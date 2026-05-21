@@ -6,11 +6,15 @@
  * === GIẢI THÍCH CHI TIẾT ===
  * 
  * Config là nơi tập trung TẤT CẢ các hằng số và thiết lập của game.
- * Thay vì hardcode các giá trị (như "8 hàng", "6 màu") rải rác trong code,
+ * Thay vì hardcode các giá trị rải rác trong code,
  * ta đặt hết vào 1 file config → dễ thay đổi, dễ bảo trì.
  * 
- * Ví dụ: Muốn đổi board từ 8x8 thành 6x6? 
- *         → Chỉ cần sửa rows/cols ở đây, KHÔNG cần sửa code logic.
+ * === THAY ĐỔI SO VỚI BẢN CŨ ===
+ * 
+ * 1. Board: 8×8 → 12×12 (144 ô, gấp 2.25 lần)
+ * 2. TileSize: 70px → 45px (để vừa canvas 800×600)
+ * 3. Xóa combinationRules — không cần nữa vì Line Scan
+ *    tự phát hiện combo theo run-length, không cần offset rules
  */
 
 export const Config = {
@@ -19,18 +23,27 @@ export const Config = {
      * - rows: số hàng (trục Y, từ trên xuống)
      * - cols: số cột (trục X, từ trái sang)
      * 
-     * Board 8x8 = 64 ô, mỗi ô chứa 1 tile
+     * Board 12×12 = 144 ô, mỗi ô chứa 1 tile
+     * 
+     * Tính toán kích thước phù hợp:
+     *   Canvas: 800×600
+     *   Board width:  12 × 45 = 540px (< 800 ✓)
+     *   Board height: 12 × 45 = 540px (< 600, chừa 60px cho UI ✓)
      */
     board: {
-        rows: 8,
-        cols: 8,
+        rows: 12,
+        cols: 12,
     },
 
     /**
      * tileSize: Kích thước mỗi ô (pixels)
-     * Dùng để căn chỉnh vị trí tiles trên board
+     * 
+     * Bản cũ: 70px cho board 8×8 (70×8 = 560px)
+     * Bản mới: 45px cho board 12×12 (45×12 = 540px)
+     * 
+     * 45px vẫn đủ lớn để nhìn rõ và click chính xác
      */
-    tileSize: 70,
+    tileSize: 45,
 
     /**
      * tileColors: Danh sách các màu tile có trong game
@@ -60,24 +73,20 @@ export const Config = {
     },
 
     /**
-     * combinationRules: Luật phát hiện combo
+     * === combinationRules ĐÃ BỊ XÓA ===
      * 
-     * Mỗi rule là 1 mảng các offset (vị trí tương đối) cần kiểm tra.
-     * Thuật toán: Với mỗi ô [row, col] trên bảng:
-     *   - Lấy tile ở ô đó
-     *   - So sánh với tiles ở các ô offset
-     *   - Nếu TẤT CẢ cùng màu → đó là combo!
+     * Phiên bản cũ dùng offset rules:
+     *   combinationRules: [
+     *     [{ col: 1, row: 0 }, { col: 2, row: 0 }],  // ngang
+     *     [{ col: 0, row: 1 }, { col: 0, row: 2 }],  // dọc
+     *   ]
      * 
-     * Rule 1: [{col:1, row:0}, {col:2, row:0}]
-     *   → Kiểm tra 3 ô NGANG liên tiếp: [r,c], [r,c+1], [r,c+2]
+     * Phiên bản mới dùng Line Scan — tự phát hiện combo bằng
+     * thuật toán run-length, KHÔNG cần rules offset nữa.
      * 
-     * Rule 2: [{col:0, row:1}, {col:0, row:2}]
-     *   → Kiểm tra 3 ô DỌC liên tiếp: [r,c], [r+1,c], [r+2,c]
-     * 
-     * (Sẽ dùng ở Tuần 5, nhưng khai báo sẵn ở đây)
+     * Lợi ích:
+     *   - Tự động detect match-4, match-5, match-N
+     *   - Không trùng lặp combo
+     *   - Code CombinationManager sạch hơn
      */
-    combinationRules: [
-        [{ col: 1, row: 0 }, { col: 2, row: 0 }],
-        [{ col: 0, row: 1 }, { col: 0, row: 2 }],
-    ],
 };

@@ -51,7 +51,7 @@ export class Game {
         this.selectedTile = null;
         this.disabled = false;
         this.score = 0;
-        this.moves = 30;          // Số lượt chơi
+        this.moves = 40;          // Số lượt chơi (tăng cho board 12×12)
         this.comboCount = 0;      // Đếm combo liên tiếp trong 1 lượt
         this.isGameOver = false;
 
@@ -101,6 +101,7 @@ export class Game {
         // === MOVES TEXT ===
         this.movesText = new Text({
             text: `MOVES: ${this.moves}`,
+
             style: {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 28,
@@ -337,7 +338,7 @@ export class Game {
 
         // Reset state
         this.score = 0;
-        this.moves = 30;
+        this.moves = 40;
         this.comboCount = 0;
         this.isGameOver = false;
         this.selectedTile = null;
@@ -401,12 +402,16 @@ export class Game {
     // ============================================================
 
     /**
-     * Swap 2 tiles — BẢN ĐẦY ĐỦ
+     * Swap 2 tiles — BẢN ĐẦY ĐỦ VỚI DIRTY REGION
      * 
      * Sau swap animation:
-     *   → Kiểm tra combo (getMatches)
+     *   → Kiểm tra combo CHỈ trong vùng bị ảnh hưởng (dirty region)
      *   → CÓ combo → processMatches() (xóa, rơi, thêm mới, chain)
      *   → KHÔNG combo → reverse swap (đổi lại vị trí cũ)
+     * 
+     * === DIRTY REGION OPTIMIZATION ===
+     * Thay vì quét toàn bộ board (144 ô cho 12×12),
+     * chỉ quét hàng + cột của 2 tile bị swap (~48 ô)
      */
     swap(selectedTile, tile, reverse = false) {
         this.disabled = true;
@@ -419,12 +424,17 @@ export class Game {
             this.board.swap(selectedTile, tile);
 
             if (!reverse) {
-                // SWAP CHÍNH → kiểm tra combo
-                const matches = this.combinationManager.getMatches();
+                // SWAP CHÍNH → kiểm tra combo CHỈ trong dirty region
+                const { dirtyRows, dirtyCols } =
+                    this.combinationManager.getDirtyRegionAfterSwap(selectedTile, tile);
+                const matches = this.combinationManager.getMatchesInRegion(dirtyRows, dirtyCols);
+
                 if (matches.length) {
                     // Có combo → trừ lượt + xử lý
                     this.moves--;
                     this.comboCount = 0;
+                    // Lưu lại affected cols để dirty region cascade
+                    this.lastAffectedCols = [...dirtyCols];
                     this.updateUI();
                     this.processMatches(matches);
                 } else {
@@ -465,12 +475,17 @@ export class Game {
         }
 
         // 3. Hiệu ứng particle trên mỗi tile bị xóa
+        //    + Thu thập affected cols để dirty region cascade
+        const affectedCols = new Set(this.lastAffectedCols || []);
         matches.forEach(match => {
-            match.forEach(tile => {
+            match.tiles.forEach(tile => {
                 if (tile.sprite) {
                     this.spawnParticles(tile.sprite.x + this.board.container.x,
                                         tile.sprite.y + this.board.container.y,
                                         tile.color);
+                }
+                if (tile.field) {
+                    affectedCols.add(tile.field.col);
                 }
             });
         });
@@ -487,8 +502,11 @@ export class Game {
         // 7. Thêm tiles mới
         await this.addTiles();
 
-        // 8. Kiểm tra chain combo
-        const newMatches = this.combinationManager.getMatches();
+        // 8. Kiểm tra chain combo — CHỈ trong dirty region (affected cols)
+        const { dirtyRows, dirtyCols } =
+            this.combinationManager.getDirtyRegionAfterCascade([...affectedCols]);
+        this.lastAffectedCols = dirtyCols;
+        const newMatches = this.combinationManager.getMatchesInRegion(dirtyRows, dirtyCols);
         if (newMatches.length) {
             await this.processMatches(newMatches);
             return;
@@ -503,14 +521,27 @@ export class Game {
     }
 
     /**
-     * Tính điểm
-     * - Mỗi tile trong combo = 10 điểm
-     * - Combo bonus: x1.5 cho combo thứ 2, x2 cho combo thứ 3, ...
+     * Tính điểm — CẬP NHẬT CHO LINE SCAN
+     * 
+     * Công thức mới:
+     *   - Mỗi tile = 10 điểm
+     *   - Match-4: bonus x1.5
+     *   - Match-5+: bonus x2.0
+     *   - Combo chain: +50% mỗi combo liên tiếp
      */
     calculateScore(matches) {
         let points = 0;
         matches.forEach(match => {
-            points += match.length * 10;
+            let base = match.tiles.length * 10;
+
+            // Bonus cho match dài
+            if (match.length >= 5) {
+                base *= 2.0;   // Match-5+: x2
+            } else if (match.length >= 4) {
+                base *= 1.5;   // Match-4: x1.5
+            }
+
+            points += base;
         });
 
         // Combo multiplier
@@ -522,12 +553,19 @@ export class Game {
     }
 
     /**
-     * Xóa tiles trong combo
+     * Xóa tiles trong combo — CẬP NHẬT CHO LINE SCAN
+     * 
+     * matches giờ là [{tiles: [...], length: N}, ...]
+     * nên truy cập qua match.tiles thay vì match trực tiếp
      */
     removeMatches(matches) {
+        const removed = new Set();
         matches.forEach(match => {
-            match.forEach(tile => {
-                tile.remove();
+            match.tiles.forEach(tile => {
+                if (!removed.has(tile)) {
+                    removed.add(tile);
+                    tile.remove();
+                }
             });
         });
     }
