@@ -243,9 +243,10 @@ export class Board {
     adjustPosition() {
         const boardWidth = this.cols * App.config.tileSize;
         const boardHeight = this.rows * App.config.tileSize;
-        const halfTile = App.config.tileSize / 2;
 
-        this.container.x = (App.app.screen.width - boardWidth) / 2 + halfTile;
-        this.container.y = (App.app.screen.height - boardHeight) / 2 + halfTile;
+        // Board container is positioned by top-left corner because
+        // field backgrounds are drawn from top-left coordinates.
+        this.container.x = (App.app.screen.width - boardWidth) / 2;
+        this.container.y = (App.app.screen.height - boardHeight) / 2;
     }
 }

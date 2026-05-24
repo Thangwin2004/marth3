@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="glow-water" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00a2ff" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#00a2ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gem-water" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#64d2ff"/>
+      <stop offset="40%" stop-color="#0077b6"/>
+      <stop offset="100%" stop-color="#03045e"/>
+    </linearGradient>
+    <linearGradient id="bevel-water" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#005f73"/>
+      <stop offset="100%" stop-color="#001219"/>
+    </linearGradient>
+    <linearGradient id="drop-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#90e0ef"/>
+      <stop offset="60%" stop-color="#00b4d8"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+    <linearGradient id="glare" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0b0b0b"/>
+  <ellipse cx="256" cy="460" rx="160" ry="25" fill="url(#glow-water)"/>
+  <g transform="translate(0, -10)">
+    <path d="M 256,80 L 400,140 Q 430,220 430,300 L 370,410 Q 256,450 142,410 L 82,300 Q 82,220 112,140 Z" fill="#001219"/>
+    <path d="M 142,410 L 82,300 Q 82,220 112,140 L 135,165 L 112,290 L 165,385 L 256,415 L 347,385 L 400,290 L 377,165 L 400,140 Q 430,220 430,300 L 370,410 Q 256,450 142,410 Z" fill="url(#bevel-water)" opacity="0.9"/>
+    <path d="M 256,100 L 377,165 L 400,290 L 347,385 L 256,415 L 165,385 L 112,290 L 135,165 Z" fill="url(#gem-water)"/>
+    <path d="M 256,100 L 377,165 L 400,290 L 220,320 L 112,290 L 135,165 Z" fill="url(#glare)" opacity="0.4"/>
+    <path d="M 160,115 Q 160,145 130,145 Q 160,145 160,175 Q 160,145 190,145 Q 160,145 160,115 Z" fill="#ffffff"/>
+    <ellipse cx="160" cy="145" rx="15" ry="12" fill="#ffffff" opacity="0.8"/>
+    <path d="M 256,170 C 256,170 330,260 330,305 C 330,345 297,370 256,370 C 215,370 182,345 182,305 C 182,260 256,170 256,170 Z" fill="#002845" stroke="#002845" stroke-width="12" stroke-linejoin="round"/>
+    <path d="M 256,175 C 256,175 324,262 324,305 C 324,341 294,364 256,364 C 218,364 188,341 188,305 C 188,262 256,175 256,175 Z" fill="url(#drop-grad)"/>
+    <ellipse cx="230" cy="275" rx="10" ry="18" transform="rotate(-30, 230, 275)" fill="#ffffff" opacity="0.7"/>
+    <ellipse cx="212" cy="315" rx="6" ry="10" transform="rotate(-15, 212, 315)" fill="#ffffff" opacity="0.5"/>
+  </g>
+</svg>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="glow-ice" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gem-ice" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="40%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="bevel-ice" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0c4a6e"/>
+    </linearGradient>
+    <linearGradient id="glare" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0b0b0b"/>
+  <ellipse cx="256" cy="460" rx="160" ry="25" fill="url(#glow-ice)"/>
+  <g transform="translate(0, -10)">
+    <path d="M 256,80 L 400,140 Q 430,220 430,300 L 370,410 Q 256,450 142,410 L 82,300 Q 82,220 112,140 Z" fill="#0c4a6e"/>
+    <path d="M 142,410 L 82,300 Q 82,220 112,140 L 135,165 L 112,290 L 165,385 L 256,415 L 347,385 L 400,290 L 377,165 L 400,140 Q 430,220 430,300 L 370,410 Q 256,450 142,410 Z" fill="url(#bevel-ice)" opacity="0.9"/>
+    <path d="M 256,100 L 377,165 L 400,290 L 347,385 L 256,415 L 165,385 L 112,290 L 135,165 Z" fill="url(#gem-ice)"/>
+    <path d="M 256,100 L 377,165 L 400,290 L 220,320 L 112,290 L 135,165 Z" fill="url(#glare)" opacity="0.4"/>
+    <path d="M 130,115 Q 130,145 100,145 Q 130,145 130,175 Q 130,145 160,145 Q 130,145 130,115 Z" fill="#ffffff"/>
+    <ellipse cx="130" cy="145" rx="15" ry="12" fill="#ffffff" opacity="0.8"/>
+    <g stroke="#004d61" stroke-width="12" stroke-linecap="round">
+      <line x1="256" y1="160" x2="256" y2="352"/>
+      <line x1="173" y1="208" x2="339" y2="304"/>
+      <line x1="173" y1="304" x2="339" y2="208"/>
+      <path d="M 256,190 L 235,175 M 256,190 L 277,175 M 256,220 L 230,205 M 256,220 L 282,205"/>
+      <path d="M 256,322 L 235,337 M 256,322 L 277,337 M 256,292 L 230,307 M 256,292 L 282,307"/>
+      <path d="M 200,223 L 180,200 M 200,223 L 210,245 M 225,238 L 210,215 M 225,238 L 235,260"/>
+      <path d="M 312,289 L 332,312 M 312,289 L 302,267 M 287,274 L 302,297 M 287,274 L 277,252"/>
+      <path d="M 200,289 L 180,312 M 200,289 L 210,267 M 225,274 L 210,297 M 225,274 L 235,252"/>
+      <path d="M 312,223 L 332,200 M 312,223 L 302,245 M 287,238 L 302,215 M 287,238 L 277,260"/>
+    </g>
+    <g stroke="#e0f2fe" stroke-width="4" stroke-linecap="round" opacity="0.9">
+      <line x1="256" y1="160" x2="256" y2="352"/>
+      <line x1="173" y1="208" x2="339" y2="304"/>
+      <line x1="173" y1="304" x2="339" y2="208"/>
+    </g>
+  </g>
+</svg>

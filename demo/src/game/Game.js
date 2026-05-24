@@ -42,6 +42,8 @@ export class Game {
 
         // === TẠO BOARD ===
         this.board = new Board();
+        this.createBoardBackground();
+        this.gameContainer.addChild(this.boardBg);
         this.gameContainer.addChild(this.board.container);
 
         // === TẠO COMBINATION MANAGER ===
@@ -66,6 +68,20 @@ export class Game {
 
         // === LẮNG NGHE SỰ KIỆN ===
         this.board.container.on('tile-touch-start', this.onTileClick.bind(this));
+    }
+
+    createBoardBackground() {
+        const boardWidth = this.board.cols * App.config.tileSize;
+        const boardHeight = this.board.rows * App.config.tileSize;
+        const padding = 16;
+
+        this.boardBg = new Graphics();
+        this.boardBg.beginFill(0x121925, 0.96);
+        this.boardBg.lineStyle(3, 0x324b8b, 0.45);
+        this.boardBg.drawRoundedRect(0, 0, boardWidth + padding * 2, boardHeight + padding * 2, 24);
+        this.boardBg.endFill();
+        this.boardBg.x = this.board.container.x - padding;
+        this.boardBg.y = this.board.container.y - padding;
     }
 
     // ============================================================
@@ -349,6 +365,8 @@ export class Game {
         App.stage.addChild(this.gameContainer);
 
         this.board = new Board();
+        this.createBoardBackground();
+        this.gameContainer.addChild(this.boardBg);
         this.gameContainer.addChild(this.board.container);
         this.combinationManager = new CombinationManager(this.board);
 
@@ -678,8 +696,16 @@ export class Game {
      */
     spawnParticles(x, y, color) {
         const colors = {
-            blue: 0x4fc3f7, green: 0x81c784, orange: 0xffb74d,
-            red: 0xe57373, purple: 0xba68c8, yellow: 0xfff176,
+            fire: 0xff6240,
+            water: 0x4fc3f7,
+            nature: 0x81c784,
+            ice: 0x8fd8ff,
+            lightning: 0xfff176,
+            earth: 0xb0723e,
+            'wind-air': 0x51c6c1,
+            'psychic-eye': 0xba68c8,
+            sun: 0xffd54f,
+            'poison-death': 0x8adf5b,
         };
         const particleColor = colors[color] || 0xffffff;
 

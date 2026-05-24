@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="glow-wind" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00f2ff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#00f2ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gem-wind" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5ff3ff"/>
+      <stop offset="40%" stop-color="#00b4d8"/>
+      <stop offset="100%" stop-color="#005f73"/>
+    </linearGradient>
+    <linearGradient id="bevel-wind" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0077b6"/>
+      <stop offset="100%" stop-color="#002d3d"/>
+    </linearGradient>
+    <linearGradient id="swirl-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a3f7ff"/>
+      <stop offset="100%" stop-color="#0096c7"/>
+    </linearGradient>
+    <linearGradient id="glare" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0b0b0b"/>
+  <ellipse cx="256" cy="460" rx="160" ry="25" fill="url(#glow-wind)"/>
+  <g transform="translate(0, -10)">
+    <path d="M 256,80 L 400,140 Q 430,220 430,300 L 370,410 Q 256,450 142,410 L 82,300 Q 82,220 112,140 Z" fill="#002d3d"/>
+    <path d="M 142,410 L 82,300 Q 82,220 112,140 L 135,165 L 112,290 L 165,385 L 256,415 L 347,385 L 400,290 L 377,165 L 400,140 Q 430,220 430,300 L 370,410 Q 256,450 142,410 Z" fill="url(#bevel-wind)" opacity="0.9"/>
+    <path d="M 256,100 L 377,165 L 400,290 L 347,385 L 256,415 L 165,385 L 112,290 L 135,165 Z" fill="url(#gem-wind)"/>
+    <path d="M 256,100 L 377,165 L 400,290 L 220,320 L 112,290 L 135,165 Z" fill="url(#glare)" opacity="0.4"/>
+    <ellipse cx="160" cy="145" rx="20" ry="15" transform="rotate(-25, 160, 145)" fill="#ffffff" opacity="0.7"/>
+    <path d="M 150,300 C 140,240 220,200 270,200 C 330,200 370,240 350,290 C 330,330 270,320 270,280 C 270,250 310,240 310,265 C 310,280 290,290 280,280 C 270,270 280,240 310,230 C 340,220 340,170 275,170 C 210,170 160,220 190,270 C 200,285 180,300 170,310 C 200,340 230,350 240,320 C 250,290 210,290 210,310 C 210,320 220,330 225,325 C 230,320 225,305 210,305 C 190,305 185,335 220,340 C 250,345 270,320 260,290 C 250,260 210,255 180,285 Z" fill="#003547" stroke="#003547" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M 150,300 C 140,240 220,200 270,200 C 330,200 370,240 350,290 C 330,330 270,320 270,280 C 270,250 310,240 310,265 C 310,280 290,290 280,280 C 270,270 280,240 310,230 C 340,220 340,170 275,170 C 210,170 160,220 190,270 C 200,285 180,300 170,310 C 200,340 230,350 240,320 C 250,290 210,290 210,310 C 210,320 220,330 225,325 C 230,320 225,305 210,305 C 190,305 185,335 220,340 C 250,345 270,320 260,290 C 250,260 210,255 180,285 Z" fill="url(#swirl-grad)"/>
+    <path d="M 230,185 C 260,180 300,190 320,215" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  </g>
+</svg>

@@ -29,6 +29,7 @@
  */
 
 import { App } from '../system/App.js';
+import { Graphics } from 'pixi.js';
 
 export class Field {
     /**
@@ -49,23 +50,30 @@ export class Field {
 
         // === THAM CHIẾU ĐẾN TILE ===
         this.tile = null;  // Ban đầu ô trống, chưa có tile
-        
-        // === SPRITE NỀN Ô ===
-        // App.sprite('field') tạo 1 Sprite từ texture 'field' đã load
-        this.sprite = App.sprite('field');
 
-        // anchor.set(0.5) → điểm neo ở TÂM sprite (thay vì góc trên-trái)
-        // Giúp việc tính vị trí và xoay sprite dễ hơn
-        this.sprite.anchor.set(0.5);
+        const tileSize = App.config.tileSize;
 
-        // Đặt sprite ở vị trí pixel tính toán từ (row, col)
+        // === NỀN Ô ===
+        this.sprite = new Graphics();
+        this.sprite.beginFill(0x101830, 0.92);
+        this.sprite.lineStyle(3, 0xffffff, 0.14);
+        this.sprite.drawRoundedRect(0, 0, tileSize, tileSize, 14);
+        this.sprite.endFill();
+
+        // Ánh sáng nhẹ ở góc trên bên trái giống hiệu ứng đá quý
+        this.sprite.beginFill(0xffffff, 0.08);
+        this.sprite.drawRoundedRect(tileSize * 0.1, tileSize * 0.08, tileSize * 0.7, tileSize * 0.18, 8);
+        this.sprite.endFill();
+
         this.sprite.x = this.position.x;
         this.sprite.y = this.position.y;
 
-        // === SPRITE "ĐƯỢC CHỌN" (viền vàng) ===
-        // Khi player click vào tile trên ô này, ta hiện viền vàng
-        this.selected = App.sprite('field-selected');
-        this.selected.anchor.set(0.5);
+        // === HIỂN THỊ Ô ĐƯỢC CHỌN ===
+        this.selected = new Graphics();
+        this.selected.lineStyle(3, 0xffffff, 0.95);
+        this.selected.beginFill(0xffffff, 0.16);
+        this.selected.drawRoundedRect(0, 0, tileSize, tileSize, 14);
+        this.selected.endFill();
         this.selected.x = this.position.x;
         this.selected.y = this.position.y;
         this.selected.visible = false;  // Ẩn mặc định, chỉ hiện khi được chọn

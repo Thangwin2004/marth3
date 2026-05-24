@@ -46,11 +46,13 @@ export const Config = {
     tileSize: 45,
 
     /**
-     * tileColors: Danh sách các màu tile có trong game
+     * tileColors: Danh sách các loại tile hiện tại trong game
      * Mỗi tên ở đây phải tương ứng với 1 file asset SVG
-     * (ví dụ: 'blue' → /assets/blue.svg)
      */
-    tileColors: ['blue', 'green', 'orange', 'red', 'purple', 'yellow'],
+    tileColors: [
+        'fire', 'water', 'nature', 'ice', 'lightning',
+        'earth', 'wind-air', 'psychic-eye', 'sun', 'poison-death',
+    ],
 
     /**
      * assets: Ánh xạ tên → đường dẫn file asset
@@ -59,17 +61,19 @@ export const Config = {
      * Mỗi entry = { alias: tên, src: đường dẫn file }
      * 
      * Sau khi load, ta dùng alias để tạo sprite:
-     *   Sprite.from('blue')  ← alias 'blue' → file '/assets/blue.svg'
+     *   Sprite.from('fire')  ← alias 'fire' → file '/assets/fire.svg'
      */
     assets: {
-        field: '/assets/field.svg',
-        'field-selected': '/assets/field-selected.svg',
-        blue: '/assets/blue.svg',
-        green: '/assets/green.svg',
-        orange: '/assets/orange.svg',
-        red: '/assets/red.svg',
-        purple: '/assets/purple.svg',
-        yellow: '/assets/yellow.svg',
+        fire: '/assets/fire.svg',
+        water: '/assets/Water.svg',
+        nature: '/assets/Nature.svg',
+        ice: '/assets/Ice.svg',
+        lightning: '/assets/Lightning.svg',
+        earth: '/assets/Earth.svg',
+        'wind-air': '/assets/Windy.svg',
+        'psychic-eye': '/assets/Psychic.svg',
+        sun: '/assets/Sun.svg',
+        'poison-death': '/assets/Poison.svg',
     },
 
     /**

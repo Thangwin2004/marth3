@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff2a2a" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#ff2a2a" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="gem-body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff7676"/>
+      <stop offset="40%" stop-color="#e63946"/>
+      <stop offset="100%" stop-color="#8b0011"/>
+    </linearGradient>
+
+    <linearGradient id="gem-bottom-bevel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a80018"/>
+      <stop offset="100%" stop-color="#4a0007"/>
+    </linearGradient>
+
+    <linearGradient id="fire-outer" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ff3700"/>
+      <stop offset="100%" stop-color="#ff9100"/>
+    </linearGradient>
+
+    <linearGradient id="fire-inner" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ffe600"/>
+      <stop offset="100%" stop-color="#ffaa00"/>
+    </linearGradient>
+
+    <linearGradient id="glass-glare" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="#0b0b0b" />
+
+  <ellipse cx="256" cy="460" rx="160" ry="25" fill="url(#bg-glow)" />
+
+  <g transform="translate(0, -10)">
+    <path d="M 256,80 L 400,140 Q 430,220 430,300 L 370,410 Q 256,450 142,410 L 82,300 Q 82,220 112,140 Z" fill="#4a030a" />
+    
+    <path d="M 142,410 L 82,300 Q 82,220 112,140 L 135,165 L 112,290 L 165,385 L 256,415 L 347,385 L 400,290 L 377,165 L 400,140 Q 430,220 430,300 L 370,410 Q 256,450 142,410 Z" fill="url(#gem-bottom-bevel)" opacity="0.85"/>
+
+    <path d="M 256,100 L 377,165 L 400,290 L 347,385 L 256,415 L 165,385 L 112,290 L 135,165 Z" fill="url(#gem-body)" />
+
+    <path d="M 256,100 L 377,165 L 400,290 L 347,385 L 256,415 L 165,385 L 112,290 L 135,165 Z" fill="none" stroke="#ff9e9e" stroke-width="3" opacity="0.4" />
+
+    <path d="M 135,165 C 130,145 160,120 190,125 C 175,150 150,175 135,165 Z" fill="#ffffff" opacity="0.8" filter="blur(2px)"/>
+    <ellipse cx="160" cy="145" rx="20" ry="15" transform="rotate(-25, 160, 145)" fill="#ffffff" />
+
+    <path d="M 256,100 L 377,165 L 400,290 L 220,320 L 112,290 L 135,165 Z" fill="url(#glass-glare)" opacity="0.4" />
+
+    <path d="M 256,130 
+             C 275,180 260,220 310,210 
+             C 340,205 320,260 335,270
+             C 355,290 340,335 310,350
+             C 280,365 232,365 202,350
+             C 172,335 157,290 177,270
+             C 192,260 172,205 202,210
+             C 252,220 237,180 256,130 Z" 
+          fill="#2b1103" stroke="#2b1103" stroke-width="14" stroke-linejoin="round" />
+
+    <path d="M 256,135 
+             C 273,182 258,222 308,212 
+             C 336,207 317,258 331,268
+             C 350,287 336,330 307,344
+             C 278,358 234,358 205,344
+             C 176,330 162,287 181,268
+             C 195,258 176,207 204,212
+             C 254,222 239,182 256,135 Z" 
+          fill="url(#fire-outer)" />
+
+    <path d="M 256,190 
+             C 268,225 255,245 290,245 
+             C 310,245 300,280 310,290
+             C 320,305 310,335 290,342
+             C 270,349 242,349 222,342
+             C 202,335 192,305 202,290
+             C 212,280 202,245 222,245
+             C 257,245 244,225 256,190 Z" 
+          fill="url(#fire-inner)" />
+          
+    <path d="M 256,250 
+             C 275,280 285,325 256,338 
+             C 227,325 237,280 256,250 Z" 
+          fill="#ffffff" opacity="0.3" />
+  </g>
+</svg>

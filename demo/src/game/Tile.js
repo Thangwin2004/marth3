@@ -6,7 +6,8 @@
  * === GIẢI THÍCH CHI TIẾT ===
  * 
  * Tile là viên gạch mà player di chuyển để tạo combo.
- * Mỗi tile có 1 MÀU (blue, green, red, ...) và 1 SPRITE (hình ảnh).
+ * Mỗi tile có 1 MÀU (fire, water, nature, ice, lightning, earth, wind-air, psychic-eye, sun, poison-death)
+ * và 1 SPRITE (hình ảnh).
  * 
  * Tile nằm trên Field (ô vuông). Khi swap, tile di chuyển từ Field này 
  * sang Field kia bằng animation.
@@ -33,12 +34,12 @@ export class Tile {
     /**
      * Tạo 1 viên gạch màu
      * 
-     * @param {string} color - Tên màu ('blue', 'green', 'red', ...)
+     * @param {string} color - Tên màu ('fire', 'water', 'leaf', ...)
      *                         Phải trùng với alias trong config.assets
      * 
      * === VÍ DỤ ===
-     * new Tile('blue')   → tạo viên gạch xanh dương
-     * new Tile('red')    → tạo viên gạch đỏ
+     * new Tile('fire')   → tạo viên gạch lửa
+     * new Tile('water')  → tạo viên giọt nước
      */
     constructor(color) {
         // === DỮ LIỆU ===
@@ -52,6 +53,19 @@ export class Tile {
         // anchor.set(0.5) → Điểm neo ở tâm sprite
         // Để tile nằm chính giữa ô field
         this.sprite.anchor.set(0.5);
+
+        // Scale sprite theo kích thước ô của board
+        this.resizeSprite();
+    }
+
+    resizeSprite() {
+        const targetSize = App.config.tileSize;
+        const texture = this.sprite.texture;
+        const textureWidth = texture.orig.width;
+        const textureHeight = texture.orig.height;
+        const baseSize = Math.max(textureWidth, textureHeight);
+        const scale = (targetSize / baseSize) * 0.92;
+        this.sprite.scale.set(scale);
     }
 
     /**
@@ -61,8 +75,9 @@ export class Tile {
      * @param {{x: number, y: number}} position - Tọa độ pixel
      */
     setPosition(position) {
-        this.sprite.x = position.x;
-        this.sprite.y = position.y;
+        const halfTile = App.config.tileSize / 2;
+        this.sprite.x = position.x + halfTile;
+        this.sprite.y = position.y + halfTile;
     }
 
     /**
@@ -88,10 +103,11 @@ export class Tile {
      * @returns {Promise} Resolve khi animation hoàn tất
      */
     moveTo(position, duration) {
+        const halfTile = App.config.tileSize / 2;
         return new Promise(resolve => {
             gsap.to(this.sprite, {
-                x: position.x,
-                y: position.y,
+                x: position.x + halfTile,
+                y: position.y + halfTile,
                 duration: duration,
                 ease: 'back.out(1.2)',  // Hiệu ứng "đi quá rồi quay lại" nhẹ
                 onComplete: () => resolve(),
@@ -112,9 +128,10 @@ export class Tile {
      * @returns {Promise} Resolve khi animation hoàn tất
      */
     fallDownTo(position, delay = 0) {
+        const halfTile = App.config.tileSize / 2;
         return new Promise(resolve => {
             gsap.to(this.sprite, {
-                y: position.y,
+                y: position.y + halfTile,
                 duration: 0.5,
                 delay: delay,
                 ease: 'bounce.out',  // Hiệu ứng nảy như quả bóng
