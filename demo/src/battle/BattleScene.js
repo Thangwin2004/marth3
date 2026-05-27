@@ -370,135 +370,178 @@ export class BattleScene {
     }
 
     async processMatches(matches, who = 'player') {
-        this.comboCount++;
         const attacker = who === 'player' ? this.player : this.boss;
         const defender = who === 'player' ? this.boss : this.player;
         const defenderSide = who === 'player' ? 'boss' : 'player';
 
-        // Calculate damage
-        const { totalDamage, effects, healAmount, shieldAmount } =
-            this.damageSystem.calculate(matches, attacker, defender, this.comboCount);
+        // 1. SETTLING PHASE (Cascade Loop until board settles)
+        const allMatchesThisTurn = [];
+        let currentMatches = matches;
+        this.comboCount = 0;
 
-        // Check for poisoned tiles
-        let poisonSelfDamage = 0;
-        matches.forEach(match => {
-            match.tiles.forEach(tile => {
-                if (tile.poisoned) {
-                    poisonSelfDamage += 5;
+        while (currentMatches.length > 0) {
+            this.comboCount++;
+            
+            // Add to matches list for damage/effects calculation at the end
+            currentMatches.forEach(m => allMatchesThisTurn.push(m));
+
+            // Check adjacent stones to destroy
+            const stonesToDestroy = this.combinationManager.getStonesToDestroy(currentMatches);
+            stonesToDestroy.forEach(field => {
+                if (field.tile) {
+                    field.tile.remove();
+                    field.tile = null;
                 }
             });
-        });
 
-        // ====== ANIMATIONS ======
-
-        // Play attack animation on attacker
-        await this.hud.playAttack(who);
-
-        // Fire projectile from board center to defender
-        if (totalDamage > 0) {
-            const boardCenter = {
-                x: this.board.container.x + (this.board.cols * Config.tileSize) / 2,
-                y: this.board.container.y + (this.board.rows * Config.tileSize) / 2,
-            };
-            const defenderPos = this.hud.getSpritePosition(defenderSide);
-
-            // Pick projectile color from first match tile type
-            const tileColor = this.getTileProjectileColor(matches);
-            await Projectile.fire(this.container, boardCenter, defenderPos, tileColor);
-
-            // Play hurt animation on defender
-            await this.hud.playHurt(defenderSide);
-
-            // Apply damage
-            this.damageSystem.applyDamage(defender, totalDamage, effects);
-            this.hud.showDamage(defenderSide, totalDamage, 'damage');
-            this.hud.setLog(`${who === 'player' ? '⚔️' : '💀'} ${attacker.name}: ${totalDamage} damage!`);
-        }
-
-        // Apply self effects with animations
-        if (healAmount > 0) {
-            const healed = attacker.heal(healAmount);
-            if (healed > 0) {
-                const attackerPos = this.hud.getSpritePosition(who);
-                await Projectile.heal(this.container, attackerPos.x, attackerPos.y);
-                await this.hud.playHeal(who);
-                this.hud.showDamage(who, healed, 'heal');
-                this.hud.setLog(`💚 ${attacker.name} heals ${healed} HP`);
+            // Remove matched tiles visually (starts GSAP fade-out)
+            this.removeMatches(currentMatches);
+            
+            // Combo display popups on the board during settling
+            if (this.comboCount >= 2) {
+                DamagePopup.show(
+                    this.container,
+                    this.board.container.x + (this.board.cols * Config.tileSize) / 2,
+                    this.board.container.y - 20,
+                    this.comboCount,
+                    'combo'
+                );
+                this.hud.setLog(`🔥 COMBO x${this.comboCount}!`);
             }
-        }
-        if (shieldAmount > 0) {
-            attacker.addShield(shieldAmount);
-            const attackerPos = this.hud.getSpritePosition(who);
-            await Projectile.shield(this.container, attackerPos.x, attackerPos.y);
-            await this.hud.playShield(who);
-            this.hud.showDamage(who, shieldAmount, 'shield');
-            this.hud.setLog(`🛡 ${attacker.name} gains ${shieldAmount} shield`);
-        }
 
-        // Apply poison self damage
-        if (poisonSelfDamage > 0) {
-            attacker.takeDamage(poisonSelfDamage);
-            this.hud.showDamage(who, poisonSelfDamage, 'poison');
-            this.hud.setLog(`☠️ Poison! ${attacker.name} takes ${poisonSelfDamage} self damage`);
-        }
+            await this.delay(250); // wait slightly for destruction animation
 
-        // Apply status effects
-        this.damageSystem.applyEffects(effects, attacker, defender, this.board);
+            // Process cascade and refill board
+            await this.processFallDown();
+            await this.addTiles();
+            this.updateUI();
 
-        // Check adjacent stones
-        const stonesToDestroy = this.combinationManager.getStonesToDestroy(matches);
-        stonesToDestroy.forEach(field => {
-            if (field.tile) {
-                field.tile.remove();
-                field.tile = null;
-            }
-        });
-
-        // Combo display
-        if (this.comboCount >= 2) {
-            DamagePopup.show(
-                this.container,
-                this.board.container.x + (this.board.cols * Config.tileSize) / 2,
-                this.board.container.y - 20,
-                this.comboCount,
-                'combo'
-            );
-            this.hud.setLog(`🔥 COMBO x${this.comboCount}!`);
-        }
-
-        // Update UI
-        this.updateUI();
-
-        // Remove matched tiles
-        this.removeMatches(matches);
-        await this.delay(200);
-
-        // Process cascade
-        await this.processFallDown();
-        await this.addTiles();
-
-        // Check chain combo
-        const affectedCols = new Set(this.lastAffectedCols || []);
-        matches.forEach(match => {
-            match.tiles.forEach(tile => {
-                if (tile.field) affectedCols.add(tile.field.col);
+            // Find new cascade matches
+            const affectedCols = new Set(this.lastAffectedCols || []);
+            currentMatches.forEach(match => {
+                match.tiles.forEach(tile => {
+                    if (tile.field) affectedCols.add(tile.field.col);
+                });
             });
-        });
 
-        const { dirtyRows, dirtyCols } =
-            this.combinationManager.getDirtyRegionAfterCascade([...affectedCols]);
-        this.lastAffectedCols = dirtyCols;
-        const newMatches = this.combinationManager.getMatchesInRegion(dirtyRows, dirtyCols);
+            const { dirtyRows, dirtyCols } =
+                this.combinationManager.getDirtyRegionAfterCascade([...affectedCols]);
+            this.lastAffectedCols = dirtyCols;
+            currentMatches = this.combinationManager.getMatchesInRegion(dirtyRows, dirtyCols);
 
-        if (newMatches.length) {
-            await this.processMatches(newMatches, who);
-            return;
+            if (currentMatches.length > 0) {
+                await this.delay(200); // pause briefly before next cascade matches are popped
+            }
         }
 
-        // Check game end
+        // 2. ATTACK / ACTION PHASE (Board has fully settled!)
+        if (allMatchesThisTurn.length > 0) {
+            // Calculate total damage/effects for all accumulated matches
+            const { totalDamage, effects, healAmount, shieldAmount } =
+                this.damageSystem.calculate(allMatchesThisTurn, attacker, defender, this.comboCount);
+
+            // Check for poisoned tiles in all matches
+            let poisonSelfDamage = 0;
+            allMatchesThisTurn.forEach(match => {
+                match.tiles.forEach(tile => {
+                    if (tile.poisoned) {
+                        poisonSelfDamage += 5;
+                    }
+                });
+            });
+
+            // Summarize all matches in the battle log
+            const colorCounts = {};
+            allMatchesThisTurn.forEach(match => {
+                match.tiles.forEach(tile => {
+                    const color = tile.color;
+                    colorCounts[color] = (colorCounts[color] || 0) + 1;
+                });
+            });
+
+            const emojiMap = {
+                fire: '🔥', water: '💧', nature: '🌿', ice: '❄️', lightning: '⚡',
+                earth: '⛰️', 'wind-air': '💨', 'psychic-eye': '👁️', sun: '☀️', 'poison-death': '☠️'
+            };
+            const summaryParts = Object.entries(colorCounts).map(([color, count]) => {
+                const emoji = emojiMap[color] || '';
+                return `${count}x ${color.charAt(0).toUpperCase() + color.slice(1)} ${emoji}`;
+            });
+            const summaryString = summaryParts.join(', ');
+            this.hud.setLog(`${who === 'player' ? '⚔️' : '💀'} ${attacker.name} matched: ${summaryString} | Combo x${this.comboCount}!`);
+
+            // ====== ANIMATIONS & EFFECTS ======
+            // Attacker casts/attacks
+            await this.hud.playAttack(who);
+
+            // Projectile elemental attacks
+            if (totalDamage > 0) {
+                const boardCenter = {
+                    x: this.board.container.x + (this.board.cols * Config.tileSize) / 2,
+                    y: this.board.container.y + (this.board.rows * Config.tileSize) / 2,
+                };
+                const defenderPos = this.hud.getSpritePosition(defenderSide);
+
+                // We can fire multiple projectiles, one for each distinct elemental match!
+                const matchedColors = [...new Set(allMatchesThisTurn.map(m => m.tiles[0]?.color).filter(Boolean))];
+                
+                const colorMap = {
+                    fire: 0xff6240, water: 0x42a5f5, nature: 0x66bb6a,
+                    ice: 0x80d8ff, lightning: 0xfff176, earth: 0x8d6e63,
+                    'wind-air': 0x90caf9, 'psychic-eye': 0xce93d8,
+                    sun: 0xffd54f, 'poison-death': 0xb388ff,
+                };
+
+                // Fire projectiles in sequence for each matched element!
+                for (const color of matchedColors) {
+                    const projColor = colorMap[color] || 0xff6240;
+                    await Projectile.fire(this.container, boardCenter, defenderPos, projColor);
+                }
+
+                // Play defender hurt animation
+                await this.hud.playHurt(defenderSide);
+
+                // Apply defender damage
+                this.damageSystem.applyDamage(defender, totalDamage, effects);
+                this.hud.showDamage(defenderSide, totalDamage, 'damage');
+            }
+
+            // Apply self heals
+            if (healAmount > 0) {
+                const healed = attacker.heal(healAmount);
+                if (healed > 0) {
+                    const attackerPos = this.hud.getSpritePosition(who);
+                    await Projectile.heal(this.container, attackerPos.x, attackerPos.y);
+                    await this.hud.playHeal(who);
+                    this.hud.showDamage(who, healed, 'heal');
+                }
+            }
+
+            // Apply self shields
+            if (shieldAmount > 0) {
+                attacker.addShield(shieldAmount);
+                const attackerPos = this.hud.getSpritePosition(who);
+                await Projectile.shield(this.container, attackerPos.x, attackerPos.y);
+                await this.hud.playShield(who);
+                this.hud.showDamage(who, shieldAmount, 'shield');
+            }
+
+            // Apply poison self damage
+            if (poisonSelfDamage > 0) {
+                attacker.takeDamage(poisonSelfDamage);
+                this.hud.showDamage(who, poisonSelfDamage, 'poison');
+            }
+
+            // Apply status effects
+            this.damageSystem.applyEffects(effects, attacker, defender, this.board);
+
+            // Update UI
+            this.updateUI();
+        }
+
+        // 3. END TURN CHECK
         if (this.checkGameEnd()) return;
 
-        // End turn
         if (who === 'player') {
             if (this.grantExtraTurn) {
                 this.grantExtraTurn = false;
