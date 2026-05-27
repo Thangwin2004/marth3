@@ -105,15 +105,30 @@ export class MatchSummaryPanel {
             gsap.to(container, { alpha: 1, duration: 0.3 });
             gsap.to(container.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2)' });
 
-            // Exit and resolve after 1.8 seconds
-            setTimeout(() => {
+            let timerId = null;
+            let dismissed = false;
+
+            const dismiss = () => {
+                if (dismissed) return;
+                dismissed = true;
+
+                if (timerId) {
+                    clearTimeout(timerId);
+                    timerId = null;
+                }
+
+                // Cleanup event listeners
+                bg.off('pointerdown', dismiss);
+                parent.off('pointerdown', dismiss);
+
+                // Exit animation: fade out and slide upwards quickly
                 gsap.to(container, {
                     alpha: 0,
-                    y: container.y - 40, // slide upward
-                    duration: 0.4,
+                    y: container.y - 40,
+                    duration: 0.3,
                     ease: 'power2.in',
                     onComplete: () => {
-                        // Kill all tweens before destroying
+                        // Kill all tweens before destroying to prevent GSAP null-property crash
                         gsap.killTweensOf(comboText.scale);
                         gsap.killTweensOf(container.scale);
                         gsap.killTweensOf(container);
@@ -121,7 +136,19 @@ export class MatchSummaryPanel {
                         resolve();
                     },
                 });
-            }, 1800);
+            };
+
+            // Allow click on panel to dismiss instantly
+            bg.eventMode = 'static';
+            bg.cursor = 'pointer';
+            bg.on('pointerdown', dismiss);
+
+            // Also dismiss on clicking anywhere else on the scene
+            parent.eventMode = 'static';
+            parent.on('pointerdown', dismiss);
+
+            // Auto dismiss after 1.2 seconds (snappy and automatic)
+            timerId = setTimeout(dismiss, 1200);
         });
     }
 }
