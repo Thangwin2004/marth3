@@ -58,6 +58,7 @@ export class BattleScene {
         this.currentTurn = 'player'; // 'player' | 'boss'
         this.turnCount = 0;
         this.comboCount = 0;
+        this.elementGuideActive = false;
         this.disabled = false;
         this.selectedTile = null;
         this.isGameOver = false;
@@ -363,6 +364,9 @@ export class BattleScene {
     }
 
     async showElementGuide() {
+        if (this.elementGuideActive) return;
+        this.elementGuideActive = true;
+
         // Temporarily disable board interactions during guide overlay
         const wasDisabled = this.disabled;
         this.disabled = true;
@@ -370,6 +374,7 @@ export class BattleScene {
         await ElementGuidePanel.show(this.container);
 
         this.disabled = wasDisabled;
+        this.elementGuideActive = false;
     }
 
     // Override onTileClick to handle skill targeting

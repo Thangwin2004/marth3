@@ -40,6 +40,14 @@ export class DamagePopup {
         popup.scale.set(0);
         
         parent.addChild(popup);
+
+        // Override destroy to clean up all active GSAP tweens on this popup
+        const originalDestroy = popup.destroy.bind(popup);
+        popup.destroy = (options) => {
+            gsap.killTweensOf(popup);
+            gsap.killTweensOf(popup.scale);
+            originalDestroy(options);
+        };
         
         // Animate: scale up -> float up -> fade out
         gsap.to(popup.scale, { x: 1, y: 1, duration: 0.2, ease: 'back.out(3)' });
