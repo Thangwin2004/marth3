@@ -45,9 +45,9 @@ export class DamageSystem {
             // Base damage × tile count
             let matchDamage = tileInfo.baseDmg * match.tiles.length;
 
-            // Match length multiplier (3=×1, 4=×1.5, 5+=×2.5)
-            const lengthKey = Math.min(match.length, 5);
-            const lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[5];
+            // Match length multiplier (3=×1.0, 4=×1.3, 5=×1.6, 6+=×2.0)
+            const lengthKey = Math.min(match.length, 6);
+            const lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[6];
             matchDamage *= lengthMult;
 
             // Terrain buff/debuff
