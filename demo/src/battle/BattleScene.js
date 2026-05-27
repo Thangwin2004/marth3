@@ -35,6 +35,7 @@ import { CoinFlip } from '../ui/CoinFlip.js';
 import { TurnIndicator } from '../ui/TurnIndicator.js';
 import { DamagePopup } from '../ui/DamagePopup.js';
 import { MatchSummaryPanel } from '../ui/MatchSummaryPanel.js';
+import { ElementGuidePanel } from '../ui/ElementGuidePanel.js';
 import gsap from 'gsap';
 
 export class BattleScene {
@@ -141,6 +142,16 @@ export class BattleScene {
         this.hud.bossSprite.container.eventMode = 'static';
         this.hud.bossSprite.container.cursor = 'pointer';
         this.hud.bossSprite.container.on('pointerdown', () => this.onBossClick());
+
+        // Add "📖 Element Guide" button in top bar empty space
+        this.createButton(
+            this.container,
+            '📖 Element Guide',
+            Config.canvas.width / 2 + 160,
+            38,
+            0x4fc3f7,
+            () => this.showElementGuide()
+        );
 
         // TurnIndicator — big overlay text
         this.turnIndicator = new TurnIndicator();
@@ -349,6 +360,16 @@ export class BattleScene {
                 this.skillTargeting = null;
             }
         }
+    }
+
+    async showElementGuide() {
+        // Temporarily disable board interactions during guide overlay
+        const wasDisabled = this.disabled;
+        this.disabled = true;
+
+        await ElementGuidePanel.show(this.container);
+
+        this.disabled = wasDisabled;
     }
 
     // Override onTileClick to handle skill targeting

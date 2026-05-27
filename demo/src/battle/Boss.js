@@ -6,6 +6,7 @@
  */
 
 import { BattleEntity } from './BattleEntity.js';
+import { ELEMENT_CHART } from '../data/LevelData.js';
 
 export class Boss extends BattleEntity {
   /**
@@ -46,6 +47,20 @@ export class Boss extends BattleEntity {
 
     /** @type {number} Tracks how many turns have elapsed. */
     this.turnCounter = 0;
+
+    const levelTypes = {
+        1: 'nature',
+        2: 'fire',
+        3: 'ice',
+        4: 'lightning',
+        5: 'water',
+        6: 'poison-death',
+        7: 'wind-air',
+        8: 'earth',
+        9: 'sun',
+        10: 'psychic-eye'
+    };
+    this.bossType = levelTypes[levelConfig.level] || 'nature';
 
     /** @type {number} Current level/stage number. */
     this.level = levelConfig.level;
@@ -93,8 +108,11 @@ export class Boss extends BattleEntity {
    * @returns {number} Multiplier: 1.5 for weakness, 0.5 for resistance, 1.0 otherwise.
    */
   getWeaknessMultiplier(tileType) {
-    if (this.weakness && tileType === this.weakness) return 2.0;
-    if (this.resistance && tileType === this.resistance) return 0.5;
+    const chart = ELEMENT_CHART[tileType];
+    if (chart) {
+      if (chart.weak.includes(this.bossType)) return 2.0;
+      if (chart.resist.includes(this.bossType)) return 0.5;
+    }
     return 1.0;
   }
 }
