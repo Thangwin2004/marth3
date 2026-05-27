@@ -653,13 +653,14 @@ export class BattleScene {
 
     getBossMaxMisses() {
         const level = this.levelNum;
-        if (level <= 4) return Infinity; // Unlimited misses in early levels (impossible to die if low HP)
+        if (level <= 2) return Infinity; // Unlimited misses in Levels 1-2
+        if (level === 3 || level === 4) return 11; // 10-12 times in Levels 3-4
         if (level === 5) return 8;
         if (level === 6) return 6;
         if (level === 7) return 5;
         if (level === 8) return 4;
         if (level === 9) return 3;
-        return 2; // Level 10: 1 to 3 misses (let's set it to 2!)
+        return 2; // Level 10: 1 to 3 misses (set to 2)
     }
 
     shouldBossMiss() {
