@@ -29,6 +29,7 @@ import { App } from '../system/App.js';
 import { Config } from '../config.js';
 import { LEVELS } from '../data/LevelData.js';
 import { saveManager } from '../system/SaveManager.js';
+import { sceneManager } from '../system/SceneManager.js';
 import { BattleHUD } from '../ui/BattleHUD.js';
 import { CoinFlip } from '../ui/CoinFlip.js';
 import { TurnIndicator } from '../ui/TurnIndicator.js';
@@ -806,10 +807,10 @@ export class BattleScene {
 
         if (type === 'victory' && this.levelNum < 10) {
             this.createButton(screen, 'Next Level ▶', Config.canvas.width / 2 - 110, btnY, 0x4fc3f7, () => {
-                this.destroyAndStart(this.levelNum + 1);
+                this.navigateTo('battle', this.levelNum + 1);
             });
-            this.createButton(screen, '🏠 Menu', Config.canvas.width / 2 + 110, btnY, 0x666666, () => {
-                this.destroyAndStart(this.levelNum);
+            this.createButton(screen, '🗺️ Levels', Config.canvas.width / 2 + 110, btnY, 0x666666, () => {
+                this.navigateTo('levelSelect');
             });
         } else if (type === 'victory') {
             // Level 10 cleared — show congrats
@@ -822,12 +823,15 @@ export class BattleScene {
             congratsText.y = Config.canvas.height / 2 + 30;
             screen.addChild(congratsText);
 
-            this.createButton(screen, '🔄 Play Again', Config.canvas.width / 2, btnY + 30, 0x81c784, () => {
-                this.destroyAndStart(1);
+            this.createButton(screen, '👑 Level Select', Config.canvas.width / 2, btnY + 30, 0x81c784, () => {
+                this.navigateTo('levelSelect');
             });
         } else {
-            this.createButton(screen, '🔄 Retry', Config.canvas.width / 2, btnY, 0x81c784, () => {
-                this.destroyAndStart(this.levelNum);
+            this.createButton(screen, '🔄 Retry', Config.canvas.width / 2 - 90, btnY, 0x81c784, () => {
+                this.navigateTo('battle', this.levelNum);
+            });
+            this.createButton(screen, '🗺️ Levels', Config.canvas.width / 2 + 90, btnY, 0x666666, () => {
+                this.navigateTo('levelSelect');
             });
         }
 
@@ -836,10 +840,16 @@ export class BattleScene {
         gsap.to(screen, { alpha: 1, duration: 0.5 });
     }
 
-    destroyAndStart(level) {
-        this.destroy();
-        const newScene = new BattleScene({ level });
-        App.stage.addChild(newScene.container);
+    async navigateTo(target, level) {
+        if (target === 'battle') {
+            await sceneManager.switchTo(BattleScene, { level });
+        } else if (target === 'levelSelect') {
+            const { LevelSelectScene } = await import('../scenes/LevelSelectScene.js');
+            await sceneManager.switchTo(LevelSelectScene);
+        } else {
+            const { MainMenuScene } = await import('../scenes/MainMenuScene.js');
+            await sceneManager.switchTo(MainMenuScene);
+        }
     }
 
     createButton(parent, label, x, y, color, onClick) {
