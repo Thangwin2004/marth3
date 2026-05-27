@@ -693,11 +693,16 @@ export class BattleScene {
 
     removeStartMatches() {
         let matches = this.combinationManager.getMatches();
-        while (matches.length) {
+        let safety = 0;
+        while (matches.length && safety < 100) {
             this.removeMatches(matches);
             const emptyFields = this.board.fields.filter(f => f.tile === null && !f.isVoid);
             emptyFields.forEach(field => this.board.createTile(field));
             matches = this.combinationManager.getMatches();
+            safety++;
+        }
+        if (safety >= 100) {
+            console.warn('[BattleScene] removeStartMatches reached safety limit of 100 iterations. Board might have forced patterns.');
         }
     }
 

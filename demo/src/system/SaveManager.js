@@ -96,7 +96,7 @@ class SaveManager {
    */
   getUnlockedSkills() {
     const data = this.load();
-    return data.unlockedSkills;
+    return data.unlockedSkills || [];
   }
 
   /**
