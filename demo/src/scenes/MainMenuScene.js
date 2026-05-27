@@ -4,8 +4,7 @@ import { Config } from '../config.js';
 import { App } from '../system/App.js';
 import { sceneManager } from '../system/SceneManager.js';
 import { saveManager } from '../system/SaveManager.js';
-import { BattleScene } from '../battle/BattleScene.js';
-import { LevelSelectScene } from './LevelSelectScene.js';
+
 
 export class MainMenuScene {
     constructor(data = {}) {
@@ -118,8 +117,9 @@ export class MainMenuScene {
                 `▶ Continue (Level ${currentLevel})`,
                 Config.canvas.width / 2, btnStartY,
                 0x4fc3f7, 260,
-                () => {
-                    sceneManager.switchTo(LevelSelectScene);
+                async () => {
+                    const { LevelSelectScene } = await import('./LevelSelectScene.js');
+                    await sceneManager.switchTo(LevelSelectScene);
                 }
             );
         }
@@ -129,11 +129,13 @@ export class MainMenuScene {
             currentLevel > 1 ? '🗺️ Level Select' : '⚔️ START GAME',
             Config.canvas.width / 2, btnStartY + (currentLevel > 1 ? 65 : 0),
             currentLevel > 1 ? 0x666666 : 0x4fc3f7, 260,
-            () => {
+            async () => {
                 if (currentLevel > 1) {
-                    sceneManager.switchTo(LevelSelectScene);
+                    const { LevelSelectScene } = await import('./LevelSelectScene.js');
+                    await sceneManager.switchTo(LevelSelectScene);
                 } else {
-                    sceneManager.switchTo(BattleScene, { level: 1 });
+                    const { BattleScene } = await import('../battle/BattleScene.js');
+                    await sceneManager.switchTo(BattleScene, { level: 1 });
                 }
             }
         );
@@ -144,10 +146,11 @@ export class MainMenuScene {
                 '🗑️ Reset Progress',
                 Config.canvas.width / 2, btnStartY + 130,
                 0x8b0000, 200,
-                () => {
+                async () => {
                     saveManager.reset();
                     // Refresh menu
-                    sceneManager.switchTo(MainMenuScene);
+                    const { MainMenuScene } = await import('./MainMenuScene.js');
+                    await sceneManager.switchTo(MainMenuScene);
                 }
             );
         }

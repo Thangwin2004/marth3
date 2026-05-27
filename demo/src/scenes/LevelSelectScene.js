@@ -6,8 +6,6 @@ import { sceneManager } from '../system/SceneManager.js';
 import { saveManager } from '../system/SaveManager.js';
 import { LEVELS } from '../data/LevelData.js';
 import { SKILLS } from '../data/SkillData.js';
-import { BattleScene } from '../battle/BattleScene.js';
-import { MainMenuScene } from './MainMenuScene.js';
 
 export class LevelSelectScene {
     constructor(data = {}) {
@@ -86,8 +84,9 @@ export class LevelSelectScene {
 
         backBg.on('pointerover', () => gsap.to(backBtn.scale, { x: 1.05, y: 1.05, duration: 0.15 }));
         backBg.on('pointerout', () => gsap.to(backBtn.scale, { x: 1, y: 1, duration: 0.15 }));
-        backBg.on('pointerdown', () => {
-            sceneManager.switchTo(MainMenuScene);
+        backBg.on('pointerdown', async () => {
+            const { MainMenuScene } = await import('./MainMenuScene.js');
+            await sceneManager.switchTo(MainMenuScene);
         });
 
         // Unlocked skills info
@@ -223,8 +222,9 @@ export class LevelSelectScene {
                 gsap.to(card.scale, { x: 1, y: 1, duration: 0.15 });
                 gsap.to(cardBg, { alpha: 0.9, duration: 0.15 });
             });
-            cardBg.on('pointerdown', () => {
-                sceneManager.switchTo(BattleScene, { level: levelNum });
+            cardBg.on('pointerdown', async () => {
+                const { BattleScene } = await import('../battle/BattleScene.js');
+                await sceneManager.switchTo(BattleScene, { level: levelNum });
             });
         }
 
