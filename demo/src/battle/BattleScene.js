@@ -909,6 +909,15 @@ export class BattleScene {
     }
 
     destroy() {
+        const killTweensRecursive = (obj) => {
+            gsap.killTweensOf(obj);
+            if (obj.scale) gsap.killTweensOf(obj.scale);
+            if (obj.children) {
+                obj.children.forEach(killTweensRecursive);
+            }
+        };
+        killTweensRecursive(this.container);
+
         this.hud.destroy();
         this.turnIndicator.destroy();
         this.container.destroy({ children: true });
