@@ -16,6 +16,15 @@ export class SkillSystem {
     }
 
     /**
+     * Get the definition of a specific skill.
+     * @param {string} skillId
+     * @returns {object|undefined}
+     */
+    getSkill(skillId) {
+        return SKILLS[skillId];
+    }
+
+    /**
      * Get available skill definitions for the player.
      * @returns {Array<object>} Skill configs with cooldown states
      */

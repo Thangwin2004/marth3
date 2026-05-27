@@ -19,8 +19,8 @@ export class Player extends BattleEntity {
    *
    * @param {string[]} [unlockedSkills=[]] - Array of skill IDs the player starts with.
    */
-  constructor(unlockedSkills = []) {
-    super('Player', 100);
+  constructor(unlockedSkills = [], maxHP = 100) {
+    super('Player', maxHP);
 
     /** @type {string[]} Skill IDs that have been unlocked. */
     this.unlockedSkills = [...unlockedSkills];

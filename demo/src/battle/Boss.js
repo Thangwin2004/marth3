@@ -93,7 +93,7 @@ export class Boss extends BattleEntity {
    * @returns {number} Multiplier: 1.5 for weakness, 0.5 for resistance, 1.0 otherwise.
    */
   getWeaknessMultiplier(tileType) {
-    if (this.weakness && tileType === this.weakness) return 1.5;
+    if (this.weakness && tileType === this.weakness) return 2.0;
     if (this.resistance && tileType === this.resistance) return 0.5;
     return 1.0;
   }

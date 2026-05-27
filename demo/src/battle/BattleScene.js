@@ -92,7 +92,9 @@ export class BattleScene {
 
     initEntities() {
         const savedSkills = saveManager.getUnlockedSkills();
-        this.player = new Player(savedSkills);
+        // Scale player Max HP: 100 base + 30 HP per level above Level 1 (makes higher levels balanced!)
+        const playerMaxHP = 100 + (this.levelNum - 1) * 30;
+        this.player = new Player(savedSkills, playerMaxHP);
         this.boss = new Boss(this.levelConfig);
     }
 
@@ -117,7 +119,7 @@ export class BattleScene {
 
     initSystems() {
         this.combinationManager = new CombinationManager(this.board);
-        this.damageSystem = new DamageSystem(this.levelConfig.terrain);
+        this.damageSystem = new DamageSystem(this.levelConfig.terrain, this.levelNum);
         this.bossAI = new BossAI(this.boss.aiOptimalChance);
         this.bossSkillSystem = new BossSkillSystem(this.boss, this.board);
         this.skillSystem = new SkillSystem(this.player);
@@ -259,6 +261,13 @@ export class BattleScene {
 
     onTileClick(tile) {
         if (this.disabled || this.isGameOver || this.currentTurn !== 'player') return;
+
+        // Handle skill targeting first if active
+        if (this.skillTargeting) {
+            this.handleSkillTarget(tile);
+            return;
+        }
+
         if (tile.frozen || tile.isStone) return;
 
         if (this.selectedTile) {
