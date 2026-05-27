@@ -137,6 +137,11 @@ export class BattleScene {
         });
         this.container.addChild(this.hud.container);
 
+        // Make the boss sprite container interactive and clickable for 'boss' targetType skills
+        this.hud.bossSprite.container.eventMode = 'static';
+        this.hud.bossSprite.container.cursor = 'pointer';
+        this.hud.bossSprite.container.on('pointerdown', () => this.onBossClick());
+
         // TurnIndicator — big overlay text
         this.turnIndicator = new TurnIndicator();
         this.container.addChild(this.turnIndicator.container);
@@ -313,20 +318,37 @@ export class BattleScene {
 
     onSkillButtonClick(skillId) {
         if (this.disabled || this.currentTurn !== 'player') return;
-        // For skills that need tile targeting, we'd enter a targeting mode
+        // For skills that need tile/boss targeting, we'd enter a targeting mode
         // For now, self/board skills execute immediately
         const skill = this.skillSystem.getSkill(skillId);
         if (!skill) return;
 
-        if (skill.targetType === 'tile' || skill.targetType === 'column') {
-            // Enter targeting mode — next tile click = target
-            this.hud.setLog(`🎯 Select a target for ${skill.name}...`);
+        if (skill.targetType === 'tile' || skill.targetType === 'column' || skill.targetType === 'boss') {
+            // Enter targeting mode
+            if (skill.targetType === 'boss') {
+                this.hud.setLog(`🎯 Select a target for ${skill.name}... (Click the Boss to attack!)`);
+            } else {
+                this.hud.setLog(`🎯 Select a target for ${skill.name}...`);
+            }
             this.skillTargeting = skillId;
             return;
         }
 
         // Execute immediately for self/board skills
         this.usePlayerSkill(skillId);
+    }
+
+    onBossClick() {
+        if (this.disabled || this.isGameOver || this.currentTurn !== 'player') return;
+
+        // If a skill targeting the boss is active, execute it directly on the boss!
+        if (this.skillTargeting) {
+            const skill = this.skillSystem.getSkill(this.skillTargeting);
+            if (skill && skill.targetType === 'boss') {
+                this.usePlayerSkill(this.skillTargeting, { boss: true });
+                this.skillTargeting = null;
+            }
+        }
     }
 
     // Override onTileClick to handle skill targeting
