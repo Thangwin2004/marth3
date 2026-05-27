@@ -52,12 +52,13 @@ export const Config = {
 
     /**
      * Match length multipliers for damage calculation.
-     * match-3 = ×1.0, match-4 = ×1.5, match-5+ = ×2.5
+     * 3 tiles = ×1.0 (base), 4 tiles = ×1.3, 5 tiles = ×1.6, 6+ tiles = ×2.0
      */
     matchMultipliers: {
         3: 1.0,
-        4: 1.5,
-        5: 2.5,
+        4: 1.3,
+        5: 1.6,
+        6: 2.0,
     },
 
     /**
