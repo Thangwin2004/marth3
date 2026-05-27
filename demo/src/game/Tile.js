@@ -25,9 +25,20 @@
  *   - 'back.out'    : Đi quá rồi quay lại (bouncy)
  *   - 'bounce.out'  : Nảy lên nảy xuống (như quả bóng)
  *   - 'power2.in'   : Chậm rồi nhanh dần (tăng tốc)
+ * 
+ * === BOSS BATTLE STATES ===
+ * 
+ * Tiles can have special states applied by boss abilities:
+ *   - frozen: Cannot be swapped for N turns
+ *   - corrupt: Matched but deals 0 damage
+ *   - poisoned: Matching hurts the attacker
+ *   - isStone: Cannot be swapped or matched at all
+ *   - hidden: Color is hidden (shows '?')
  */
 
 import { App } from '../system/App.js';
+import { Graphics } from 'pixi.js';
+import { TILE_DAMAGE } from '../data/LevelData.js';
 import gsap from 'gsap';
 
 export class Tile {
@@ -45,6 +56,19 @@ export class Tile {
         // === DỮ LIỆU ===
         this.color = color;      // Tên màu (dùng để so sánh combo)
         this.field = null;       // Field mà tile đang nằm trên (tham chiếu 2 chiều)
+
+        // === BOSS BATTLE STATES ===
+        this.frozen = false;         // Cannot be swapped for N turns
+        this.frozenDuration = 0;     // Turns remaining frozen
+        this.corrupt = false;        // Matched but deals 0 damage
+        this.poisoned = false;       // Matching hurts the attacker
+        this.isStone = false;        // Cannot be swapped or matched
+        this.isVoid = false;         // Permanent empty (not used on Tile, used on Field)
+        this.hidden = false;         // Color hidden (shows '?')
+        this.hiddenDuration = 0;     // Turns remaining hidden
+
+        // Overlay graphics for special states
+        this.stateOverlay = null;
 
         // === SPRITE ===
         // Tạo sprite từ texture đã load (alias = tên màu)
@@ -140,13 +164,164 @@ export class Tile {
         });
     }
 
+    // ================================================================
+    //  BOSS BATTLE STATE METHODS
+    // ================================================================
+
+    /**
+     * Freeze tile — cannot be swapped for N turns
+     * @param {number} duration - Number of turns to stay frozen
+     */
+    setFrozen(duration) {
+        this.frozen = true;
+        this.frozenDuration = duration;
+        this.updateStateOverlay();
+    }
+
+    /**
+     * Remove frozen state
+     */
+    unfreeze() {
+        this.frozen = false;
+        this.frozenDuration = 0;
+        this.updateStateOverlay();
+    }
+
+    /**
+     * Mark tile as corrupt — can be matched but deals 0 damage
+     */
+    setCorrupt() {
+        this.corrupt = true;
+        this.updateStateOverlay();
+    }
+
+    /**
+     * Mark tile as poisoned — matching hurts the attacker
+     */
+    setPoisoned() {
+        this.poisoned = true;
+        this.updateStateOverlay();
+    }
+
+    /**
+     * Hide tile color — shows '?' instead
+     * @param {number} duration - Number of turns to stay hidden
+     */
+    setHidden(duration) {
+        this.hidden = true;
+        this.hiddenDuration = duration;
+        this.updateStateOverlay();
+    }
+
+    /**
+     * Remove hidden state — reveal tile color
+     */
+    unhide() {
+        this.hidden = false;
+        this.hiddenDuration = 0;
+        this.updateStateOverlay();
+    }
+
+    /**
+     * Change tile color (for shuffle, clone, rainbow abilities)
+     * Replaces the sprite texture and resets corrupt/poisoned states.
+     * 
+     * @param {string} newColor - New color name (e.g. 'fire', 'water')
+     */
+    changeColor(newColor) {
+        this.color = newColor;
+        this.corrupt = false;
+        this.poisoned = false;
+
+        // Save current sprite state
+        const oldX = this.sprite.x;
+        const oldY = this.sprite.y;
+        const parent = this.sprite.parent;
+        const zIndex = this.sprite.zIndex;
+
+        // Destroy old sprite and create new one
+        this.sprite.destroy();
+        this.sprite = App.sprite(newColor);
+        this.sprite.anchor.set(0.5);
+        this.resizeSprite();
+        this.sprite.x = oldX;
+        this.sprite.y = oldY;
+        this.sprite.zIndex = zIndex;
+        this.sprite.eventMode = 'static';
+        this.sprite.cursor = 'pointer';
+        if (parent) parent.addChild(this.sprite);
+
+        this.updateStateOverlay();
+    }
+
+    /**
+     * Visual overlay for frozen/corrupt/poison/hidden states.
+     * Uses PixiJS v8 Graphics API to draw tinted overlay on the sprite.
+     */
+    updateStateOverlay() {
+        // Remove existing overlay
+        if (this.stateOverlay) {
+            this.stateOverlay.destroy();
+            this.stateOverlay = null;
+        }
+
+        if (!this.sprite) return;
+
+        const tileSize = App.config.tileSize;
+        const overlay = new Graphics();
+
+        if (this.frozen) {
+            // Light blue tint for frozen
+            overlay.rect(-tileSize / 2, -tileSize / 2, tileSize, tileSize);
+            overlay.fill({ color: 0x80d8ff, alpha: 0.4 });
+        } else if (this.corrupt) {
+            // Dark purple tint for corrupt
+            overlay.rect(-tileSize / 2, -tileSize / 2, tileSize, tileSize);
+            overlay.fill({ color: 0x2a002a, alpha: 0.6 });
+        } else if (this.poisoned) {
+            // Green tint for poisoned
+            overlay.rect(-tileSize / 2, -tileSize / 2, tileSize, tileSize);
+            overlay.fill({ color: 0x00ff00, alpha: 0.25 });
+        } else if (this.hidden) {
+            // Full cover — hide tile color
+            overlay.rect(-tileSize / 2, -tileSize / 2, tileSize, tileSize);
+            overlay.fill({ color: 0x1a1a2e, alpha: 0.95 });
+            // Draw '?' mark using simple shapes
+            overlay.circle(0, -4, 6);
+            overlay.fill({ color: 0xffffff, alpha: 0.5 });
+            overlay.rect(-2, 6, 4, 4);
+            overlay.fill({ color: 0xffffff, alpha: 0.5 });
+        }
+
+        if (overlay.geometry && this.sprite.parent) {
+            this.stateOverlay = overlay;
+            overlay.x = this.sprite.x;
+            overlay.y = this.sprite.y;
+            overlay.zIndex = this.sprite.zIndex + 0.5;
+            this.sprite.parent.addChild(overlay);
+        }
+    }
+
+    /**
+     * Get damage value for this tile type.
+     * Corrupt tiles always deal 0 damage.
+     * 
+     * @returns {number} Base damage value
+     */
+    getDamage() {
+        if (this.corrupt) return 0;
+        const info = TILE_DAMAGE[this.color];
+        return info ? info.baseDmg : 0;
+    }
+
     /**
      * Xóa tile khỏi game
      * 
      * === QUY TRÌNH XÓA ===
      * 1. Animation thu nhỏ + mờ dần (0.15 giây)
      * 2. Destroy sprite (giải phóng bộ nhớ GPU)
-     * 3. Xóa tham chiếu 2 chiều (field ↔ tile)
+     * 3. Destroy stateOverlay nếu có
+     * 4. Xóa tham chiếu 2 chiều (field ↔ tile)
      * 
      * === QUAN TRỌNG: Memory Management ===
      * Phải gọi sprite.destroy() để PixiJS giải phóng texture khỏi GPU.
@@ -172,6 +347,12 @@ export class Tile {
                 }
             },
         });
+
+        // Destroy state overlay
+        if (this.stateOverlay) {
+            this.stateOverlay.destroy();
+            this.stateOverlay = null;
+        }
 
         // Xóa tham chiếu 2 chiều
         if (this.field) {

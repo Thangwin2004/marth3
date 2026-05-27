@@ -1,53 +1,32 @@
 /**
  * ===== src/config.js =====
  * 
- * File cấu hình game Match-3.
+ * Game configuration for Match-3 Boss Battle RPG.
  * 
- * === GIẢI THÍCH CHI TIẾT ===
- * 
- * Config là nơi tập trung TẤT CẢ các hằng số và thiết lập của game.
- * Thay vì hardcode các giá trị rải rác trong code,
- * ta đặt hết vào 1 file config → dễ thay đổi, dễ bảo trì.
- * 
- * === THAY ĐỔI SO VỚI BẢN CŨ ===
- * 
- * 1. Board: 8×8 → 12×12 (144 ô, gấp 2.25 lần)
- * 2. TileSize: 70px → 45px (để vừa canvas 800×600)
- * 3. Xóa combinationRules — không cần nữa vì Line Scan
- *    tự phát hiện combo theo run-length, không cần offset rules
+ * Canvas: 1100×750
+ * Board: 8×8 (default, can be overridden per level)
+ * TileSize: 50px
  */
 
 export const Config = {
-    /**
-     * board: Kích thước bảng game
-     * - rows: số hàng (trục Y, từ trên xuống)
-     * - cols: số cột (trục X, từ trái sang)
-     * 
-     * Board 12×12 = 144 ô, mỗi ô chứa 1 tile
-     * 
-     * Tính toán kích thước phù hợp:
-     *   Canvas: 800×600
-     *   Board width:  12 × 45 = 540px (< 800 ✓)
-     *   Board height: 12 × 45 = 540px (< 600, chừa 60px cho UI ✓)
-     */
-    board: {
-        rows: 12,
-        cols: 12,
+    /** Canvas dimensions */
+    canvas: {
+        width: 1100,
+        height: 750,
     },
 
-    /**
-     * tileSize: Kích thước mỗi ô (pixels)
-     * 
-     * Bản cũ: 70px cho board 8×8 (70×8 = 560px)
-     * Bản mới: 45px cho board 12×12 (45×12 = 540px)
-     * 
-     * 45px vẫn đủ lớn để nhìn rõ và click chính xác
-     */
-    tileSize: 45,
+    /** Default board size (can be overridden by level config) */
+    board: {
+        rows: 8,
+        cols: 8,
+    },
+
+    /** Tile size in pixels */
+    tileSize: 50,
 
     /**
-     * tileColors: Danh sách các loại tile hiện tại trong game
-     * Mỗi tên ở đây phải tương ứng với 1 file asset SVG
+     * All tile types available in the game.
+     * Each level uses a subset (first N types) based on difficulty.
      */
     tileColors: [
         'fire', 'water', 'nature', 'ice', 'lightning',
@@ -55,13 +34,8 @@ export const Config = {
     ],
 
     /**
-     * assets: Ánh xạ tên → đường dẫn file asset
-     * 
-     * PixiJS v8 sử dụng Assets.load() để tải texture.
-     * Mỗi entry = { alias: tên, src: đường dẫn file }
-     * 
-     * Sau khi load, ta dùng alias để tạo sprite:
-     *   Sprite.from('fire')  ← alias 'fire' → file '/assets/fire.svg'
+     * Asset mappings: alias → file path
+     * PixiJS Assets.load() uses these to cache textures.
      */
     assets: {
         fire: '/assets/fire.svg',
@@ -77,20 +51,24 @@ export const Config = {
     },
 
     /**
-     * === combinationRules ĐÃ BỊ XÓA ===
-     * 
-     * Phiên bản cũ dùng offset rules:
-     *   combinationRules: [
-     *     [{ col: 1, row: 0 }, { col: 2, row: 0 }],  // ngang
-     *     [{ col: 0, row: 1 }, { col: 0, row: 2 }],  // dọc
-     *   ]
-     * 
-     * Phiên bản mới dùng Line Scan — tự phát hiện combo bằng
-     * thuật toán run-length, KHÔNG cần rules offset nữa.
-     * 
-     * Lợi ích:
-     *   - Tự động detect match-4, match-5, match-N
-     *   - Không trùng lặp combo
-     *   - Code CombinationManager sạch hơn
+     * Match length multipliers for damage calculation.
+     * match-3 = ×1.0, match-4 = ×1.5, match-5+ = ×2.5
      */
+    matchMultipliers: {
+        3: 1.0,
+        4: 1.5,
+        5: 2.5,
+    },
+
+    /**
+     * Combo chain multipliers.
+     * chain 1 = ×1.0, chain 2 = ×1.5, chain 3 = ×2.0, chain 4+ = ×2.5
+     */
+    comboMultipliers: [0, 1.0, 1.5, 2.0, 2.5],
+
+    /** Turn timer (seconds per turn) */
+    turnTimer: 20,
+
+    /** Default player HP per level */
+    playerHP: 100,
 };

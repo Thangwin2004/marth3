@@ -1,61 +1,48 @@
 /**
  * ===== src/main.js =====
  * 
- * Entry point (điểm khởi đầu) của game Match-3
- * 
- * === GIẢI THÍCH CHI TIẾT ===
- * 
- * Đây là file JavaScript đầu tiên được trình duyệt chạy
- * (được gọi bởi <script src="/src/main.js"> trong index.html)
- * 
- * === LUỒNG KHỞI ĐỘNG ===
- * 
- * 1. Import App (PixiJS wrapper) và Config (cài đặt)
- * 2. Gọi App.init(Config) → tạo canvas, load textures
- * 3. Tạo Game object → tạo Board, Fields, Tiles
- * 4. Game sẵn sàng!
- * 
- * === ASYNC/AWAIT ===
- * 
- * PixiJS v8 yêu cầu init bất đồng bộ (async):
- * - Detect WebGPU/WebGL    → mất thời gian
- * - Load texture files      → mất thời gian  
- * 
- * Nên ta phải dùng async function + await:
- *   await App.init(Config);   ← Chờ cho đến khi init xong
- *   new Game();                ← Chỉ chạy SAU KHI init xong
- * 
- * Nếu không await, Game sẽ tạo Sprites khi textures chưa load xong → CRASH!
+ * Entry point for Match-3 Boss Battle RPG.
+ * Initializes PixiJS, loads assets, and starts the main menu.
  */
 
 import { App } from './system/App.js';
 import { Config } from './config.js';
-import { Game } from './game/Game.js';
+import { sceneManager } from './system/SceneManager.js';
+import { saveManager } from './system/SaveManager.js';
 
-/**
- * Hàm khởi động game
- * 
- * async function: Cho phép dùng await bên trong
- * Bọc trong try-catch để bắt lỗi (ví dụ: file asset bị thiếu)
- */
 async function startGame() {
     try {
-        console.log('🚀 Starting Match-3 Game...');
+        console.log('🚀 Starting Match-3 Boss Battle RPG...');
 
-        // Bước 1: Khởi tạo PixiJS + Load assets
-        // (Chờ cho đến khi TẤT CẢ assets được load xong)
+        // Step 1: Initialize PixiJS + Load assets
         await App.init(Config);
 
-        // Bước 2: Tạo Game (Board, Fields, Tiles, Input handling)
-        const game = new Game();
+        // Step 2: Init scene manager
+        sceneManager.init(App.app);
 
-        console.log('✅ Game is ready! Try clicking on tiles.');
-        console.log('💡 Tip: Click a tile to select, then click an adjacent tile to swap.');
+        // Step 3: Load save data
+        const save = saveManager.load();
+        console.log(`📂 Save loaded: Level ${save.currentLevel}, Skills: [${save.unlockedSkills.join(', ')}]`);
+
+        // Step 4: Start with Main Menu
+        const { MainMenuScene } = await import('./scenes/MainMenuScene.js');
+        await sceneManager.switchTo(MainMenuScene);
+
+        console.log('✅ Game is ready!');
 
     } catch (error) {
         console.error('❌ Failed to start game:', error);
+
+        // Fallback: start battle directly if menu fails
+        try {
+            const { BattleScene } = await import('./battle/BattleScene.js');
+            const save = saveManager.load();
+            const scene = new BattleScene({ level: save.currentLevel || 1 });
+            App.stage.addChild(scene.container);
+        } catch (fallbackError) {
+            console.error('❌ Fallback also failed:', fallbackError);
+        }
     }
 }
 
-// Gọi hàm khởi động
 startGame();

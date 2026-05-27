@@ -26,6 +26,12 @@
  * 
  * Khi swap 2 tiles, ta chỉ cần đổi các tham chiếu này, 
  * KHÔNG cần thay đổi vị trí vật lý của Field.
+ * 
+ * === BOSS BATTLE ===
+ * 
+ * Fields can be set as "void" (permanent empty spaces) by boss abilities.
+ * Void fields cannot hold tiles and appear as dark holes on the board.
+ * Fields can also have terrain-themed colors for different battle environments.
  */
 
 import { App } from '../system/App.js';
@@ -51,29 +57,30 @@ export class Field {
         // === THAM CHIẾU ĐẾN TILE ===
         this.tile = null;  // Ban đầu ô trống, chưa có tile
 
+        // === BOSS BATTLE STATE ===
+        this.isVoid = false;  // Permanent empty space (boss ability)
+
         const tileSize = App.config.tileSize;
 
-        // === NỀN Ô ===
+        // === NỀN Ô (PixiJS v8 Graphics API) ===
         this.sprite = new Graphics();
-        this.sprite.beginFill(0x101830, 0.92);
-        this.sprite.lineStyle(3, 0xffffff, 0.14);
-        this.sprite.drawRoundedRect(0, 0, tileSize, tileSize, 14);
-        this.sprite.endFill();
+        // Main background
+        this.sprite.roundRect(0, 0, tileSize, tileSize, 14);
+        this.sprite.fill({ color: 0x101830, alpha: 0.92 });
+        this.sprite.stroke({ color: 0xffffff, width: 3, alpha: 0.14 });
 
         // Ánh sáng nhẹ ở góc trên bên trái giống hiệu ứng đá quý
-        this.sprite.beginFill(0xffffff, 0.08);
-        this.sprite.drawRoundedRect(tileSize * 0.1, tileSize * 0.08, tileSize * 0.7, tileSize * 0.18, 8);
-        this.sprite.endFill();
+        this.sprite.roundRect(tileSize * 0.1, tileSize * 0.08, tileSize * 0.7, tileSize * 0.18, 8);
+        this.sprite.fill({ color: 0xffffff, alpha: 0.08 });
 
         this.sprite.x = this.position.x;
         this.sprite.y = this.position.y;
 
-        // === HIỂN THỊ Ô ĐƯỢC CHỌN ===
+        // === HIỂN THỊ Ô ĐƯỢC CHỌN (PixiJS v8 Graphics API) ===
         this.selected = new Graphics();
-        this.selected.lineStyle(3, 0xffffff, 0.95);
-        this.selected.beginFill(0xffffff, 0.16);
-        this.selected.drawRoundedRect(0, 0, tileSize, tileSize, 14);
-        this.selected.endFill();
+        this.selected.roundRect(0, 0, tileSize, tileSize, 14);
+        this.selected.fill({ color: 0xffffff, alpha: 0.16 });
+        this.selected.stroke({ color: 0xffffff, width: 3, alpha: 0.95 });
         this.selected.x = this.position.x;
         this.selected.y = this.position.y;
         this.selected.visible = false;  // Ẩn mặc định, chỉ hiện khi được chọn
@@ -116,5 +123,46 @@ export class Field {
      */
     unselect() {
         this.selected.visible = false;
+    }
+
+    // ================================================================
+    //  BOSS BATTLE METHODS
+    // ================================================================
+
+    /**
+     * Set this field as a permanent void (empty space).
+     * Removes any tile on this field and redraws as a dark hole.
+     * Void fields cannot hold tiles.
+     */
+    setVoid() {
+        this.isVoid = true;
+        if (this.tile) {
+            this.tile.remove();
+            this.tile = null;
+        }
+        // Redraw sprite as dark hole
+        const tileSize = App.config.tileSize;
+        this.sprite.clear();
+        this.sprite.rect(0, 0, tileSize, tileSize);
+        this.sprite.fill({ color: 0x000000, alpha: 0.8 });
+        // Border
+        this.sprite.stroke({ color: 0x1a1a2a, width: 1 });
+    }
+
+    /**
+     * Apply terrain-themed color to this field background.
+     * Used for different boss battle environments (lava, ice, poison swamp, etc.)
+     * 
+     * @param {number} fieldColor - Hex color for the field background (e.g. 0x2a1010 for lava)
+     */
+    setTerrainColor(fieldColor) {
+        const tileSize = App.config.tileSize;
+        this.sprite.clear();
+        this.sprite.rect(0, 0, tileSize, tileSize);
+        this.sprite.fill({ color: fieldColor, alpha: 0.92 });
+        this.sprite.stroke({ color: 0xffffff, width: 2, alpha: 0.14 });
+        // Light reflection
+        this.sprite.rect(tileSize * 0.1, tileSize * 0.08, tileSize * 0.7, tileSize * 0.18);
+        this.sprite.fill({ color: 0xffffff, alpha: 0.06 });
     }
 }
