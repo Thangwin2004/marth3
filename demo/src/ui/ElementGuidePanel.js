@@ -31,6 +31,14 @@ export class ElementGuidePanel {
             overlay.alpha = 0;
             parent.addChild(overlay);
 
+            // Override destroy to clean up all tweens on overlay and scale
+            const originalDestroy = overlay.destroy.bind(overlay);
+            overlay.destroy = (options) => {
+                gsap.killTweensOf(overlay);
+                gsap.killTweensOf(overlay.scale);
+                originalDestroy(options);
+            };
+
             const width = 840;
             const height = 580;
 
