@@ -78,6 +78,53 @@ export const TILE_DAMAGE = {
   },
 };
 
+/**
+ * Pokemon-like type relationship chart.
+ * Defines which elements are super effective (weak) or not very effective (resist).
+ */
+export const ELEMENT_CHART = {
+  fire: {
+    weak: ['nature', 'ice'],
+    resist: ['water', 'earth']
+  },
+  water: {
+    weak: ['fire', 'earth'],
+    resist: ['nature', 'lightning']
+  },
+  nature: {
+    weak: ['water', 'earth', 'poison-death'],
+    resist: ['fire', 'wind-air']
+  },
+  ice: {
+    weak: ['nature', 'wind-air'],
+    resist: ['fire', 'water']
+  },
+  lightning: {
+    weak: ['water', 'wind-air'],
+    resist: ['earth', 'lightning']
+  },
+  earth: {
+    weak: ['fire', 'lightning', 'poison-death'],
+    resist: ['nature', 'wind-air']
+  },
+  'wind-air': {
+    weak: ['nature', 'lightning'],
+    resist: ['earth', 'ice']
+  },
+  'psychic-eye': {
+    weak: ['poison-death', 'sun'],
+    resist: ['psychic-eye']
+  },
+  sun: {
+    weak: ['poison-death', 'ice'],
+    resist: ['fire', 'sun']
+  },
+  'poison-death': {
+    weak: ['sun', 'nature'],
+    resist: ['earth', 'poison-death']
+  }
+};
+
 // ---------------------------------------------------------------------------
 // Helper: build buff/debuff objects for all tile types
 // ---------------------------------------------------------------------------

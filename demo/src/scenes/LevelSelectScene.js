@@ -223,6 +223,10 @@ export class LevelSelectScene {
                 gsap.to(cardBg, { alpha: 0.9, duration: 0.15 });
             });
             cardBg.on('pointerdown', async () => {
+                // Disable all interaction immediately to prevent hover/out events from starting new tweens during fadeout
+                this.container.eventMode = 'none';
+                this.container.interactiveChildren = false;
+
                 const { BattleScene } = await import('../battle/BattleScene.js');
                 await sceneManager.switchTo(BattleScene, { level: levelNum });
             });
@@ -240,6 +244,15 @@ export class LevelSelectScene {
     }
 
     destroy() {
+        const killTweensRecursive = (obj) => {
+            gsap.killTweensOf(obj);
+            if (obj.scale) gsap.killTweensOf(obj.scale);
+            if (obj.children) {
+                obj.children.forEach(killTweensRecursive);
+            }
+        };
+        killTweensRecursive(this.container);
+
         this.container.destroy({ children: true });
     }
 }

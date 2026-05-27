@@ -34,6 +34,8 @@ import { BattleHUD } from '../ui/BattleHUD.js';
 import { CoinFlip } from '../ui/CoinFlip.js';
 import { TurnIndicator } from '../ui/TurnIndicator.js';
 import { DamagePopup } from '../ui/DamagePopup.js';
+import { MatchSummaryPanel } from '../ui/MatchSummaryPanel.js';
+import { ElementGuidePanel } from '../ui/ElementGuidePanel.js';
 import gsap from 'gsap';
 
 export class BattleScene {
@@ -56,6 +58,8 @@ export class BattleScene {
         this.currentTurn = 'player'; // 'player' | 'boss'
         this.turnCount = 0;
         this.comboCount = 0;
+        this.elementGuideActive = false;
+        this.bossMissCount = 0;
         this.disabled = false;
         this.selectedTile = null;
         this.isGameOver = false;
@@ -92,7 +96,9 @@ export class BattleScene {
 
     initEntities() {
         const savedSkills = saveManager.getUnlockedSkills();
-        this.player = new Player(savedSkills);
+        // Scale player Max HP: 100 base + 30 HP per level above Level 1 (makes higher levels balanced!)
+        const playerMaxHP = 100 + (this.levelNum - 1) * 30;
+        this.player = new Player(savedSkills, playerMaxHP);
         this.boss = new Boss(this.levelConfig);
     }
 
@@ -117,7 +123,7 @@ export class BattleScene {
 
     initSystems() {
         this.combinationManager = new CombinationManager(this.board);
-        this.damageSystem = new DamageSystem(this.levelConfig.terrain);
+        this.damageSystem = new DamageSystem(this.levelConfig.terrain, this.levelNum);
         this.bossAI = new BossAI(this.boss.aiOptimalChance);
         this.bossSkillSystem = new BossSkillSystem(this.boss, this.board);
         this.skillSystem = new SkillSystem(this.player);
@@ -133,6 +139,21 @@ export class BattleScene {
             onSkillSelect: (skillId) => this.onSkillButtonClick(skillId),
         });
         this.container.addChild(this.hud.container);
+
+        // Make the boss sprite container interactive and clickable for 'boss' targetType skills
+        this.hud.bossSprite.container.eventMode = 'static';
+        this.hud.bossSprite.container.cursor = 'pointer';
+        this.hud.bossSprite.container.on('pointerdown', () => this.onBossClick());
+
+        // Add "📖 Element Guide" button in top bar empty space
+        this.createButton(
+            this.container,
+            '📖 Element Guide',
+            Config.canvas.width / 2 + 160,
+            38,
+            0x4fc3f7,
+            () => this.showElementGuide()
+        );
 
         // TurnIndicator — big overlay text
         this.turnIndicator = new TurnIndicator();
@@ -259,6 +280,13 @@ export class BattleScene {
 
     onTileClick(tile) {
         if (this.disabled || this.isGameOver || this.currentTurn !== 'player') return;
+
+        // Handle skill targeting first if active
+        if (this.skillTargeting) {
+            this.handleSkillTarget(tile);
+            return;
+        }
+
         if (tile.frozen || tile.isStone) return;
 
         if (this.selectedTile) {
@@ -303,20 +331,51 @@ export class BattleScene {
 
     onSkillButtonClick(skillId) {
         if (this.disabled || this.currentTurn !== 'player') return;
-        // For skills that need tile targeting, we'd enter a targeting mode
+        // For skills that need tile/boss targeting, we'd enter a targeting mode
         // For now, self/board skills execute immediately
         const skill = this.skillSystem.getSkill(skillId);
         if (!skill) return;
 
-        if (skill.targetType === 'tile' || skill.targetType === 'column') {
-            // Enter targeting mode — next tile click = target
-            this.hud.setLog(`🎯 Select a target for ${skill.name}...`);
+        if (skill.targetType === 'tile' || skill.targetType === 'column' || skill.targetType === 'boss') {
+            // Enter targeting mode
+            if (skill.targetType === 'boss') {
+                this.hud.setLog(`🎯 Select a target for ${skill.name}... (Click the Boss to attack!)`);
+            } else {
+                this.hud.setLog(`🎯 Select a target for ${skill.name}...`);
+            }
             this.skillTargeting = skillId;
             return;
         }
 
         // Execute immediately for self/board skills
         this.usePlayerSkill(skillId);
+    }
+
+    onBossClick() {
+        if (this.disabled || this.isGameOver || this.currentTurn !== 'player') return;
+
+        // If a skill targeting the boss is active, execute it directly on the boss!
+        if (this.skillTargeting) {
+            const skill = this.skillSystem.getSkill(this.skillTargeting);
+            if (skill && skill.targetType === 'boss') {
+                this.usePlayerSkill(this.skillTargeting, { boss: true });
+                this.skillTargeting = null;
+            }
+        }
+    }
+
+    async showElementGuide() {
+        if (this.elementGuideActive) return;
+        this.elementGuideActive = true;
+
+        // Temporarily disable board interactions during guide overlay
+        const wasDisabled = this.disabled;
+        this.disabled = true;
+
+        await ElementGuidePanel.show(this.container);
+
+        this.disabled = wasDisabled;
+        this.elementGuideActive = false;
     }
 
     // Override onTileClick to handle skill targeting
@@ -361,8 +420,10 @@ export class BattleScene {
                 }
             } else {
                 if (who === 'player') {
-                    this.disabled = false;
+                    this.hud.setLog('❌ Swap missed! You lost your turn!');
+                    this.switchTurn();
                 } else {
+                    this.hud.setLog('💀 Boss missed the swap! Turn passes to you!');
                     this.switchTurn();
                 }
             }
@@ -370,135 +431,181 @@ export class BattleScene {
     }
 
     async processMatches(matches, who = 'player') {
-        this.comboCount++;
         const attacker = who === 'player' ? this.player : this.boss;
         const defender = who === 'player' ? this.boss : this.player;
         const defenderSide = who === 'player' ? 'boss' : 'player';
 
-        // Calculate damage
-        const { totalDamage, effects, healAmount, shieldAmount } =
-            this.damageSystem.calculate(matches, attacker, defender, this.comboCount);
+        // 1. SETTLING PHASE (Cascade Loop until board settles)
+        const allMatchesThisTurn = [];
+        let currentMatches = matches;
+        this.comboCount = 0;
 
-        // Check for poisoned tiles
-        let poisonSelfDamage = 0;
-        matches.forEach(match => {
-            match.tiles.forEach(tile => {
-                if (tile.poisoned) {
-                    poisonSelfDamage += 5;
+        while (currentMatches.length > 0) {
+            this.comboCount++;
+            
+            // Add to matches list for damage/effects calculation at the end
+            currentMatches.forEach(m => allMatchesThisTurn.push(m));
+
+            // Check adjacent stones to destroy
+            const stonesToDestroy = this.combinationManager.getStonesToDestroy(currentMatches);
+            stonesToDestroy.forEach(field => {
+                if (field.tile) {
+                    field.tile.remove();
+                    field.tile = null;
                 }
             });
-        });
 
-        // ====== ANIMATIONS ======
-
-        // Play attack animation on attacker
-        await this.hud.playAttack(who);
-
-        // Fire projectile from board center to defender
-        if (totalDamage > 0) {
-            const boardCenter = {
-                x: this.board.container.x + (this.board.cols * Config.tileSize) / 2,
-                y: this.board.container.y + (this.board.rows * Config.tileSize) / 2,
-            };
-            const defenderPos = this.hud.getSpritePosition(defenderSide);
-
-            // Pick projectile color from first match tile type
-            const tileColor = this.getTileProjectileColor(matches);
-            await Projectile.fire(this.container, boardCenter, defenderPos, tileColor);
-
-            // Play hurt animation on defender
-            await this.hud.playHurt(defenderSide);
-
-            // Apply damage
-            this.damageSystem.applyDamage(defender, totalDamage, effects);
-            this.hud.showDamage(defenderSide, totalDamage, 'damage');
-            this.hud.setLog(`${who === 'player' ? '⚔️' : '💀'} ${attacker.name}: ${totalDamage} damage!`);
-        }
-
-        // Apply self effects with animations
-        if (healAmount > 0) {
-            const healed = attacker.heal(healAmount);
-            if (healed > 0) {
-                const attackerPos = this.hud.getSpritePosition(who);
-                await Projectile.heal(this.container, attackerPos.x, attackerPos.y);
-                await this.hud.playHeal(who);
-                this.hud.showDamage(who, healed, 'heal');
-                this.hud.setLog(`💚 ${attacker.name} heals ${healed} HP`);
+            // Remove matched tiles visually (starts GSAP fade-out)
+            this.removeMatches(currentMatches);
+            
+            // Combo display popups on the board during settling
+            if (this.comboCount >= 2) {
+                DamagePopup.show(
+                    this.container,
+                    this.board.container.x + (this.board.cols * Config.tileSize) / 2,
+                    this.board.container.y - 20,
+                    this.comboCount,
+                    'combo'
+                );
+                this.hud.setLog(`🔥 COMBO x${this.comboCount}!`);
             }
-        }
-        if (shieldAmount > 0) {
-            attacker.addShield(shieldAmount);
-            const attackerPos = this.hud.getSpritePosition(who);
-            await Projectile.shield(this.container, attackerPos.x, attackerPos.y);
-            await this.hud.playShield(who);
-            this.hud.showDamage(who, shieldAmount, 'shield');
-            this.hud.setLog(`🛡 ${attacker.name} gains ${shieldAmount} shield`);
-        }
 
-        // Apply poison self damage
-        if (poisonSelfDamage > 0) {
-            attacker.takeDamage(poisonSelfDamage);
-            this.hud.showDamage(who, poisonSelfDamage, 'poison');
-            this.hud.setLog(`☠️ Poison! ${attacker.name} takes ${poisonSelfDamage} self damage`);
-        }
+            await this.delay(250); // wait slightly for destruction animation
 
-        // Apply status effects
-        this.damageSystem.applyEffects(effects, attacker, defender, this.board);
+            // Process cascade and refill board
+            await this.processFallDown();
+            await this.addTiles();
+            this.updateUI();
 
-        // Check adjacent stones
-        const stonesToDestroy = this.combinationManager.getStonesToDestroy(matches);
-        stonesToDestroy.forEach(field => {
-            if (field.tile) {
-                field.tile.remove();
-                field.tile = null;
-            }
-        });
-
-        // Combo display
-        if (this.comboCount >= 2) {
-            DamagePopup.show(
-                this.container,
-                this.board.container.x + (this.board.cols * Config.tileSize) / 2,
-                this.board.container.y - 20,
-                this.comboCount,
-                'combo'
-            );
-            this.hud.setLog(`🔥 COMBO x${this.comboCount}!`);
-        }
-
-        // Update UI
-        this.updateUI();
-
-        // Remove matched tiles
-        this.removeMatches(matches);
-        await this.delay(200);
-
-        // Process cascade
-        await this.processFallDown();
-        await this.addTiles();
-
-        // Check chain combo
-        const affectedCols = new Set(this.lastAffectedCols || []);
-        matches.forEach(match => {
-            match.tiles.forEach(tile => {
-                if (tile.field) affectedCols.add(tile.field.col);
+            // Find new cascade matches
+            const affectedCols = new Set(this.lastAffectedCols || []);
+            currentMatches.forEach(match => {
+                match.tiles.forEach(tile => {
+                    if (tile.field) affectedCols.add(tile.field.col);
+                });
             });
-        });
 
-        const { dirtyRows, dirtyCols } =
-            this.combinationManager.getDirtyRegionAfterCascade([...affectedCols]);
-        this.lastAffectedCols = dirtyCols;
-        const newMatches = this.combinationManager.getMatchesInRegion(dirtyRows, dirtyCols);
+            const { dirtyRows, dirtyCols } =
+                this.combinationManager.getDirtyRegionAfterCascade([...affectedCols]);
+            this.lastAffectedCols = dirtyCols;
+            currentMatches = this.combinationManager.getMatchesInRegion(dirtyRows, dirtyCols);
 
-        if (newMatches.length) {
-            await this.processMatches(newMatches, who);
-            return;
+            if (currentMatches.length > 0) {
+                await this.delay(200); // pause briefly before next cascade matches are popped
+            }
         }
 
-        // Check game end
+        // 2. ATTACK / ACTION PHASE (Board has fully settled!)
+        if (allMatchesThisTurn.length > 0) {
+            // Calculate total damage/effects for all accumulated matches
+            const { totalDamage, effects, healAmount, shieldAmount } =
+                this.damageSystem.calculate(allMatchesThisTurn, attacker, defender, this.comboCount);
+
+            // Check for poisoned tiles in all matches
+            let poisonSelfDamage = 0;
+            allMatchesThisTurn.forEach(match => {
+                match.tiles.forEach(tile => {
+                    if (tile.poisoned) {
+                        poisonSelfDamage += 5;
+                    }
+                });
+            });
+
+            // Summarize all matches in the battle log
+            const colorCounts = {};
+            allMatchesThisTurn.forEach(match => {
+                match.tiles.forEach(tile => {
+                    const color = tile.color;
+                    colorCounts[color] = (colorCounts[color] || 0) + 1;
+                });
+            });
+
+            const emojiMap = {
+                fire: '🔥', water: '💧', nature: '🌿', ice: '❄️', lightning: '⚡',
+                earth: '⛰️', 'wind-air': '💨', 'psychic-eye': '👁️', sun: '☀️', 'poison-death': '☠️'
+            };
+            const summaryParts = Object.entries(colorCounts).map(([color, count]) => {
+                const emoji = emojiMap[color] || '';
+                return `${count}x ${color.charAt(0).toUpperCase() + color.slice(1)} ${emoji}`;
+            });
+            const summaryString = summaryParts.join(', ');
+            this.hud.setLog(`${who === 'player' ? '⚔️' : '💀'} ${attacker.name} matched: ${summaryString} | Combo x${this.comboCount}!`);
+
+            // Show visual match summary panel to display matched tile graphics & combo count
+            await MatchSummaryPanel.show(this.container, colorCounts, this.comboCount);
+
+            // ====== ANIMATIONS & EFFECTS ======
+            // Attacker casts/attacks
+            await this.hud.playAttack(who);
+
+            // Projectile elemental attacks
+            if (totalDamage > 0) {
+                const boardCenter = {
+                    x: this.board.container.x + (this.board.cols * Config.tileSize) / 2,
+                    y: this.board.container.y + (this.board.rows * Config.tileSize) / 2,
+                };
+                const defenderPos = this.hud.getSpritePosition(defenderSide);
+
+                // We can fire multiple projectiles, one for each distinct elemental match!
+                const matchedColors = [...new Set(allMatchesThisTurn.map(m => m.tiles[0]?.color).filter(Boolean))];
+                
+                const colorMap = {
+                    fire: 0xff6240, water: 0x42a5f5, nature: 0x66bb6a,
+                    ice: 0x80d8ff, lightning: 0xfff176, earth: 0x8d6e63,
+                    'wind-air': 0x90caf9, 'psychic-eye': 0xce93d8,
+                    sun: 0xffd54f, 'poison-death': 0xb388ff,
+                };
+
+                // Fire projectiles in sequence for each matched element!
+                for (const color of matchedColors) {
+                    const projColor = colorMap[color] || 0xff6240;
+                    await Projectile.fire(this.container, boardCenter, defenderPos, projColor);
+                }
+
+                // Play defender hurt animation
+                await this.hud.playHurt(defenderSide);
+
+                // Apply defender damage
+                this.damageSystem.applyDamage(defender, totalDamage, effects);
+                this.hud.showDamage(defenderSide, totalDamage, 'damage');
+            }
+
+            // Apply self heals
+            if (healAmount > 0) {
+                const healed = attacker.heal(healAmount);
+                if (healed > 0) {
+                    const attackerPos = this.hud.getSpritePosition(who);
+                    await Projectile.heal(this.container, attackerPos.x, attackerPos.y);
+                    await this.hud.playHeal(who);
+                    this.hud.showDamage(who, healed, 'heal');
+                }
+            }
+
+            // Apply self shields
+            if (shieldAmount > 0) {
+                attacker.addShield(shieldAmount);
+                const attackerPos = this.hud.getSpritePosition(who);
+                await Projectile.shield(this.container, attackerPos.x, attackerPos.y);
+                await this.hud.playShield(who);
+                this.hud.showDamage(who, shieldAmount, 'shield');
+            }
+
+            // Apply poison self damage
+            if (poisonSelfDamage > 0) {
+                attacker.takeDamage(poisonSelfDamage);
+                this.hud.showDamage(who, poisonSelfDamage, 'poison');
+            }
+
+            // Apply status effects
+            this.damageSystem.applyEffects(effects, attacker, defender, this.board);
+
+            // Update UI
+            this.updateUI();
+        }
+
+        // 3. END TURN CHECK
         if (this.checkGameEnd()) return;
 
-        // End turn
         if (who === 'player') {
             if (this.grantExtraTurn) {
                 this.grantExtraTurn = false;
@@ -544,7 +651,41 @@ export class BattleScene {
     //  BOSS TURN (AI)
     // ================================================================
 
+    getBossMaxMisses() {
+        const level = this.levelNum;
+        if (level <= 4) return Infinity; // Unlimited misses in early levels (impossible to die if low HP)
+        if (level === 5) return 8;
+        if (level === 6) return 6;
+        if (level === 7) return 5;
+        if (level === 8) return 4;
+        if (level === 9) return 3;
+        return 2; // Level 10: 1 to 3 misses (let's set it to 2!)
+    }
+
+    shouldBossMiss() {
+        const hpPercent = this.player.hp / this.player.maxHP;
+        if (hpPercent <= 0.3) {
+            // Player is low HP (<= 30%)
+            const maxMisses = this.getBossMaxMisses();
+            if (this.bossMissCount < maxMisses) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     async executeBossTurn() {
+        // Dynamic Dynamic Difficulty: check if Boss should miss to ease low-HP player experience
+        if (this.shouldBossMiss()) {
+            const missChoice = this.bossAI.findInvalidSwap(this.board, this.combinationManager);
+            if (missChoice) {
+                this.bossMissCount++;
+                this.hud.setLog('💀 Boss makes a move...');
+                this.swap(missChoice.tile1, missChoice.tile2, false, 'boss');
+                return;
+            }
+        }
+
         const swapChoice = this.bossAI.findBestSwap(
             this.board,
             this.combinationManager,
@@ -909,6 +1050,15 @@ export class BattleScene {
     }
 
     destroy() {
+        const killTweensRecursive = (obj) => {
+            gsap.killTweensOf(obj);
+            if (obj.scale) gsap.killTweensOf(obj.scale);
+            if (obj.children) {
+                obj.children.forEach(killTweensRecursive);
+            }
+        };
+        killTweensRecursive(this.container);
+
         this.hud.destroy();
         this.turnIndicator.destroy();
         this.container.destroy({ children: true });

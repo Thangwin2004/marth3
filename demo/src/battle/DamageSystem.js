@@ -13,9 +13,11 @@ import { statusEffectManager } from './StatusEffects.js';
 export class DamageSystem {
     /**
      * @param {object} terrainConfig - Current level's terrain config
+     * @param {number} levelNum - Current level number
      */
-    constructor(terrainConfig) {
+    constructor(terrainConfig, levelNum = 1) {
         this.terrain = terrainConfig;
+        this.levelNum = levelNum;
     }
 
     /**
@@ -54,6 +56,12 @@ export class DamageSystem {
             }
             if (this.terrain.debuff && this.terrain.debuff[tileType]) {
                 matchDamage *= (1 - this.terrain.debuff[tileType]);
+            }
+
+            // Scale player damage with level progress! (+15% damage per level above Level 1)
+            if (attacker.name === 'Player') {
+                const dmgMultiplier = 1 + (this.levelNum - 1) * 0.15;
+                matchDamage *= dmgMultiplier;
             }
 
             // Elemental weakness/resistance (defender-specific)

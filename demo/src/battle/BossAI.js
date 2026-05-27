@@ -184,4 +184,63 @@ export class BossAI {
 
         return score;
     }
+
+    /**
+     * Find a swap that does NOT produce any matches (a miss).
+     * 
+     * @param {import('../game/Board.js').Board} board
+     * @param {import('../game/CombinationManager.js').CombinationManager} combinationManager
+     * @returns {{ tile1: object, tile2: object } | null}
+     */
+    findInvalidSwap(board, combinationManager) {
+        const rows = board.rows;
+        const cols = board.cols;
+        const invalidSwaps = [];
+
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const field = board.getField(row, col);
+                if (!field || !field.tile) continue;
+
+                const tile = field.tile;
+                if (tile.frozen || tile.isStone || tile.isVoid) continue;
+
+                // Try right neighbor
+                if (col < cols - 1) {
+                    const rightField = board.getField(row, col + 1);
+                    if (rightField && rightField.tile && !rightField.tile.frozen && !rightField.tile.isStone && !rightField.tile.isVoid) {
+                        const matches = this.trySwap(board, combinationManager, field, rightField);
+                        if (matches.length === 0) {
+                            invalidSwaps.push({
+                                tile1: field.tile,
+                                tile2: rightField.tile,
+                                field1: field,
+                                field2: rightField
+                            });
+                        }
+                    }
+                }
+
+                // Try bottom neighbor
+                if (row < rows - 1) {
+                    const bottomField = board.getField(row + 1, col);
+                    if (bottomField && bottomField.tile && !bottomField.tile.frozen && !bottomField.tile.isStone && !bottomField.tile.isVoid) {
+                        const matches = this.trySwap(board, combinationManager, field, bottomField);
+                        if (matches.length === 0) {
+                            invalidSwaps.push({
+                                tile1: field.tile,
+                                tile2: bottomField.tile,
+                                field1: field,
+                                field2: bottomField
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        if (invalidSwaps.length === 0) return null;
+        // Pick a random invalid swap to execute
+        return invalidSwaps[Math.floor(Math.random() * invalidSwaps.length)];
+    }
 }

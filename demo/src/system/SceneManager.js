@@ -55,6 +55,11 @@ class SceneManager {
 
     // ── Fade out & destroy current scene ─────────────────────────────────
     if (this.currentScene) {
+      if (this.currentScene.container) {
+        this.currentScene.container.eventMode = 'none';
+        this.currentScene.container.interactiveChildren = false;
+      }
+
       await gsap.to(this.currentScene.container, {
         alpha: 0,
         duration: 0.3,

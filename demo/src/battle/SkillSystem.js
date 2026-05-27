@@ -16,6 +16,15 @@ export class SkillSystem {
     }
 
     /**
+     * Get the definition of a specific skill.
+     * @param {string} skillId
+     * @returns {object|undefined}
+     */
+    getSkill(skillId) {
+        return SKILLS[skillId];
+    }
+
+    /**
      * Get available skill definitions for the player.
      * @returns {Array<object>} Skill configs with cooldown states
      */
@@ -54,17 +63,13 @@ export class SkillSystem {
 
         switch (skillId) {
             case 'fireball': {
-                // Destroy 1 tile + deal 15 damage
-                if (target && target.row !== undefined && target.col !== undefined) {
-                    const field = board.getField(target.row, target.col);
-                    if (field && field.tile && !field.tile.isStone && !field.tile.isVoid) {
-                        field.tile.remove();
-                        field.tile = null;
-                        result.damage = 15;
-                        defender.takeDamage(15);
-                        result.type = 'damage';
-                        result.destroyedTiles = [{ row: target.row, col: target.col }];
-                    }
+                // Deal 15 direct damage to the boss
+                if (target && target.boss) {
+                    result.damage = 15;
+                    defender.takeDamage(15);
+                    result.type = 'damage';
+                } else {
+                    return { success: false, endsTurn: false, result: null };
                 }
                 break;
             }
@@ -90,14 +95,13 @@ export class SkillSystem {
             }
 
             case 'lightning': {
-                // Destroy 1 column + deal 5 damage per tile
-                if (target && target.col !== undefined) {
-                    const destroyed = board.destroyColumn(target.col);
-                    const damage = destroyed * 5;
-                    defender.takeDamage(damage);
+                // Deal 45 direct damage to the boss
+                if (target && target.boss) {
+                    result.damage = 45;
+                    defender.takeDamage(45);
                     result.type = 'damage';
-                    result.damage = damage;
-                    result.destroyedCount = destroyed;
+                } else {
+                    return { success: false, endsTurn: false, result: null };
                 }
                 break;
             }
@@ -110,14 +114,13 @@ export class SkillSystem {
             }
 
             case 'bomb': {
-                // Destroy 3×3 area + deal 8 damage per tile
-                if (target && target.row !== undefined && target.col !== undefined) {
-                    const destroyed = board.destroyArea(target.row, target.col, 3);
-                    const damage = destroyed * 8;
-                    defender.takeDamage(damage);
+                // Deal 72 direct damage to the boss
+                if (target && target.boss) {
+                    result.damage = 72;
+                    defender.takeDamage(72);
                     result.type = 'damage';
-                    result.damage = damage;
-                    result.destroyedCount = destroyed;
+                } else {
+                    return { success: false, endsTurn: false, result: null };
                 }
                 break;
             }
