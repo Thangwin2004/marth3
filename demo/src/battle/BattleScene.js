@@ -150,7 +150,7 @@ export class BattleScene {
             this.container,
             '📖 Element Guide',
             Config.canvas.width / 2 + 160,
-            38,
+            56,
             0x4fc3f7,
             () => this.showElementGuide()
         );
