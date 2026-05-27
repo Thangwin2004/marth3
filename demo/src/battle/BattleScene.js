@@ -34,6 +34,7 @@ import { BattleHUD } from '../ui/BattleHUD.js';
 import { CoinFlip } from '../ui/CoinFlip.js';
 import { TurnIndicator } from '../ui/TurnIndicator.js';
 import { DamagePopup } from '../ui/DamagePopup.js';
+import { MatchSummaryPanel } from '../ui/MatchSummaryPanel.js';
 import gsap from 'gsap';
 
 export class BattleScene {
@@ -478,6 +479,9 @@ export class BattleScene {
             });
             const summaryString = summaryParts.join(', ');
             this.hud.setLog(`${who === 'player' ? '⚔️' : '💀'} ${attacker.name} matched: ${summaryString} | Combo x${this.comboCount}!`);
+
+            // Show visual match summary panel to display matched tile graphics & combo count
+            await MatchSummaryPanel.show(this.container, colorCounts, this.comboCount);
 
             // ====== ANIMATIONS & EFFECTS ======
             // Attacker casts/attacks
