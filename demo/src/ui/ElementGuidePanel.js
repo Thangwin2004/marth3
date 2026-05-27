@@ -39,8 +39,8 @@ export class ElementGuidePanel {
                 originalDestroy(options);
             };
 
-            const width = 840;
-            const height = 580;
+            const width = 860;
+            const height = 620;
 
             // --- Dark Modal Background ---
             const bg = new Graphics();
@@ -51,8 +51,12 @@ export class ElementGuidePanel {
 
             // Main Glassmorphic Guide Card
             bg.roundRect(-width / 2, -height / 2, width, height, 20);
-            bg.fill({ color: 0x0a1020, alpha: 0.95 });
-            bg.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.7 });
+            bg.fill({ color: 0x0a1124, alpha: 0.96 });
+            bg.stroke({ color: 0x00d2ff, width: 2, alpha: 0.8 }); // neon cyan border
+            
+            // Inner decorative glass line border
+            bg.roundRect(-width / 2 + 6, -height / 2 + 6, width - 12, height - 12, 16);
+            bg.stroke({ color: 0xffffff, width: 1, alpha: 0.08 });
             overlay.addChild(bg);
 
             // --- Header Title ---
@@ -67,7 +71,7 @@ export class ElementGuidePanel {
                 }
             });
             title.anchor.set(0.5);
-            title.y = -height / 2 + 40;
+            title.y = -height / 2 + 42;
             overlay.addChild(title);
 
             // --- Description ---
@@ -76,11 +80,11 @@ export class ElementGuidePanel {
                 style: {
                     fontFamily: 'Arial, sans-serif',
                     fontSize: 13,
-                    fill: '#888888'
+                    fill: '#b0bec5'
                 }
             });
             subtitle.anchor.set(0.5);
-            subtitle.y = -height / 2 + 75;
+            subtitle.y = -height / 2 + 78;
             overlay.addChild(subtitle);
 
             // --- Close Click on Backdrop ---
@@ -89,14 +93,14 @@ export class ElementGuidePanel {
 
             // --- 2-Column Grid Layout of Elements ---
             const gridContainer = new Container();
-            gridContainer.y = -35;
+            gridContainer.y = 8;
             overlay.addChild(gridContainer);
 
             const keys = Object.keys(ELEMENT_DETAILS);
-            const cardW = 380;
-            const cardH = 80;
-            const gapX = 30;
-            const gapY = 15;
+            const cardW = 390;
+            const cardH = 75;
+            const gapX = 24;
+            const gapY = 12;
 
             keys.forEach((key, index) => {
                 const col = index < 5 ? 0 : 1;
@@ -104,15 +108,24 @@ export class ElementGuidePanel {
                 const detail = ELEMENT_DETAILS[key];
 
                 const card = new Container();
-                card.x = col === 0 ? -(cardW + gapX / 2) : gapX / 2;
-                card.y = row * (cardH + gapY) - 180;
+                card.pivot.set(cardW / 2, cardH / 2);
+                
+                const posX = col === 0 ? -(cardW + gapX / 2) : gapX / 2;
+                const posY = row * (cardH + gapY) - 210;
+                
+                card.x = posX + cardW / 2;
+                card.y = posY + cardH / 2;
                 gridContainer.addChild(card);
 
                 // Card background
                 const cBg = new Graphics();
-                cBg.roundRect(0, 0, cardW, cardH, 10);
-                cBg.fill({ color: 0x11172a, alpha: 0.9 });
-                cBg.stroke({ color: detail.color, width: 1.5, alpha: 0.5 });
+                cBg.roundRect(0, 0, cardW, cardH, 12);
+                cBg.fill({ color: 0x0f172a, alpha: 0.85 });
+                cBg.stroke({ color: detail.color, width: 1.5, alpha: 0.45 });
+                
+                // Pill accent bar
+                cBg.roundRect(8, 8, 4, cardH - 16, 2);
+                cBg.fill({ color: detail.color, alpha: 0.95 });
                 card.addChild(cBg);
 
                 // Element Icon + Name
@@ -120,13 +133,13 @@ export class ElementGuidePanel {
                     text: `${detail.emoji} ${detail.name}`,
                     style: {
                         fontFamily: 'Arial, sans-serif',
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: 'bold',
                         fill: detail.color
                     }
                 });
-                nameTxt.x = 12;
-                nameTxt.y = 10;
+                nameTxt.x = 20;
+                nameTxt.y = 8;
                 card.addChild(nameTxt);
 
                 // Stats: Base Dmg + Special Effect
@@ -138,8 +151,8 @@ export class ElementGuidePanel {
                         fill: '#b0bec5'
                     }
                 });
-                statsTxt.x = 12;
-                statsTxt.y = 32;
+                statsTxt.x = 20;
+                statsTxt.y = 28;
                 card.addChild(statsTxt);
 
                 // Strengths and Weaknesses
@@ -154,15 +167,27 @@ export class ElementGuidePanel {
                         fill: '#90a4ae'
                     }
                 });
-                countersTxt.x = 12;
-                countersTxt.y = 54;
+                countersTxt.x = 20;
+                countersTxt.y = 48;
                 card.addChild(countersTxt);
+
+                // Interactive Hover Micro-animations
+                card.eventMode = 'static';
+                card.cursor = 'pointer';
+                card.on('pointerover', () => {
+                    gsap.to(card.scale, { x: 1.03, y: 1.03, duration: 0.15, ease: 'power1.out' });
+                    gsap.to(cBg, { alpha: 1, duration: 0.15 });
+                });
+                card.on('pointerout', () => {
+                    gsap.to(card.scale, { x: 1, y: 1, duration: 0.15, ease: 'power1.out' });
+                    gsap.to(cBg, { alpha: 0.85, duration: 0.15 });
+                });
             });
 
             // --- Elegant Close Button ---
             const closeBtn = new Container();
             closeBtn.x = 0;
-            closeBtn.y = height / 2 - 40;
+            closeBtn.y = height / 2 - 35;
             overlay.addChild(closeBtn);
 
             const btnBg = new Graphics();
