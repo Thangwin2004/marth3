@@ -365,19 +365,11 @@ export class BattleScene {
     }
 
     async showElementGuide() {
-        // Prevent opening the guide during active board animations, turn transitions, or when it's not the player's turn
-        if (this.disabled || this.currentTurn !== 'player') return;
-        
         if (this.elementGuideActive) return;
         this.elementGuideActive = true;
 
-        // Temporarily disable board interactions during guide overlay
-        const wasDisabled = this.disabled;
-        this.disabled = true;
-
         await ElementGuidePanel.show(this.container);
 
-        this.disabled = wasDisabled;
         this.elementGuideActive = false;
     }
 
