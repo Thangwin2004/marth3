@@ -36,7 +36,7 @@ export class BattleHUD {
 
         // ===================== TOP BAR =====================
         this.topBar = new Container();
-        this.topBar.y = 8;
+        this.topBar.y = 26;
         this.container.addChild(this.topBar);
 
         // Level title (center top)
