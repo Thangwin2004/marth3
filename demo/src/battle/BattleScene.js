@@ -2,13 +2,14 @@
  * ===== src/battle/BattleScene.js =====
  * 
  * Main battle controller — turn-based PvP on shared Match-3 board.
+ * Integrates BattleHUD, CoinFlip, TurnIndicator, Projectile for full UI.
  * 
  * Flow:
- * 1. Init: create board, player, boss, UI
- * 2. Coin flip → decide first turn
+ * 1. Init: create board, player, boss, HUD
+ * 2. Coin flip animation → decide first turn
  * 3. Turn loop: Player ↔ Boss alternate
- * 4. Player: swap tiles OR use skill → damage boss
- * 5. Boss: AI skill (every N turns) + AI swap → damage player
+ * 4. Player: swap tiles OR use skill → animate → damage boss
+ * 5. Boss: AI skill + AI swap → animate → damage player
  * 6. Win: boss HP = 0 | Lose: player HP = 0
  */
 
@@ -23,10 +24,15 @@ import { BossSkillSystem } from './BossSkillSystem.js';
 import { SkillSystem } from './SkillSystem.js';
 import { EnvironmentSystem } from './EnvironmentSystem.js';
 import { statusEffectManager } from './StatusEffects.js';
+import { Projectile } from './Projectile.js';
 import { App } from '../system/App.js';
 import { Config } from '../config.js';
 import { LEVELS } from '../data/LevelData.js';
 import { saveManager } from '../system/SaveManager.js';
+import { BattleHUD } from '../ui/BattleHUD.js';
+import { CoinFlip } from '../ui/CoinFlip.js';
+import { TurnIndicator } from '../ui/TurnIndicator.js';
+import { DamagePopup } from '../ui/DamagePopup.js';
 import gsap from 'gsap';
 
 export class BattleScene {
@@ -56,10 +62,10 @@ export class BattleScene {
 
         // Init everything
         this.initBackground();
-        this.initBoard();
         this.initEntities();
+        this.initBoard();
         this.initSystems();
-        this.initUI();
+        this.initHUD();
         this.removeStartMatches();
 
         // Bind events
@@ -67,7 +73,7 @@ export class BattleScene {
 
         // Start battle with coin flip (delayed)
         this.disabled = true;
-        setTimeout(() => this.startBattle(), 500);
+        setTimeout(() => this.startBattle(), 600);
     }
 
     // ================================================================
@@ -75,20 +81,25 @@ export class BattleScene {
     // ================================================================
 
     initBackground() {
-        // Set terrain background color
         const bgColor = this.levelConfig.terrain.background;
         App.setBackgroundColor(bgColor);
 
-        // Board background panel
+        // Board background panel (drawn after board is created)
         this.boardBg = new Graphics();
         this.container.addChild(this.boardBg);
+    }
+
+    initEntities() {
+        const savedSkills = saveManager.getUnlockedSkills();
+        this.player = new Player(savedSkills);
+        this.boss = new Boss(this.levelConfig);
     }
 
     initBoard() {
         this.board = new Board(this.levelConfig);
         this.container.addChild(this.board.container);
 
-        // Draw board background
+        // Draw board background panel
         const boardWidth = this.board.cols * Config.tileSize;
         const boardHeight = this.board.rows * Config.tileSize;
         const padding = 12;
@@ -103,12 +114,6 @@ export class BattleScene {
         this.boardBg.stroke({ color: 0xffffff, width: 2, alpha: 0.15 });
     }
 
-    initEntities() {
-        const savedSkills = saveManager.getUnlockedSkills();
-        this.player = new Player(savedSkills);
-        this.boss = new Boss(this.levelConfig);
-    }
-
     initSystems() {
         this.combinationManager = new CombinationManager(this.board);
         this.damageSystem = new DamageSystem(this.levelConfig.terrain);
@@ -118,110 +123,19 @@ export class BattleScene {
         this.environmentSystem = new EnvironmentSystem(this.levelConfig.terrain, this.board);
     }
 
-    initUI() {
-        this.uiContainer = new Container();
-        this.uiContainer.zIndex = 100;
-        this.container.addChild(this.uiContainer);
-
-        // Level title
-        this.titleText = new Text({
-            text: `⚔ LEVEL ${this.levelNum}: ${this.levelConfig.bossName}`,
-            style: {
-                fontFamily: 'Arial, sans-serif',
-                fontSize: 22,
-                fontWeight: 'bold',
-                fill: '#ffffff',
-                dropShadow: { color: '#000000', blur: 4, distance: 2 },
-            },
+    initHUD() {
+        // BattleHUD — full UI with characters, HP bars, skills, etc.
+        this.hud = new BattleHUD({
+            player: this.player,
+            boss: this.boss,
+            levelConfig: this.levelConfig,
+            onSkillSelect: (skillId) => this.onSkillButtonClick(skillId),
         });
-        this.titleText.x = Config.canvas.width / 2;
-        this.titleText.y = 15;
-        this.titleText.anchor.set(0.5, 0);
-        this.uiContainer.addChild(this.titleText);
+        this.container.addChild(this.hud.container);
 
-        // Player HP text (left side)
-        this.playerHPText = new Text({
-            text: `❤️ ${this.player.currentHP}/${this.player.maxHP}`,
-            style: { fontFamily: 'Arial', fontSize: 18, fontWeight: 'bold', fill: '#4fc3f7' },
-        });
-        this.playerHPText.x = 30;
-        this.playerHPText.y = 50;
-        this.uiContainer.addChild(this.playerHPText);
-
-        // Player shield text
-        this.playerShieldText = new Text({
-            text: '',
-            style: { fontFamily: 'Arial', fontSize: 14, fill: '#64b5f6' },
-        });
-        this.playerShieldText.x = 30;
-        this.playerShieldText.y = 75;
-        this.uiContainer.addChild(this.playerShieldText);
-
-        // Boss HP text (right side)
-        this.bossHPText = new Text({
-            text: `🩸 ${this.boss.currentHP}/${this.boss.maxHP}`,
-            style: { fontFamily: 'Arial', fontSize: 18, fontWeight: 'bold', fill: '#ff6b6b' },
-        });
-        this.bossHPText.x = Config.canvas.width - 30;
-        this.bossHPText.y = 50;
-        this.bossHPText.anchor.set(1, 0);
-        this.uiContainer.addChild(this.bossHPText);
-
-        // Boss info
-        this.bossInfoText = new Text({
-            text: this.getBossInfoString(),
-            style: { fontFamily: 'Arial', fontSize: 12, fill: '#aaaaaa' },
-        });
-        this.bossInfoText.x = Config.canvas.width - 30;
-        this.bossInfoText.y = 75;
-        this.bossInfoText.anchor.set(1, 0);
-        this.uiContainer.addChild(this.bossInfoText);
-
-        // Turn indicator text
-        this.turnText = new Text({
-            text: '',
-            style: { fontFamily: 'Arial', fontSize: 16, fill: '#ffdd57' },
-        });
-        this.turnText.x = Config.canvas.width / 2;
-        this.turnText.y = 45;
-        this.turnText.anchor.set(0.5, 0);
-        this.uiContainer.addChild(this.turnText);
-
-        // Battle log (bottom)
-        this.logText = new Text({
-            text: '💡 Match tiles to attack the boss!',
-            style: { fontFamily: 'Arial', fontSize: 14, fill: '#cccccc' },
-        });
-        this.logText.x = Config.canvas.width / 2;
-        this.logText.y = Config.canvas.height - 30;
-        this.logText.anchor.set(0.5, 0.5);
-        this.uiContainer.addChild(this.logText);
-
-        // Terrain info
-        this.terrainText = new Text({
-            text: this.getTerrainInfoString(),
-            style: { fontFamily: 'Arial', fontSize: 12, fill: '#aaa' },
-        });
-        this.terrainText.x = Config.canvas.width / 2;
-        this.terrainText.y = Config.canvas.height - 55;
-        this.terrainText.anchor.set(0.5, 0.5);
-        this.uiContainer.addChild(this.terrainText);
-
-        // Big turn overlay (YOUR TURN / BOSS TURN)
-        this.turnOverlay = new Text({
-            text: '',
-            style: {
-                fontFamily: 'Arial', fontSize: 48, fontWeight: 'bold',
-                fill: '#ffdd57',
-                dropShadow: { color: '#000000', blur: 8, distance: 4 },
-            },
-        });
-        this.turnOverlay.anchor.set(0.5);
-        this.turnOverlay.x = Config.canvas.width / 2;
-        this.turnOverlay.y = Config.canvas.height / 2;
-        this.turnOverlay.visible = false;
-        this.turnOverlay.zIndex = 200;
-        this.uiContainer.addChild(this.turnOverlay);
+        // TurnIndicator — big overlay text
+        this.turnIndicator = new TurnIndicator();
+        this.container.addChild(this.turnIndicator.container);
     }
 
     // ================================================================
@@ -229,16 +143,9 @@ export class BattleScene {
     // ================================================================
 
     async startBattle() {
-        // Simple coin flip
-        const result = Math.random() < 0.5 ? 'player' : 'boss';
+        // Animated coin flip
+        const result = await CoinFlip.play(this.container);
         this.currentTurn = result;
-
-        // Show coin flip result
-        await this.showTurnOverlay(
-            result === 'player' ? '⚔️ YOU GO FIRST!' : '💀 BOSS GOES FIRST!',
-            result === 'player' ? '#ffdd57' : '#ff6b6b'
-        );
-
         this.startTurn(result);
     }
 
@@ -256,16 +163,22 @@ export class BattleScene {
         const entity = who === 'player' ? this.player : this.boss;
         const dotResult = statusEffectManager.tickEffects(entity);
         if (dotResult.totalDotDamage > 0) {
-            this.addLog(`${entity.name} takes ${dotResult.totalDotDamage} DoT damage!`);
+            this.hud.setLog(`${entity.name} takes ${dotResult.totalDotDamage} DoT damage!`);
+            // Animate hurt for DoT
+            this.hud.showDamage(who, dotResult.totalDotDamage, 'poison');
+            await this.hud.playHurt(who);
             this.updateUI();
+            if (this.checkGameEnd()) return;
         }
 
         // Check if stunned
         if (dotResult.wasStunned) {
-            this.addLog(`${entity.name} is stunned! Turn skipped.`);
-            await this.showTurnOverlay(`${who === 'player' ? '😵' : '💫'} STUNNED!`, '#ffaa00');
+            this.hud.setLog(`${entity.name} is stunned! Turn skipped.`);
+            await this.turnIndicator.show(
+                `${who === 'player' ? '😵' : '💫'} STUNNED!`, '#ffaa00'
+            );
             entity.stunned = false;
-            await this.delay(800);
+            await this.delay(500);
             this.switchTurn();
             return;
         }
@@ -283,15 +196,16 @@ export class BattleScene {
         if (who === 'player' && this.turnCount > 2) {
             const envResult = this.environmentSystem.tick();
             if (envResult.warning) {
-                this.addLog(envResult.warning);
+                this.hud.setLog(`⚠️ ${envResult.warning}`);
             }
             if (envResult.triggered) {
-                this.addLog(`🌍 ${envResult.result.description}`);
+                this.hud.setLog(`🌍 ${envResult.result.description}`);
                 if (envResult.result.damage && envResult.result.damageTarget === 'both') {
                     this.player.takeDamage(envResult.result.damage);
                     this.boss.takeDamage(envResult.result.damage);
+                    this.hud.showDamage('player', envResult.result.damage, 'damage');
+                    this.hud.showDamage('boss', envResult.result.damage, 'damage');
                 }
-                // Process cascade after environment event
                 await this.processFallDown();
                 await this.addTiles();
                 this.updateUI();
@@ -303,15 +217,16 @@ export class BattleScene {
         if (who === 'boss') {
             this.disabled = true;
             this.board.setInputEnabled(false);
-            await this.showTurnOverlay('💀 BOSS TURN', '#ff6b6b');
+            await this.turnIndicator.show('💀 BOSS TURN', '#ff6b6b');
 
             // Boss skill (every N turns)
             this.boss.incrementTurn();
             if (this.bossSkillSystem.shouldUseSkill()) {
+                await this.hud.playSkillCast('boss');
                 const skillResult = this.bossSkillSystem.executeSkill();
                 if (skillResult) {
-                    this.addLog(`🔮 Boss uses ${skillResult.skillId}: ${skillResult.description}`);
-                    await this.delay(800);
+                    this.hud.setLog(`🔮 Boss uses ${skillResult.skillId}: ${skillResult.description}`);
+                    await this.delay(600);
                     await this.processFallDown();
                     await this.addTiles();
                     this.updateUI();
@@ -320,7 +235,7 @@ export class BattleScene {
             }
 
             // Boss AI swap
-            await this.delay(600);
+            await this.delay(400);
             await this.executeBossTurn();
             return;
         }
@@ -328,7 +243,7 @@ export class BattleScene {
         // Player turn
         this.disabled = false;
         this.board.setInputEnabled(true);
-        await this.showTurnOverlay('⚔️ YOUR TURN', '#ffdd57');
+        await this.turnIndicator.show('⚔️ YOUR TURN', '#ffdd57');
         this.updateUI();
     }
 
@@ -352,7 +267,6 @@ export class BattleScene {
                 this.clearSelection();
                 this.selectTile(tile);
             } else {
-                // Check if either tile is frozen
                 if (this.selectedTile.frozen || tile.frozen) {
                     this.clearSelection();
                     return;
@@ -383,6 +297,42 @@ export class BattleScene {
     }
 
     // ================================================================
+    //  SKILL BUTTON CLICK
+    // ================================================================
+
+    onSkillButtonClick(skillId) {
+        if (this.disabled || this.currentTurn !== 'player') return;
+        // For skills that need tile targeting, we'd enter a targeting mode
+        // For now, self/board skills execute immediately
+        const skill = this.skillSystem.getSkill(skillId);
+        if (!skill) return;
+
+        if (skill.targetType === 'tile' || skill.targetType === 'column') {
+            // Enter targeting mode — next tile click = target
+            this.hud.setLog(`🎯 Select a target for ${skill.name}...`);
+            this.skillTargeting = skillId;
+            return;
+        }
+
+        // Execute immediately for self/board skills
+        this.usePlayerSkill(skillId);
+    }
+
+    // Override onTileClick to handle skill targeting
+    handleSkillTarget(tile) {
+        if (!this.skillTargeting) return false;
+
+        const target = {
+            row: tile.field.row,
+            col: tile.field.col,
+        };
+
+        this.usePlayerSkill(this.skillTargeting, target);
+        this.skillTargeting = null;
+        return true;
+    }
+
+    // ================================================================
     //  SWAP & MATCH PROCESSING
     // ================================================================
 
@@ -409,11 +359,9 @@ export class BattleScene {
                     this.swap(tile, selectedTile, true, who);
                 }
             } else {
-                // After reverse, allow next action
                 if (who === 'player') {
                     this.disabled = false;
                 } else {
-                    // Boss reverse — no valid move, switch turn
                     this.switchTurn();
                 }
             }
@@ -424,6 +372,7 @@ export class BattleScene {
         this.comboCount++;
         const attacker = who === 'player' ? this.player : this.boss;
         const defender = who === 'player' ? this.boss : this.player;
+        const defenderSide = who === 'player' ? 'boss' : 'player';
 
         // Calculate damage
         const { totalDamage, effects, healAmount, shieldAmount } =
@@ -439,26 +388,57 @@ export class BattleScene {
             });
         });
 
-        // Apply damage to defender
+        // ====== ANIMATIONS ======
+
+        // Play attack animation on attacker
+        await this.hud.playAttack(who);
+
+        // Fire projectile from board center to defender
         if (totalDamage > 0) {
+            const boardCenter = {
+                x: this.board.container.x + (this.board.cols * Config.tileSize) / 2,
+                y: this.board.container.y + (this.board.rows * Config.tileSize) / 2,
+            };
+            const defenderPos = this.hud.getSpritePosition(defenderSide);
+
+            // Pick projectile color from first match tile type
+            const tileColor = this.getTileProjectileColor(matches);
+            await Projectile.fire(this.container, boardCenter, defenderPos, tileColor);
+
+            // Play hurt animation on defender
+            await this.hud.playHurt(defenderSide);
+
+            // Apply damage
             this.damageSystem.applyDamage(defender, totalDamage, effects);
-            this.addLog(`${who === 'player' ? '⚔️' : '💀'} ${attacker.name}: ${totalDamage} damage!`);
+            this.hud.showDamage(defenderSide, totalDamage, 'damage');
+            this.hud.setLog(`${who === 'player' ? '⚔️' : '💀'} ${attacker.name}: ${totalDamage} damage!`);
         }
 
-        // Apply self effects
+        // Apply self effects with animations
         if (healAmount > 0) {
             const healed = attacker.heal(healAmount);
-            if (healed > 0) this.addLog(`💚 ${attacker.name} heals ${healed} HP`);
+            if (healed > 0) {
+                const attackerPos = this.hud.getSpritePosition(who);
+                await Projectile.heal(this.container, attackerPos.x, attackerPos.y);
+                await this.hud.playHeal(who);
+                this.hud.showDamage(who, healed, 'heal');
+                this.hud.setLog(`💚 ${attacker.name} heals ${healed} HP`);
+            }
         }
         if (shieldAmount > 0) {
             attacker.addShield(shieldAmount);
-            this.addLog(`🛡 ${attacker.name} gains ${shieldAmount} shield`);
+            const attackerPos = this.hud.getSpritePosition(who);
+            await Projectile.shield(this.container, attackerPos.x, attackerPos.y);
+            await this.hud.playShield(who);
+            this.hud.showDamage(who, shieldAmount, 'shield');
+            this.hud.setLog(`🛡 ${attacker.name} gains ${shieldAmount} shield`);
         }
 
         // Apply poison self damage
         if (poisonSelfDamage > 0) {
             attacker.takeDamage(poisonSelfDamage);
-            this.addLog(`☠️ Poison! ${attacker.name} takes ${poisonSelfDamage} self damage`);
+            this.hud.showDamage(who, poisonSelfDamage, 'poison');
+            this.hud.setLog(`☠️ Poison! ${attacker.name} takes ${poisonSelfDamage} self damage`);
         }
 
         // Apply status effects
@@ -475,7 +455,14 @@ export class BattleScene {
 
         // Combo display
         if (this.comboCount >= 2) {
-            this.addLog(`🔥 COMBO x${this.comboCount}!`);
+            DamagePopup.show(
+                this.container,
+                this.board.container.x + (this.board.cols * Config.tileSize) / 2,
+                this.board.container.y - 20,
+                this.comboCount,
+                'combo'
+            );
+            this.hud.setLog(`🔥 COMBO x${this.comboCount}!`);
         }
 
         // Update UI
@@ -515,7 +502,7 @@ export class BattleScene {
             if (this.grantExtraTurn) {
                 this.grantExtraTurn = false;
                 this.disabled = false;
-                this.addLog('⏳ Extra turn!');
+                this.hud.setLog('⏳ Extra turn!');
             } else {
                 this.switchTurn();
             }
@@ -536,6 +523,22 @@ export class BattleScene {
         });
     }
 
+    /** Get a projectile color based on the dominant tile type in matches */
+    getTileProjectileColor(matches) {
+        const colorMap = {
+            fire: 0xff6240, water: 0x42a5f5, nature: 0x66bb6a,
+            ice: 0x80d8ff, lightning: 0xfff176, earth: 0x8d6e63,
+            'wind-air': 0x90caf9, 'psychic-eye': 0xce93d8,
+            sun: 0xffd54f, 'poison-death': 0xb388ff,
+        };
+        // Use first match tile color
+        if (matches.length > 0 && matches[0].tiles.length > 0) {
+            const tileColor = matches[0].tiles[0].color;
+            return colorMap[tileColor] || 0xff6240;
+        }
+        return 0xff6240;
+    }
+
     // ================================================================
     //  BOSS TURN (AI)
     // ================================================================
@@ -548,16 +551,14 @@ export class BattleScene {
         );
 
         if (!swapChoice) {
-            // No valid swap — shuffle board and try again
             this.board.shuffleAll();
-            this.addLog('💀 Boss shuffles the board!');
+            this.hud.setLog('💀 Boss shuffles the board!');
             await this.delay(500);
             const retrySwap = this.bossAI.findBestSwap(
                 this.board, this.combinationManager, this.levelConfig.terrain
             );
             if (!retrySwap) {
-                // Still nothing — pass turn
-                this.addLog('💀 Boss passes turn.');
+                this.hud.setLog('💀 Boss passes turn.');
                 this.switchTurn();
                 return;
             }
@@ -573,7 +574,7 @@ export class BattleScene {
     // ================================================================
 
     /**
-     * Called from UI when player clicks a skill.
+     * Called from skill bar or targeting mode.
      * @param {string} skillId
      * @param {object} target - { row, col } for tile/column skills
      */
@@ -583,19 +584,36 @@ export class BattleScene {
         const result = this.skillSystem.execute(skillId, this.board, target, this.boss);
         if (!result.success) return;
 
-        this.addLog(`✨ Used ${skillId}!`);
+        // Play skill cast animation
+        await this.hud.playSkillCast('player');
+
+        this.hud.setLog(`✨ Used ${skillId}!`);
 
         if (result.result?.type === 'damage') {
-            this.addLog(`💥 ${result.result.damage} damage to boss!`);
+            const defenderPos = this.hud.getSpritePosition('boss');
+            const playerPos = this.hud.getSpritePosition('player');
+            await Projectile.fire(this.container, playerPos, defenderPos, 0xff6240);
+            await this.hud.playHurt('boss');
+            this.hud.showDamage('boss', result.result.damage, 'damage');
+            this.hud.setLog(`💥 ${result.result.damage} damage to boss!`);
         } else if (result.result?.type === 'heal') {
-            this.addLog(`💚 Healed ${result.result.amount} HP!`);
+            const playerPos = this.hud.getSpritePosition('player');
+            await Projectile.heal(this.container, playerPos.x, playerPos.y);
+            await this.hud.playHeal('player');
+            this.hud.showDamage('player', result.result.amount, 'heal');
+            this.hud.setLog(`💚 Healed ${result.result.amount} HP!`);
         } else if (result.result?.type === 'shield') {
-            this.addLog(`🛡 Gained ${result.result.amount} shield!`);
+            const playerPos = this.hud.getSpritePosition('player');
+            await Projectile.shield(this.container, playerPos.x, playerPos.y);
+            await this.hud.playShield('player');
+            this.hud.showDamage('player', result.result.amount, 'shield');
+            this.hud.setLog(`🛡 Gained ${result.result.amount} shield!`);
         } else if (result.result?.type === 'extraTurn') {
             this.grantExtraTurn = true;
+            this.hud.setLog('⏳ Extra turn granted!');
         }
 
-        // Process board changes (cascade)
+        // Process board changes (cascade from tile destruction)
         await this.processFallDown();
         await this.addTiles();
         this.updateUI();
@@ -604,11 +622,13 @@ export class BattleScene {
 
         if (result.endsTurn) {
             this.switchTurn();
+        } else {
+            this.disabled = false;
         }
     }
 
     // ================================================================
-    //  BOARD OPERATIONS (from Game.js)
+    //  BOARD OPERATIONS
     // ================================================================
 
     processFallDown() {
@@ -700,6 +720,9 @@ export class BattleScene {
         this.isGameOver = true;
         this.disabled = true;
 
+        // Play defeated animation on boss
+        await this.hud.playDefeated('boss');
+
         // Unlock next level and skill
         saveManager.unlockLevel(this.levelNum + 1);
         const skillReward = this.levelConfig.skillReward;
@@ -707,11 +730,10 @@ export class BattleScene {
             saveManager.unlockSkill(skillReward);
         }
 
-        await this.showTurnOverlay('🎉 VICTORY!', '#ffdd57');
-        this.addLog(`Boss defeated! ${skillReward ? `Unlocked: ${skillReward}` : 'Congratulations!'}`);
+        await this.turnIndicator.show('🎉 VICTORY!', '#ffdd57');
+        this.hud.setLog(`Boss defeated! ${skillReward ? `Unlocked: ${skillReward}` : 'Congratulations!'}`);
 
-        // Show victory screen after delay
-        await this.delay(2000);
+        await this.delay(1500);
         this.showEndScreen('victory');
     }
 
@@ -719,10 +741,13 @@ export class BattleScene {
         this.isGameOver = true;
         this.disabled = true;
 
-        await this.showTurnOverlay('💀 DEFEATED...', '#ff6b6b');
-        this.addLog('You have been defeated. Try again!');
+        // Play defeated animation on player
+        await this.hud.playDefeated('player');
 
-        await this.delay(2000);
+        await this.turnIndicator.show('💀 DEFEATED...', '#ff6b6b');
+        this.hud.setLog('You have been defeated. Try again!');
+
+        await this.delay(1500);
         this.showEndScreen('defeat');
     }
 
@@ -731,156 +756,146 @@ export class BattleScene {
         screen.zIndex = 300;
         this.container.addChild(screen);
 
+        // Dark overlay
         const overlay = new Graphics();
         overlay.rect(0, 0, Config.canvas.width, Config.canvas.height);
-        overlay.fill({ color: 0x000000, alpha: 0.75 });
+        overlay.fill({ color: 0x000000, alpha: 0.8 });
         screen.addChild(overlay);
 
+        // Title
         const title = new Text({
             text: type === 'victory' ? '🎉 VICTORY!' : '💀 DEFEATED',
             style: {
-                fontFamily: 'Arial', fontSize: 56, fontWeight: 'bold',
-                fill: type === 'victory' ? '#ffdd57' : '#ff6b6b',
+                fontFamily: 'Arial', fontSize: 52, fontWeight: 'bold',
+                fill: type === 'victory' ? '#ffd54f' : '#ff5252',
                 dropShadow: { color: '#000000', blur: 8, distance: 4 },
             },
         });
         title.anchor.set(0.5);
         title.x = Config.canvas.width / 2;
-        title.y = Config.canvas.height / 2 - 80;
+        title.y = Config.canvas.height / 2 - 90;
         screen.addChild(title);
+
+        // Battle stats
+        const statsText = new Text({
+            text: `Turns: ${this.turnCount} | Level: ${this.levelNum}`,
+            style: { fontFamily: 'Arial', fontSize: 18, fill: '#aaaaaa' },
+        });
+        statsText.anchor.set(0.5);
+        statsText.x = Config.canvas.width / 2;
+        statsText.y = Config.canvas.height / 2 - 35;
+        screen.addChild(statsText);
 
         // Skill reward for victory
         if (type === 'victory' && this.levelConfig.skillReward) {
             const skillText = new Text({
                 text: `✨ Skill Unlocked: ${this.levelConfig.skillReward}`,
-                style: { fontFamily: 'Arial', fontSize: 24, fontWeight: 'bold', fill: '#4fc3f7' },
+                style: { fontFamily: 'Arial', fontSize: 22, fontWeight: 'bold', fill: '#4fc3f7' },
             });
             skillText.anchor.set(0.5);
             skillText.x = Config.canvas.width / 2;
-            skillText.y = Config.canvas.height / 2 - 20;
+            skillText.y = Config.canvas.height / 2 - 5;
             screen.addChild(skillText);
+
+            // Pulsing glow
+            gsap.to(skillText, { alpha: 0.5, duration: 0.6, yoyo: true, repeat: -1 });
         }
 
         // Buttons
-        const btnY = Config.canvas.height / 2 + 50;
+        const btnY = Config.canvas.height / 2 + 55;
+
         if (type === 'victory' && this.levelNum < 10) {
-            this.createButton(screen, 'Next Level ▶', Config.canvas.width / 2 - 130, btnY, 0x4fc3f7, () => {
-                // Switch to next level
-                const { sceneManager } = require('../system/SceneManager.js');
-                sceneManager.switchTo(BattleScene, { level: this.levelNum + 1 });
+            this.createButton(screen, 'Next Level ▶', Config.canvas.width / 2 - 110, btnY, 0x4fc3f7, () => {
+                this.destroyAndStart(this.levelNum + 1);
+            });
+            this.createButton(screen, '🏠 Menu', Config.canvas.width / 2 + 110, btnY, 0x666666, () => {
+                this.destroyAndStart(this.levelNum);
+            });
+        } else if (type === 'victory') {
+            // Level 10 cleared — show congrats
+            const congratsText = new Text({
+                text: '👑 YOU CONQUERED ALL 10 LEVELS! 👑',
+                style: { fontFamily: 'Arial', fontSize: 20, fontWeight: 'bold', fill: '#ffd54f' },
+            });
+            congratsText.anchor.set(0.5);
+            congratsText.x = Config.canvas.width / 2;
+            congratsText.y = Config.canvas.height / 2 + 30;
+            screen.addChild(congratsText);
+
+            this.createButton(screen, '🔄 Play Again', Config.canvas.width / 2, btnY + 30, 0x81c784, () => {
+                this.destroyAndStart(1);
+            });
+        } else {
+            this.createButton(screen, '🔄 Retry', Config.canvas.width / 2, btnY, 0x81c784, () => {
+                this.destroyAndStart(this.levelNum);
             });
         }
 
-        this.createButton(screen,
-            type === 'victory' ? '🏠 Menu' : '🔄 Retry',
-            type === 'victory' ? Config.canvas.width / 2 + 50 : Config.canvas.width / 2 - 60,
-            btnY,
-            type === 'victory' ? 0x888888 : 0x81c784,
-            () => {
-                if (type === 'defeat') {
-                    // Retry same level
-                    this.restartBattle();
-                } else {
-                    // Go to menu (simplified — just restart)
-                    this.restartBattle();
-                }
-            }
-        );
-
+        // Fade in
         screen.alpha = 0;
         gsap.to(screen, { alpha: 1, duration: 0.5 });
     }
 
-    restartBattle() {
-        // Destroy and recreate
-        this.container.destroy({ children: true });
-        const newScene = new BattleScene({ level: this.levelNum });
+    destroyAndStart(level) {
+        this.destroy();
+        const newScene = new BattleScene({ level });
         App.stage.addChild(newScene.container);
     }
 
     createButton(parent, label, x, y, color, onClick) {
-        const btnBg = new Graphics();
-        btnBg.roundRect(-80, -25, 160, 50, 12);
-        btnBg.fill({ color });
-        btnBg.x = x;
-        btnBg.y = y;
-        btnBg.eventMode = 'static';
-        btnBg.cursor = 'pointer';
-        parent.addChild(btnBg);
+        const btnContainer = new Container();
+        btnContainer.x = x;
+        btnContainer.y = y;
+        parent.addChild(btnContainer);
 
-        const btnText = new Text({
+        const bg = new Graphics();
+        bg.roundRect(-85, -22, 170, 44, 10);
+        bg.fill({ color });
+        bg.stroke({ color: 0xffffff, width: 1, alpha: 0.3 });
+        bg.eventMode = 'static';
+        bg.cursor = 'pointer';
+        btnContainer.addChild(bg);
+
+        const text = new Text({
             text: label,
-            style: { fontFamily: 'Arial', fontSize: 18, fontWeight: 'bold', fill: '#ffffff' },
+            style: { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: '#ffffff' },
         });
-        btnText.anchor.set(0.5);
-        btnText.x = x;
-        btnText.y = y;
-        parent.addChild(btnText);
+        text.anchor.set(0.5);
+        btnContainer.addChild(text);
 
-        btnBg.on('pointerdown', onClick);
+        // Hover effect
+        bg.on('pointerover', () => gsap.to(btnContainer.scale, { x: 1.05, y: 1.05, duration: 0.15 }));
+        bg.on('pointerout', () => gsap.to(btnContainer.scale, { x: 1, y: 1, duration: 0.15 }));
+        bg.on('pointerdown', onClick);
     }
 
     // ================================================================
-    //  UI HELPERS
+    //  UI UPDATE
     // ================================================================
 
     updateUI() {
-        this.playerHPText.text = `❤️ ${this.player.currentHP}/${this.player.maxHP}`;
-        this.playerShieldText.text = this.player.shield > 0 ? `🛡 Shield: ${this.player.shield}` : '';
-        this.bossHPText.text = `🩸 ${this.boss.currentHP}/${this.boss.maxHP}`;
-        this.turnText.text = `Turn: ${this.currentTurn === 'player' ? 'Player' : 'Boss'} #${this.turnCount}`;
-    }
+        const bossSkillIn = this.boss.skills.length > 0
+            ? this.boss.skillInterval - (this.boss.turnCounter % this.boss.skillInterval)
+            : undefined;
 
-    addLog(message) {
-        this.logText.text = message;
-        console.log(`[Battle] ${message}`);
-    }
-
-    getBossInfoString() {
-        const weakStr = this.boss.weakness ? `Weak:${this.boss.weakness}` : '';
-        const resStr = this.boss.resistance ? `Res:${this.boss.resistance}` : '';
-        return `${this.levelConfig.bossEmoji} ${weakStr} ${resStr}`.trim();
-    }
-
-    getTerrainInfoString() {
-        const t = this.levelConfig.terrain;
-        const buffStr = Object.entries(t.buff || {}).map(([k, v]) => `${k}+${Math.round(v * 100)}%`).join(', ');
-        const debuffStr = Object.entries(t.debuff || {}).map(([k, v]) => `${k}-${Math.round(v * 100)}%`).join(', ');
-        let str = `${t.emoji} ${t.name}`;
-        if (buffStr) str += ` | Buff: ${buffStr}`;
-        if (debuffStr) str += ` | Debuff: ${debuffStr}`;
-        return str;
-    }
-
-    async showTurnOverlay(text, color) {
-        this.turnOverlay.text = text;
-        this.turnOverlay.style.fill = color;
-        this.turnOverlay.visible = true;
-        this.turnOverlay.alpha = 0;
-        this.turnOverlay.scale.set(0.5);
-
-        gsap.to(this.turnOverlay.scale, { x: 1.2, y: 1.2, duration: 0.3, ease: 'back.out(2)' });
-        gsap.to(this.turnOverlay, { alpha: 1, duration: 0.3 });
-
-        await this.delay(1200);
-
-        gsap.to(this.turnOverlay, {
-            alpha: 0,
-            duration: 0.3,
-            onComplete: () => { this.turnOverlay.visible = false; },
+        this.hud.update({
+            currentTurn: this.currentTurn,
+            turnCount: this.turnCount,
+            bossSkillIn,
         });
-
-        await this.delay(300);
     }
+
+    // ================================================================
+    //  UTILITIES
+    // ================================================================
 
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    /**
-     * Destroy this scene and all its resources.
-     */
     destroy() {
+        this.hud.destroy();
+        this.turnIndicator.destroy();
         this.container.destroy({ children: true });
     }
 }
