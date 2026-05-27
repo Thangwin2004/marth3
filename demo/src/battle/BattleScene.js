@@ -365,6 +365,9 @@ export class BattleScene {
     }
 
     async showElementGuide() {
+        // Prevent opening the guide during active board animations, turn transitions, or when it's not the player's turn
+        if (this.disabled || this.currentTurn !== 'player') return;
+        
         if (this.elementGuideActive) return;
         this.elementGuideActive = true;
 
