@@ -37,6 +37,13 @@
  *   - Sau cascade: chỉ quét các cột có tile rơi xuống
  * 
  * Board 12×12: Full scan = 288 checks, Dirty = ~48 checks → nhanh ~6x
+ * 
+ * === BOSS BATTLE ===
+ * 
+ * Special tile handling for boss battle states:
+ *   - isVoid fields are skipped (permanent empty spaces)
+ *   - isStone tiles are skipped (cannot be matched)
+ *   - Stone tiles adjacent to matches are destroyed
  */
 
 import { App } from '../system/App.js';
@@ -142,6 +149,42 @@ export class CombinationManager {
         const allRows = [];
         for (let i = 0; i < this.board.rows; i++) allRows.push(i);
         return { dirtyRows: allRows, dirtyCols: [...new Set(affectedCols)] };
+    }
+
+    // ================================================================
+    //  BOSS BATTLE: STONE DESTRUCTION
+    // ================================================================
+
+    /**
+     * Check and find stone tiles adjacent to matched tiles for destruction.
+     * Stones can't be matched directly, but are destroyed when a match
+     * occurs next to them.
+     * 
+     * @param {Array<{tiles: Array<Tile>}>} matches - Array of match results
+     * @returns {Array<Field>} Fields containing stones to destroy
+     */
+    getStonesToDestroy(matches) {
+        const stonesToDestroy = new Set();
+        matches.forEach(match => {
+            match.tiles.forEach(tile => {
+                if (!tile.field) return;
+                const { row, col } = tile.field;
+                // Check 4 neighbors (up, down, left, right)
+                const neighbors = [
+                    { r: row - 1, c: col },
+                    { r: row + 1, c: col },
+                    { r: row, c: col - 1 },
+                    { r: row, c: col + 1 },
+                ];
+                neighbors.forEach(({ r, c }) => {
+                    const field = this.board.getField(r, c);
+                    if (field && field.tile && field.tile.isStone) {
+                        stonesToDestroy.add(field);
+                    }
+                });
+            });
+        });
+        return [...stonesToDestroy];
     }
 
     // ================================================================
@@ -265,10 +308,18 @@ export class CombinationManager {
 
     /**
      * Helper: Lấy tile tại vị trí (row, col)
-     * Trả về null nếu ngoài board hoặc ô trống
+     * Trả về null nếu ngoài board, ô trống, void field, hoặc stone tile
+     * 
+     * Updated for boss battle:
+     *   - Void fields return null (permanent empty spaces)
+     *   - Stone tiles return null (cannot be matched)
      */
     getTileAt(row, col) {
         const field = this.board.getField(row, col);
-        return field ? field.tile : null;
+        if (!field || field.isVoid) return null;
+        const tile = field.tile;
+        if (!tile) return null;
+        if (tile.isStone) return null;  // Stone tiles can't match
+        return tile;
     }
 }

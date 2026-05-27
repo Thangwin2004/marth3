@@ -32,15 +32,34 @@
  * === SORTABLE CHILDREN ===
  * container.sortableChildren = true → sprites có zIndex cao hiện trên
  * → Khi swap, tile đang di chuyển có zIndex=2 → hiện trên tile kia
+ * 
+ * === BOSS BATTLE EXTENSIONS ===
+ * 
+ * New methods for boss skills, player skills, and environment events:
+ * - freezeRandom, corruptRandom, poisonRandom — status effects on tiles
+ * - addStones, addVoids — obstacle tiles
+ * - destroyRow, destroyColumn, destroyArea — area destruction
+ * - shuffleAll, shuffleRow — randomize tile colors
+ * - cloneRow, rainbowTransform — color manipulation
+ * - purifyAll — cleanse all negative effects
+ * - shiftRow, rotateArea — positional manipulation
+ * - getNormalTiles — utility to find eligible tiles
+ * - tickFrozenTiles, tickHiddenTiles — per-turn status tick
+ * - setInputEnabled — lock/unlock board input
  */
 
-import { Container } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import { Field } from './Field.js';
 import { Tile } from './Tile.js';
 import { App } from '../system/App.js';
+import { Config } from '../config.js';
 
 export class Board {
-    constructor() {
+    /**
+     * @param {object} [levelConfig] - Optional level configuration
+     * @param {number} [levelConfig.tileCount] - Number of tile types to use (defaults to all)
+     */
+    constructor(levelConfig) {
         /**
          * Container: "hộp chứa" tất cả sprites của board
          * 
@@ -59,12 +78,28 @@ export class Board {
         this.rows = App.config.board.rows;
         this.cols = App.config.board.cols;
 
+        /**
+         * Allowed tile types for this level.
+         * Levels can restrict the number of tile types for difficulty tuning.
+         */
+        this.allowedTiles = Config.tileColors.slice(
+            0,
+            levelConfig?.tileCount || Config.tileColors.length
+        );
+
+        /** Whether player input (tile clicks) is currently enabled */
+        this.inputEnabled = true;
+
         // Tạo board
         this.create();
 
         // Căn giữa board trên canvas
         this.adjustPosition();
     }
+
+    // =========================================================================
+    // CORE METHODS (ORIGINAL)
+    // =========================================================================
 
     /**
      * Tạo toàn bộ board: fields + tiles
@@ -125,7 +160,7 @@ export class Board {
      * Tạo 1 Tile mới trên 1 Field
      * 
      * === QUY TRÌNH ===
-     * 1. Random chọn màu từ danh sách tileColors
+     * 1. Random chọn màu từ danh sách allowedTiles
      * 2. Tạo Tile object với màu đó
      * 3. Thiết lập tham chiếu 2 chiều: field ↔ tile
      * 4. Đặt tile sprite ở vị trí pixel của field
@@ -152,8 +187,8 @@ export class Board {
      * @returns {Tile} Tile vừa tạo
      */
     createTile(field) {
-        // 1. Random màu
-        const colors = App.config.tileColors;
+        // 1. Random màu from level-specific allowed tiles
+        const colors = this.allowedTiles;
         const color = colors[Math.floor(Math.random() * colors.length)];
 
         // 2. Tạo Tile
@@ -175,6 +210,7 @@ export class Board {
 
         // 7. Lắng nghe click → emit event lên container
         tile.sprite.on('pointerdown', () => {
+            if (!this.inputEnabled) return;  // Skip if input is disabled
             this.container.emit('tile-touch-start', tile);
         });
 
@@ -229,24 +265,784 @@ export class Board {
     }
 
     /**
-     * Căn giữa board trên canvas
+     * Căn giữa board trên canvas, offset left to leave room for characters.
      * 
-     * === CÔNG THỨC CĂN GIỮA ===
-     * offset_x = (canvasWidth - boardWidth) / 2
-     * 
-     * Ví dụ: canvas 800px, board 560px (8 ô × 70px)
-     * → offset_x = (800 - 560) / 2 = 120px
-     * 
-     * Ta + thêm tileSize/2 vì anchor của sprites ở tâm (0.5)
-     * → Sprite ở [0,0] cần thêm 35px để không bị cắt nửa
+     * Board is centered horizontally and vertically with a slight downward
+     * offset to leave space for top UI elements (HP bars, turn indicator, etc.).
      */
     adjustPosition() {
+        const canvasWidth = App.app.screen.width;   // 1100
         const boardWidth = this.cols * App.config.tileSize;
         const boardHeight = this.rows * App.config.tileSize;
 
-        // Board container is positioned by top-left corner because
-        // field backgrounds are drawn from top-left coordinates.
-        this.container.x = (App.app.screen.width - boardWidth) / 2;
-        this.container.y = (App.app.screen.height - boardHeight) / 2;
+        // Board center at approximately x=450 (center-left area)
+        this.container.x = (canvasWidth / 2) - (boardWidth / 2);
+        this.container.y = (App.app.screen.height - boardHeight) / 2 + 20; // slight offset down for top UI
+    }
+
+    // =========================================================================
+    // UTILITY METHODS
+    // =========================================================================
+
+    /**
+     * Get all fields with normal (non-frozen, non-stone, non-void, non-corrupt, non-poisoned) tiles.
+     * 
+     * Used by boss/player skill methods to find eligible targets.
+     * 
+     * @returns {Field[]} Array of fields containing normal, interactable tiles
+     */
+    getNormalTiles() {
+        return this.fields.filter(field => {
+            if (!field.tile) return false;           // Void field — no tile
+            if (field.isVoid) return false;           // Void field flag
+            const tile = field.tile;
+            if (tile.frozen) return false;            // Already frozen
+            if (tile.corrupt) return false;           // Already corrupt
+            if (tile.isStone) return false;           // Stone tile
+            if (tile.poisoned) return false;          // Already poisoned
+            if (tile.hidden) return false;            // Hidden tile
+            return true;
+        });
+    }
+
+    /**
+     * Fisher-Yates shuffle of an array (in-place).
+     * @param {any[]} array
+     * @returns {any[]} The same array, shuffled
+     * @private
+     */
+    _shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    /**
+     * Helper: change a tile's color and rebuild its sprite.
+     * 
+     * Destroys the old sprite, creates a new one with the new color,
+     * sets anchor, scale, and position correctly, adds to container,
+     * and re-attaches the pointerdown event.
+     * 
+     * @param {Tile} tile - The tile to recolor
+     * @param {string} newColor - The new color/alias name
+     * @private
+     */
+    _recolorTile(tile, newColor) {
+        if (!tile || !tile.sprite) return;
+
+        const field = tile.field;
+        if (!field) return;
+
+        // Remove old sprite from container and destroy
+        this.container.removeChild(tile.sprite);
+        tile.sprite.destroy();
+
+        // Assign new color
+        tile.color = newColor;
+
+        // Create new sprite
+        tile.sprite = App.sprite(newColor);
+        tile.sprite.anchor.set(0.5);
+        tile.resizeSprite();
+
+        // Position
+        tile.setPosition(field.position);
+
+        // Add to container
+        this.container.addChild(tile.sprite);
+
+        // Re-attach interactivity
+        tile.sprite.eventMode = 'static';
+        tile.sprite.cursor = 'pointer';
+        tile.sprite.on('pointerdown', () => {
+            if (!this.inputEnabled) return;
+            this.container.emit('tile-touch-start', tile);
+        });
+    }
+
+    // =========================================================================
+    // BOSS SKILL METHODS
+    // =========================================================================
+
+    /**
+     * Freeze N random normal tiles for a given duration.
+     * 
+     * Frozen tiles cannot be swapped or matched until the freeze wears off.
+     * Visual: adds a semi-transparent ice overlay on the tile.
+     * 
+     * @param {number} count - Number of tiles to freeze
+     * @param {number} duration - Number of turns the freeze lasts
+     * @returns {{row: number, col: number}[]} Array of affected positions
+     */
+    freezeRandom(count, duration) {
+        const normals = this.getNormalTiles();
+        this._shuffle(normals);
+        const targets = normals.slice(0, Math.min(count, normals.length));
+        const affected = [];
+
+        for (const field of targets) {
+            const tile = field.tile;
+            tile.frozen = true;
+            tile.frozenDuration = duration;
+
+            // Visual: add ice overlay
+            if (!tile._frozenOverlay) {
+                const overlay = new Graphics();
+                const ts = App.config.tileSize;
+                overlay.beginFill(0x88ccff, 0.4);
+                overlay.drawRoundedRect(-ts / 2, -ts / 2, ts, ts, 10);
+                overlay.endFill();
+                overlay.x = tile.sprite.x;
+                overlay.y = tile.sprite.y;
+                overlay.zIndex = 5;
+                this.container.addChild(overlay);
+                tile._frozenOverlay = overlay;
+            }
+
+            affected.push({ row: field.row, col: field.col });
+        }
+
+        return affected;
+    }
+
+    /**
+     * Mark N random normal tiles as corrupt.
+     * 
+     * Corrupt tiles may have altered matching behavior. Visual: purple tint overlay.
+     * 
+     * @param {number} count - Number of tiles to corrupt
+     * @returns {{row: number, col: number}[]} Array of affected positions
+     */
+    corruptRandom(count) {
+        const normals = this.getNormalTiles();
+        this._shuffle(normals);
+        const targets = normals.slice(0, Math.min(count, normals.length));
+        const affected = [];
+
+        for (const field of targets) {
+            const tile = field.tile;
+            tile.corrupt = true;
+
+            // Visual: purple overlay
+            if (!tile._corruptOverlay) {
+                const overlay = new Graphics();
+                const ts = App.config.tileSize;
+                overlay.beginFill(0x8800aa, 0.35);
+                overlay.drawRoundedRect(-ts / 2, -ts / 2, ts, ts, 10);
+                overlay.endFill();
+                overlay.x = tile.sprite.x;
+                overlay.y = tile.sprite.y;
+                overlay.zIndex = 5;
+                this.container.addChild(overlay);
+                tile._corruptOverlay = overlay;
+            }
+
+            affected.push({ row: field.row, col: field.col });
+        }
+
+        return affected;
+    }
+
+    /**
+     * Replace N random normal tiles with stone tiles.
+     * 
+     * Stone tiles cannot be swapped or matched.
+     * Visual: gray rounded rectangle.
+     * 
+     * @param {number} count - Number of stone tiles to add
+     * @returns {number} Number of stones actually placed
+     */
+    addStones(count) {
+        const normals = this.getNormalTiles();
+        this._shuffle(normals);
+        const targets = normals.slice(0, Math.min(count, normals.length));
+        let placed = 0;
+
+        for (const field of targets) {
+            const tile = field.tile;
+
+            // Remove old sprite
+            if (tile.sprite) {
+                this.container.removeChild(tile.sprite);
+                tile.sprite.destroy();
+            }
+
+            // Mark as stone
+            tile.isStone = true;
+            tile.color = 'stone';
+
+            // Create stone visual (gray rectangle)
+            const ts = App.config.tileSize;
+            const stoneGraphic = new Graphics();
+            stoneGraphic.beginFill(0x666666, 0.9);
+            stoneGraphic.lineStyle(2, 0x888888, 0.6);
+            stoneGraphic.drawRoundedRect(-ts / 2, -ts / 2, ts, ts, 12);
+            stoneGraphic.endFill();
+
+            // Inner crack details
+            stoneGraphic.lineStyle(1, 0x555555, 0.5);
+            stoneGraphic.moveTo(-ts * 0.2, -ts * 0.1);
+            stoneGraphic.lineTo(ts * 0.1, ts * 0.15);
+            stoneGraphic.moveTo(ts * 0.05, -ts * 0.2);
+            stoneGraphic.lineTo(-ts * 0.1, ts * 0.1);
+
+            const halfTile = ts / 2;
+            stoneGraphic.x = field.position.x + halfTile;
+            stoneGraphic.y = field.position.y + halfTile;
+            stoneGraphic.zIndex = 1;
+
+            // Replace sprite reference with the graphic
+            tile.sprite = stoneGraphic;
+            tile.sprite.eventMode = 'none';  // Cannot interact
+
+            this.container.addChild(tile.sprite);
+            placed++;
+        }
+
+        return placed;
+    }
+
+    /**
+     * Remove N random normal tiles permanently, making those fields void.
+     * 
+     * Void fields have no tile and cannot be filled again.
+     * 
+     * @param {number} count - Number of void fields to create
+     * @returns {number} Number of voids actually created
+     */
+    addVoids(count) {
+        const normals = this.getNormalTiles();
+        this._shuffle(normals);
+        const targets = normals.slice(0, Math.min(count, normals.length));
+        let created = 0;
+
+        for (const field of targets) {
+            const tile = field.tile;
+
+            // Remove tile entirely
+            if (tile) {
+                if (tile.sprite) {
+                    this.container.removeChild(tile.sprite);
+                    tile.sprite.destroy();
+                    tile.sprite = null;
+                }
+                tile.field = null;
+            }
+
+            field.tile = null;
+            field.isVoid = true;
+
+            // Dim the field background to indicate void
+            if (field.sprite) {
+                field.sprite.alpha = 0.3;
+            }
+
+            created++;
+        }
+
+        return created;
+    }
+
+    /**
+     * Mark N random normal tiles as poisoned.
+     * 
+     * Matching poisoned tiles causes the attacker to take 5 damage.
+     * Visual: green tint overlay.
+     * 
+     * @param {number} count - Number of tiles to poison
+     * @returns {{row: number, col: number}[]} Array of affected positions
+     */
+    poisonRandom(count) {
+        const normals = this.getNormalTiles();
+        this._shuffle(normals);
+        const targets = normals.slice(0, Math.min(count, normals.length));
+        const affected = [];
+
+        for (const field of targets) {
+            const tile = field.tile;
+            tile.poisoned = true;
+
+            // Visual: green poison overlay
+            if (!tile._poisonOverlay) {
+                const overlay = new Graphics();
+                const ts = App.config.tileSize;
+                overlay.beginFill(0x33cc33, 0.3);
+                overlay.drawRoundedRect(-ts / 2, -ts / 2, ts, ts, 10);
+                overlay.endFill();
+                overlay.x = tile.sprite.x;
+                overlay.y = tile.sprite.y;
+                overlay.zIndex = 5;
+                this.container.addChild(overlay);
+                tile._poisonOverlay = overlay;
+            }
+
+            affected.push({ row: field.row, col: field.col });
+        }
+
+        return affected;
+    }
+
+    // =========================================================================
+    // DESTRUCTION METHODS
+    // =========================================================================
+
+    /**
+     * Destroy all tiles in a given row.
+     * 
+     * @param {number} row - Row index (0-based)
+     * @returns {number} Number of tiles destroyed
+     */
+    destroyRow(row) {
+        let destroyed = 0;
+        for (let col = 0; col < this.cols; col++) {
+            const field = this.getField(row, col);
+            if (field && field.tile && !field.isVoid) {
+                this._removeTileOverlays(field.tile);
+                field.tile.remove();
+                destroyed++;
+            }
+        }
+        return destroyed;
+    }
+
+    /**
+     * Destroy all tiles in a given column.
+     * 
+     * @param {number} col - Column index (0-based)
+     * @returns {number} Number of tiles destroyed
+     */
+    destroyColumn(col) {
+        let destroyed = 0;
+        for (let row = 0; row < this.rows; row++) {
+            const field = this.getField(row, col);
+            if (field && field.tile && !field.isVoid) {
+                this._removeTileOverlays(field.tile);
+                field.tile.remove();
+                destroyed++;
+            }
+        }
+        return destroyed;
+    }
+
+    /**
+     * Destroy all tiles in an NxN area centered at (centerRow, centerCol).
+     * 
+     * @param {number} centerRow - Center row
+     * @param {number} centerCol - Center column
+     * @param {number} size - Area size (e.g., 3 = 3x3 area)
+     * @returns {number} Number of tiles destroyed
+     */
+    destroyArea(centerRow, centerCol, size) {
+        const halfSize = Math.floor(size / 2);
+        let destroyed = 0;
+
+        for (let r = centerRow - halfSize; r <= centerRow + halfSize; r++) {
+            for (let c = centerCol - halfSize; c <= centerCol + halfSize; c++) {
+                if (r < 0 || r >= this.rows || c < 0 || c >= this.cols) continue;
+                const field = this.getField(r, c);
+                if (field && field.tile && !field.isVoid) {
+                    this._removeTileOverlays(field.tile);
+                    field.tile.remove();
+                    destroyed++;
+                }
+            }
+        }
+
+        return destroyed;
+    }
+
+    /**
+     * Remove all visual overlays (frozen, corrupt, poison) from a tile.
+     * @param {Tile} tile
+     * @private
+     */
+    _removeTileOverlays(tile) {
+        if (!tile) return;
+
+        if (tile._frozenOverlay) {
+            this.container.removeChild(tile._frozenOverlay);
+            tile._frozenOverlay.destroy();
+            tile._frozenOverlay = null;
+        }
+        if (tile._corruptOverlay) {
+            this.container.removeChild(tile._corruptOverlay);
+            tile._corruptOverlay.destroy();
+            tile._corruptOverlay = null;
+        }
+        if (tile._poisonOverlay) {
+            this.container.removeChild(tile._poisonOverlay);
+            tile._poisonOverlay.destroy();
+            tile._poisonOverlay = null;
+        }
+    }
+
+    // =========================================================================
+    // COLOR MANIPULATION METHODS
+    // =========================================================================
+
+    /**
+     * Shuffle all tile colors randomly.
+     * 
+     * Keeps tiles in their fields, but reassigns random colors and recreates sprites.
+     * Uses the level's allowed tile types.
+     */
+    shuffleAll() {
+        for (const field of this.fields) {
+            if (!field.tile || field.isVoid || field.tile.isStone) continue;
+            const newColor = this.allowedTiles[
+                Math.floor(Math.random() * this.allowedTiles.length)
+            ];
+            this._recolorTile(field.tile, newColor);
+        }
+    }
+
+    /**
+     * Shuffle tiles in a single row.
+     * 
+     * @param {number} row - Row index (0-based)
+     */
+    shuffleRow(row) {
+        for (let col = 0; col < this.cols; col++) {
+            const field = this.getField(row, col);
+            if (!field || !field.tile || field.isVoid || field.tile.isStone) continue;
+            const newColor = this.allowedTiles[
+                Math.floor(Math.random() * this.allowedTiles.length)
+            ];
+            this._recolorTile(field.tile, newColor);
+        }
+    }
+
+    /**
+     * Set all tiles in a row to the same random color.
+     * 
+     * @param {number} row - Row index (0-based)
+     * @returns {Tile[]} Array of affected tiles
+     */
+    cloneRow(row) {
+        const cloneColor = this.allowedTiles[
+            Math.floor(Math.random() * this.allowedTiles.length)
+        ];
+        const affected = [];
+
+        for (let col = 0; col < this.cols; col++) {
+            const field = this.getField(row, col);
+            if (!field || !field.tile || field.isVoid || field.tile.isStone) continue;
+            this._recolorTile(field.tile, cloneColor);
+            affected.push(field.tile);
+        }
+
+        return affected;
+    }
+
+    /**
+     * Transform N random tiles to the same random color.
+     * 
+     * Picks a random color from allowed tiles, then changes N random normal tiles
+     * to that color.
+     * 
+     * @param {number} count - Number of tiles to transform
+     * @returns {{color: string, affected: {row: number, col: number}[]}}
+     */
+    rainbowTransform(count) {
+        const targetColor = this.allowedTiles[
+            Math.floor(Math.random() * this.allowedTiles.length)
+        ];
+        const normals = this.getNormalTiles();
+        this._shuffle(normals);
+        const targets = normals.slice(0, Math.min(count, normals.length));
+        const affected = [];
+
+        for (const field of targets) {
+            this._recolorTile(field.tile, targetColor);
+            affected.push({ row: field.row, col: field.col });
+        }
+
+        return { color: targetColor, affected };
+    }
+
+    // =========================================================================
+    // CLEANSE / PURIFY
+    // =========================================================================
+
+    /**
+     * Remove all corrupt, poison, frozen, and stone states from the board.
+     * 
+     * Stone tiles get replaced with new random normal tiles.
+     * Overlays are removed.
+     * 
+     * @returns {number} Number of tiles purified
+     */
+    purifyAll() {
+        let purified = 0;
+
+        for (const field of this.fields) {
+            if (!field.tile || field.isVoid) continue;
+            const tile = field.tile;
+            let wasDirty = false;
+
+            // Clear frozen
+            if (tile.frozen) {
+                tile.frozen = false;
+                tile.frozenDuration = 0;
+                wasDirty = true;
+            }
+
+            // Clear corrupt
+            if (tile.corrupt) {
+                tile.corrupt = false;
+                wasDirty = true;
+            }
+
+            // Clear poison
+            if (tile.poisoned) {
+                tile.poisoned = false;
+                wasDirty = true;
+            }
+
+            // Remove overlays
+            this._removeTileOverlays(tile);
+
+            // Replace stone tiles with new random tiles
+            if (tile.isStone) {
+                // Remove stone graphic
+                if (tile.sprite) {
+                    this.container.removeChild(tile.sprite);
+                    tile.sprite.destroy();
+                    tile.sprite = null;
+                }
+                tile.field = null;
+                field.tile = null;
+
+                // Create a fresh tile
+                this.createTile(field);
+                wasDirty = true;
+            }
+
+            if (wasDirty) purified++;
+        }
+
+        return purified;
+    }
+
+    // =========================================================================
+    // POSITIONAL MANIPULATION METHODS
+    // =========================================================================
+
+    /**
+     * Shift tiles in a row by 1 position, with wrapping.
+     * 
+     * @param {number} row - Row index (0-based)
+     * @param {number} direction - Positive = shift right, Negative = shift left
+     */
+    shiftRow(row, direction) {
+        // Collect tiles in order
+        const tiles = [];
+        for (let col = 0; col < this.cols; col++) {
+            const field = this.getField(row, col);
+            tiles.push(field ? field.tile : null);
+        }
+
+        // Rotate the array
+        if (direction > 0) {
+            // Shift right: last element goes to front
+            const last = tiles.pop();
+            tiles.unshift(last);
+        } else {
+            // Shift left: first element goes to end
+            const first = tiles.shift();
+            tiles.push(first);
+        }
+
+        // Reassign tiles to fields
+        for (let col = 0; col < this.cols; col++) {
+            const field = this.getField(row, col);
+            if (!field) continue;
+
+            const tile = tiles[col];
+            field.tile = tile;
+
+            if (tile) {
+                tile.field = field;
+                tile.setPosition(field.position);
+
+                // Update overlay positions if they exist
+                if (tile._frozenOverlay) {
+                    const halfTile = App.config.tileSize / 2;
+                    tile._frozenOverlay.x = field.position.x + halfTile;
+                    tile._frozenOverlay.y = field.position.y + halfTile;
+                }
+                if (tile._corruptOverlay) {
+                    const halfTile = App.config.tileSize / 2;
+                    tile._corruptOverlay.x = field.position.x + halfTile;
+                    tile._corruptOverlay.y = field.position.y + halfTile;
+                }
+                if (tile._poisonOverlay) {
+                    const halfTile = App.config.tileSize / 2;
+                    tile._poisonOverlay.x = field.position.x + halfTile;
+                    tile._poisonOverlay.y = field.position.y + halfTile;
+                }
+            }
+        }
+    }
+
+    /**
+     * Rotate tiles in an NxN area 90 degrees clockwise.
+     * 
+     * Moves tile references (and their sprites) around the area.
+     * 
+     * @param {number} startRow - Top-left row of the area
+     * @param {number} startCol - Top-left col of the area
+     * @param {number} size - Width/height of the area
+     */
+    rotateArea(startRow, startCol, size) {
+        // Collect current tiles in a 2D grid
+        const grid = [];
+        for (let r = 0; r < size; r++) {
+            grid[r] = [];
+            for (let c = 0; c < size; c++) {
+                const field = this.getField(startRow + r, startCol + c);
+                grid[r][c] = field ? field.tile : null;
+            }
+        }
+
+        // Assign rotated tiles: new[c][size-1-r] = old[r][c]
+        // For 90° clockwise: newGrid[c][size-1-r] = grid[r][c]
+        // Equivalently: destination row = c, destination col = size-1-r
+        for (let r = 0; r < size; r++) {
+            for (let c = 0; c < size; c++) {
+                const destRow = startRow + c;
+                const destCol = startCol + (size - 1 - r);
+
+                if (destRow >= this.rows || destCol >= this.cols) continue;
+
+                const destField = this.getField(destRow, destCol);
+                if (!destField) continue;
+
+                const tile = grid[r][c];
+                destField.tile = tile;
+
+                if (tile) {
+                    tile.field = destField;
+                    tile.setPosition(destField.position);
+
+                    // Update overlay positions
+                    const halfTile = App.config.tileSize / 2;
+                    if (tile._frozenOverlay) {
+                        tile._frozenOverlay.x = destField.position.x + halfTile;
+                        tile._frozenOverlay.y = destField.position.y + halfTile;
+                    }
+                    if (tile._corruptOverlay) {
+                        tile._corruptOverlay.x = destField.position.x + halfTile;
+                        tile._corruptOverlay.y = destField.position.y + halfTile;
+                    }
+                    if (tile._poisonOverlay) {
+                        tile._poisonOverlay.x = destField.position.x + halfTile;
+                        tile._poisonOverlay.y = destField.position.y + halfTile;
+                    }
+                }
+            }
+        }
+    }
+
+    // =========================================================================
+    // PER-TURN TICK METHODS
+    // =========================================================================
+
+    /**
+     * Decrease frozenDuration of all frozen tiles by 1.
+     * Unfreeze tiles that reach 0 and remove their ice overlay.
+     * 
+     * Call this at the start/end of each turn.
+     * 
+     * @returns {number} Number of tiles unfrozen this tick
+     */
+    tickFrozenTiles() {
+        let unfrozen = 0;
+
+        for (const field of this.fields) {
+            if (!field.tile) continue;
+            const tile = field.tile;
+
+            if (tile.frozen && tile.frozenDuration > 0) {
+                tile.frozenDuration--;
+
+                if (tile.frozenDuration <= 0) {
+                    tile.frozen = false;
+                    tile.frozenDuration = 0;
+
+                    // Remove ice overlay
+                    if (tile._frozenOverlay) {
+                        this.container.removeChild(tile._frozenOverlay);
+                        tile._frozenOverlay.destroy();
+                        tile._frozenOverlay = null;
+                    }
+
+                    unfrozen++;
+                }
+            }
+        }
+
+        return unfrozen;
+    }
+
+    /**
+     * Decrease hiddenDuration of all hidden tiles by 1.
+     * Un-hide tiles that reach 0 and restore their sprite visibility.
+     * 
+     * @returns {number} Number of tiles revealed this tick
+     */
+    tickHiddenTiles() {
+        let revealed = 0;
+
+        for (const field of this.fields) {
+            if (!field.tile) continue;
+            const tile = field.tile;
+
+            if (tile.hidden && tile.hiddenDuration > 0) {
+                tile.hiddenDuration--;
+
+                if (tile.hiddenDuration <= 0) {
+                    tile.hidden = false;
+                    tile.hiddenDuration = 0;
+
+                    // Show sprite again
+                    if (tile.sprite) {
+                        tile.sprite.visible = true;
+                    }
+
+                    revealed++;
+                }
+            }
+        }
+
+        return revealed;
+    }
+
+    // =========================================================================
+    // INPUT CONTROL
+    // =========================================================================
+
+    /**
+     * Enable or disable tile click events on the board.
+     * 
+     * Used to lock the board during boss turn, animations, etc.
+     * When disabled, pointerdown events on tiles are ignored.
+     * 
+     * @param {boolean} enabled - true to enable input, false to disable
+     */
+    setInputEnabled(enabled) {
+        this.inputEnabled = enabled;
+
+        // Also update cursor style for visual feedback
+        for (const field of this.fields) {
+            if (!field.tile || !field.tile.sprite) continue;
+            if (field.tile.isStone) continue;
+
+            field.tile.sprite.cursor = enabled ? 'pointer' : 'default';
+            field.tile.sprite.eventMode = enabled ? 'static' : 'none';
+        }
     }
 }
