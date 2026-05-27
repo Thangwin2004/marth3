@@ -223,7 +223,11 @@ export class MainMenuScene {
             gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 });
             gsap.to(bg, { alpha: 0.85, duration: 0.15 });
         });
-        bg.on('pointerdown', onClick);
+        bg.on('pointerdown', () => {
+            this.container.eventMode = 'none';
+            this.container.interactiveChildren = false;
+            onClick();
+        });
 
         // Entrance animation
         btn.alpha = 0;

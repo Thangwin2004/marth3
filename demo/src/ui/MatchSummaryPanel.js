@@ -100,6 +100,15 @@ export class MatchSummaryPanel {
                 item.addChild(countText);
             });
 
+            // Override destroy to clean up all tweens on container, scale, comboText.scale
+            const originalDestroy = container.destroy.bind(container);
+            container.destroy = (options) => {
+                gsap.killTweensOf(container);
+                gsap.killTweensOf(container.scale);
+                gsap.killTweensOf(comboText.scale);
+                originalDestroy(options);
+            };
+
             // --- ANIMATIONS ---
             // Enter: scale up & fade in
             gsap.to(container, { alpha: 1, duration: 0.3 });
