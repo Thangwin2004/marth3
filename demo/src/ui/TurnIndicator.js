@@ -54,6 +54,17 @@ export class TurnIndicator {
     }
     
     destroy() {
-        this.container.destroy({ children: true });
+        if (this.container) {
+            // Kill all running tweens on the container itself
+            gsap.killTweensOf(this.container);
+            // Kill all running tweens on any of its children (such as bg or label)
+            this.container.children.forEach(child => {
+                gsap.killTweensOf(child);
+                if (child.scale) {
+                    gsap.killTweensOf(child.scale);
+                }
+            });
+            this.container.destroy({ children: true });
+        }
     }
 }

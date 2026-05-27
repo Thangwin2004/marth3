@@ -11,6 +11,7 @@ export class Projectile {
      * @returns {Promise<void>}
      */
     static async fire(parent, start, end, color = 0xff6240) {
+        if (!parent || parent.destroyed) return;
         const container = new Container();
         container.zIndex = 150;
         parent.addChild(container);
@@ -48,12 +49,17 @@ export class Projectile {
         }
         
         // Main projectile movement
-        await gsap.to(proj, {
-            x: end.x,
-            y: end.y,
-            duration: 0.4,
-            ease: 'power2.in',
-        });
+        try {
+            await gsap.to(proj, {
+                x: end.x,
+                y: end.y,
+                duration: 0.4,
+                ease: 'power2.in',
+            });
+        } catch (e) {}
+        
+        // Safety check after async movement
+        if (parent.destroyed || container.destroyed) return;
         
         // Impact burst
         Projectile.burst(container, end.x, end.y, color);
@@ -63,7 +69,16 @@ export class Projectile {
         
         // Wait for particles then destroy
         await new Promise(r => setTimeout(r, 600));
-        container.destroy({ children: true });
+        
+        if (!container.destroyed) {
+            // Kill all running tweens on any of its children before destroying
+            gsap.killTweensOf(container);
+            container.children.forEach(child => {
+                gsap.killTweensOf(child);
+                if (child.scale) gsap.killTweensOf(child.scale);
+            });
+            container.destroy({ children: true });
+        }
     }
     
     /**
@@ -74,6 +89,7 @@ export class Projectile {
      * @param {number} color
      */
     static burst(parent, x, y, color) {
+        if (!parent || parent.destroyed) return;
         const count = 12;
         for (let i = 0; i < count; i++) {
             const p = new Graphics();
@@ -93,7 +109,11 @@ export class Projectile {
                 alpha: 0,
                 duration: 0.5 + Math.random() * 0.3,
                 ease: 'power2.out',
-                onComplete: () => p.destroy(),
+                onComplete: () => {
+                    if (p && !p.destroyed) {
+                        try { p.destroy(); } catch (e) {}
+                    }
+                },
             });
         }
     }
@@ -105,6 +125,7 @@ export class Projectile {
      * @param {number} y
      */
     static async heal(parent, x, y) {
+        if (!parent || parent.destroyed) return;
         const count = 10;
         for (let i = 0; i < count; i++) {
             const p = new Graphics();
@@ -120,7 +141,11 @@ export class Projectile {
                 duration: 0.6 + Math.random() * 0.4,
                 delay: i * 0.05,
                 ease: 'power2.out',
-                onComplete: () => p.destroy(),
+                onComplete: () => {
+                    if (p && !p.destroyed) {
+                        try { p.destroy(); } catch (e) {}
+                    }
+                },
             });
         }
         await new Promise(r => setTimeout(r, 800));
@@ -130,6 +155,7 @@ export class Projectile {
      * Shield effect around target.
      */
     static async shield(parent, x, y) {
+        if (!parent || parent.destroyed) return;
         const shield = new Graphics();
         shield.circle(0, 0, 45);
         shield.stroke({ color: 0x42a5f5, width: 3 });
@@ -140,7 +166,16 @@ export class Projectile {
         parent.addChild(shield);
         
         gsap.to(shield.scale, { x: 1.2, y: 1.2, duration: 0.3, ease: 'back.out(2)' });
-        gsap.to(shield, { alpha: 0, duration: 0.8, delay: 0.4, onComplete: () => shield.destroy() });
+        gsap.to(shield, {
+            alpha: 0,
+            duration: 0.8,
+            delay: 0.4,
+            onComplete: () => {
+                if (shield && !shield.destroyed) {
+                    try { shield.destroy(); } catch (e) {}
+                }
+            }
+        });
         await new Promise(r => setTimeout(r, 800));
     }
     
