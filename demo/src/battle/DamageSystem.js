@@ -62,6 +62,21 @@ export class DamageSystem {
             if (attacker.name === 'Player') {
                 const dmgMultiplier = 1 + (this.levelNum - 1) * 0.15;
                 matchDamage *= dmgMultiplier;
+            } else {
+                // Scale Boss damage based on level to prevent early bosses from unexpectedly one-shotting the player.
+                // Level 1 starts at 35% damage, gradually scaling up to 100% at Level 10 (Final Boss).
+                let bossScale = 1.0;
+                if (this.levelNum === 1) bossScale = 0.35;
+                else if (this.levelNum === 2) bossScale = 0.40;
+                else if (this.levelNum === 3) bossScale = 0.48;
+                else if (this.levelNum === 4) bossScale = 0.55;
+                else if (this.levelNum === 5) bossScale = 0.63;
+                else if (this.levelNum === 6) bossScale = 0.70;
+                else if (this.levelNum === 7) bossScale = 0.76;
+                else if (this.levelNum === 8) bossScale = 0.82;
+                else if (this.levelNum === 9) bossScale = 0.90;
+                
+                matchDamage *= bossScale;
             }
 
             // Elemental weakness/resistance (defender-specific)
