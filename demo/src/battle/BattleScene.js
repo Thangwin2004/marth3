@@ -59,6 +59,7 @@ export class BattleScene {
         this.turnCount = 0;
         this.comboCount = 0;
         this.elementGuideActive = false;
+        this.bossMissCount = 0;
         this.disabled = false;
         this.selectedTile = null;
         this.isGameOver = false;
@@ -419,8 +420,10 @@ export class BattleScene {
                 }
             } else {
                 if (who === 'player') {
-                    this.disabled = false;
+                    this.hud.setLog('❌ Swap missed! You lost your turn!');
+                    this.switchTurn();
                 } else {
+                    this.hud.setLog('💀 Boss missed the swap! Turn passes to you!');
                     this.switchTurn();
                 }
             }
@@ -648,7 +651,41 @@ export class BattleScene {
     //  BOSS TURN (AI)
     // ================================================================
 
+    getBossMaxMisses() {
+        const level = this.levelNum;
+        if (level <= 4) return Infinity; // Unlimited misses in early levels (impossible to die if low HP)
+        if (level === 5) return 8;
+        if (level === 6) return 6;
+        if (level === 7) return 5;
+        if (level === 8) return 4;
+        if (level === 9) return 3;
+        return 2; // Level 10: 1 to 3 misses (let's set it to 2!)
+    }
+
+    shouldBossMiss() {
+        const hpPercent = this.player.hp / this.player.maxHP;
+        if (hpPercent <= 0.3) {
+            // Player is low HP (<= 30%)
+            const maxMisses = this.getBossMaxMisses();
+            if (this.bossMissCount < maxMisses) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     async executeBossTurn() {
+        // Dynamic Dynamic Difficulty: check if Boss should miss to ease low-HP player experience
+        if (this.shouldBossMiss()) {
+            const missChoice = this.bossAI.findInvalidSwap(this.board, this.combinationManager);
+            if (missChoice) {
+                this.bossMissCount++;
+                this.hud.setLog('💀 Boss makes a move...');
+                this.swap(missChoice.tile1, missChoice.tile2, false, 'boss');
+                return;
+            }
+        }
+
         const swapChoice = this.bossAI.findBestSwap(
             this.board,
             this.combinationManager,
