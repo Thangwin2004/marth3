@@ -76,10 +76,9 @@ export class Game {
         const padding = 16;
 
         this.boardBg = new Graphics();
-        this.boardBg.beginFill(0x121925, 0.96);
-        this.boardBg.lineStyle(3, 0x324b8b, 0.45);
-        this.boardBg.drawRoundedRect(0, 0, boardWidth + padding * 2, boardHeight + padding * 2, 24);
-        this.boardBg.endFill();
+        this.boardBg.roundRect(0, 0, boardWidth + padding * 2, boardHeight + padding * 2, 24);
+        this.boardBg.fill({ color: 0x121925, alpha: 0.96 });
+        this.boardBg.stroke({ color: 0x324b8b, width: 3, alpha: 0.45 });
         this.boardBg.x = this.board.container.x - padding;
         this.boardBg.y = this.board.container.y - padding;
     }

@@ -392,9 +392,8 @@ export class Board {
             if (!tile._frozenOverlay) {
                 const overlay = new Graphics();
                 const ts = App.config.tileSize;
-                overlay.beginFill(0x88ccff, 0.4);
-                overlay.drawRoundedRect(-ts / 2, -ts / 2, ts, ts, 10);
-                overlay.endFill();
+                overlay.roundRect(-ts / 2, -ts / 2, ts, ts, 10);
+                overlay.fill({ color: 0x88ccff, alpha: 0.4 });
                 overlay.x = tile.sprite.x;
                 overlay.y = tile.sprite.y;
                 overlay.zIndex = 5;
@@ -430,9 +429,8 @@ export class Board {
             if (!tile._corruptOverlay) {
                 const overlay = new Graphics();
                 const ts = App.config.tileSize;
-                overlay.beginFill(0x8800aa, 0.35);
-                overlay.drawRoundedRect(-ts / 2, -ts / 2, ts, ts, 10);
-                overlay.endFill();
+                overlay.roundRect(-ts / 2, -ts / 2, ts, ts, 10);
+                overlay.fill({ color: 0x8800aa, alpha: 0.35 });
                 overlay.x = tile.sprite.x;
                 overlay.y = tile.sprite.y;
                 overlay.zIndex = 5;
@@ -477,17 +475,16 @@ export class Board {
             // Create stone visual (gray rectangle)
             const ts = App.config.tileSize;
             const stoneGraphic = new Graphics();
-            stoneGraphic.beginFill(0x666666, 0.9);
-            stoneGraphic.lineStyle(2, 0x888888, 0.6);
-            stoneGraphic.drawRoundedRect(-ts / 2, -ts / 2, ts, ts, 12);
-            stoneGraphic.endFill();
+            stoneGraphic.roundRect(-ts / 2, -ts / 2, ts, ts, 12);
+            stoneGraphic.fill({ color: 0x666666, alpha: 0.9 });
+            stoneGraphic.stroke({ color: 0x888888, width: 2, alpha: 0.6 });
 
             // Inner crack details
-            stoneGraphic.lineStyle(1, 0x555555, 0.5);
             stoneGraphic.moveTo(-ts * 0.2, -ts * 0.1);
             stoneGraphic.lineTo(ts * 0.1, ts * 0.15);
             stoneGraphic.moveTo(ts * 0.05, -ts * 0.2);
             stoneGraphic.lineTo(-ts * 0.1, ts * 0.1);
+            stoneGraphic.stroke({ color: 0x555555, width: 1, alpha: 0.5 });
 
             const halfTile = ts / 2;
             stoneGraphic.x = field.position.x + halfTile;
@@ -569,9 +566,8 @@ export class Board {
             if (!tile._poisonOverlay) {
                 const overlay = new Graphics();
                 const ts = App.config.tileSize;
-                overlay.beginFill(0x33cc33, 0.3);
-                overlay.drawRoundedRect(-ts / 2, -ts / 2, ts, ts, 10);
-                overlay.endFill();
+                overlay.roundRect(-ts / 2, -ts / 2, ts, ts, 10);
+                overlay.fill({ color: 0x33cc33, alpha: 0.3 });
                 overlay.x = tile.sprite.x;
                 overlay.y = tile.sprite.y;
                 overlay.zIndex = 5;
