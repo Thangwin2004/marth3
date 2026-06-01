@@ -1,10 +1,9 @@
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture, Text } from 'pixi.js';
 import gsap from 'gsap';
 import { Config } from '../config.js';
 import { App } from '../system/App.js';
 import { sceneManager } from '../system/SceneManager.js';
 import { saveManager } from '../system/SaveManager.js';
-
 
 export class MainMenuScene {
     constructor(data = {}) {
@@ -15,19 +14,30 @@ export class MainMenuScene {
         App.setBackgroundColor(0x0a0a1a);
 
         // === BACKGROUND ===
-        // Dark gradient background with subtle animated particles
-        const bg = new Graphics();
-        bg.rect(0, 0, Config.canvas.width, Config.canvas.height);
-        bg.fill({ color: 0x0a0a1a });
+        // Use a solid-color Sprite (Texture.WHITE) instead of Graphics to be 100% immune to PixiJS v8 RenderGroup bugs
+        const bg = new Sprite(Texture.WHITE);
+        bg.width = Config.canvas.width;
+        bg.height = Config.canvas.height;
+        bg.tint = 0x0a0a1a;
         this.container.addChild(bg);
 
-        // Floating particles (small circles that drift upward slowly)
+        // === PARTICLES ===
+        // Draw a circular particle shape ONCE and convert it to a texture for high-performance Sprite rendering
+        const tempParticle = new Graphics();
+        tempParticle.circle(8, 8, 8);
+        tempParticle.fill({ color: 0xffffff });
+        const particleTexture = App.app.renderer.generateTexture({ target: tempParticle });
+        tempParticle.destroy();
+
+        // Spawn 30 drifting Sprite-based particles
         this.particles = [];
         for (let i = 0; i < 30; i++) {
-            const p = new Graphics();
             const size = 1 + Math.random() * 3;
-            p.circle(0, 0, size);
-            p.fill({ color: 0xffffff, alpha: 0.1 + Math.random() * 0.2 });
+            const p = new Sprite(particleTexture);
+            p.anchor.set(0.5);
+            p.width = size * 2;
+            p.height = size * 2;
+            p.alpha = 0.1 + Math.random() * 0.2;
             p.x = Math.random() * Config.canvas.width;
             p.y = Math.random() * Config.canvas.height;
             this.container.addChild(p);
@@ -56,15 +66,22 @@ export class MainMenuScene {
         titleContainer.y = 160;
         this.container.addChild(titleContainer);
 
-        // Glow behind title
-        const glowWrapper = new Container();
-        const glow = new Graphics();
-        glow.circle(0, 0, 120);
-        glow.fill({ color: 0x4fc3f7, alpha: 0.08 });
-        glowWrapper.addChild(glow);
-        titleContainer.addChild(glowWrapper);
-        gsap.to(glowWrapper, { alpha: 0.15, duration: 2, yoyo: true, repeat: -1, ease: 'sine.inOut' });
-        gsap.to(glowWrapper.scale, { x: 1.2, y: 1.2, duration: 3, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        // Generate circular texture for glow once to use a Sprite
+        const tempGlow = new Graphics();
+        tempGlow.circle(120, 120, 120);
+        tempGlow.fill({ color: 0xffffff });
+        const glowTexture = App.app.renderer.generateTexture({ target: tempGlow });
+        tempGlow.destroy();
+
+        // Glow behind title (Sprite-based)
+        const glow = new Sprite(glowTexture);
+        glow.anchor.set(0.5);
+        glow.tint = 0x4fc3f7;
+        glow.alpha = 0.08;
+        titleContainer.addChild(glow);
+        
+        gsap.to(glow, { alpha: 0.15, duration: 2, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        gsap.to(glow.scale, { x: 1.2, y: 1.2, duration: 3, yoyo: true, repeat: -1, ease: 'sine.inOut' });
 
         // Main title
         const title = new Text({
@@ -90,15 +107,15 @@ export class MainMenuScene {
         subtitle.y = 45;
         titleContainer.addChild(subtitle);
 
-        // Decorative line
-        const lineWrapper = new Container();
-        const line = new Graphics();
-        line.rect(-150, 0, 300, 2);
-        line.fill({ color: 0x4fc3f7, alpha: 0.4 });
-        lineWrapper.addChild(line);
-        
-        lineWrapper.y = 75;
-        titleContainer.addChild(lineWrapper);
+        // Decorative line (Sprite-based using Texture.WHITE)
+        const line = new Sprite(Texture.WHITE);
+        line.anchor.set(0.5);
+        line.width = 300;
+        line.height = 2;
+        line.tint = 0x4fc3f7;
+        line.alpha = 0.4;
+        line.y = 75;
+        titleContainer.addChild(line);
 
         // === SAVE INFO ===
         const save = saveManager.load();
@@ -198,26 +215,33 @@ export class MainMenuScene {
         btn.y = y;
         this.container.addChild(btn);
 
-        const halfW = width / 2;
-        const bg = new Graphics();
-        bg.roundRect(-halfW, -24, width, 48, 12);
-        bg.fill({ color, alpha: 0.85 });
-        bg.stroke({ color: 0xffffff, width: 1, alpha: 0.2 });
+        // Generate rounded rect texture for bg
+        const tempBg = new Graphics();
+        tempBg.roundRect(0, 0, width, 48, 12);
+        tempBg.fill({ color: 0xffffff });
+        const bgTexture = App.app.renderer.generateTexture({ target: tempBg });
+        tempBg.destroy();
+
+        const bg = new Sprite(bgTexture);
+        bg.anchor.set(0.5);
+        bg.tint = color;
+        bg.alpha = 0.85;
         bg.eventMode = 'static';
         bg.cursor = 'pointer';
+        btn.addChild(bg);
 
-        const bgWrapper = new Container();
-        bgWrapper.addChild(bg);
-        btn.addChild(bgWrapper);
+        // Generate rounded rect texture for shine
+        const tempShine = new Graphics();
+        tempShine.roundRect(0, 0, width, 24, 12);
+        tempShine.fill({ color: 0xffffff });
+        const shineTexture = App.app.renderer.generateTexture({ target: tempShine });
+        tempShine.destroy();
 
-        // Subtle shine
-        const shine = new Graphics();
-        shine.roundRect(-halfW, -24, width, 24, 12);
-        shine.fill({ color: 0xffffff, alpha: 0.08 });
-        
-        const shineWrapper = new Container();
-        shineWrapper.addChild(shine);
-        btn.addChild(shineWrapper);
+        const shine = new Sprite(shineTexture);
+        shine.anchor.set(0.5);
+        shine.y = -12; // Position it at the top half
+        shine.alpha = 0.08;
+        btn.addChild(shine);
 
         const text = new Text({
             text: label,
@@ -257,7 +281,12 @@ export class MainMenuScene {
         };
         killTweensRecursive(this.container);
 
-        this.particles.forEach(p => gsap.killTweensOf(p));
+        this.particles.forEach(p => {
+            gsap.killTweensOf(p);
+            if (p.texture && p.texture !== Texture.WHITE) {
+                // Keep the shared texture intact but clean up the Sprite
+            }
+        });
         this.container.destroy({ children: true });
     }
 }
