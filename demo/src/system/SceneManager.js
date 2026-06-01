@@ -23,9 +23,6 @@ class SceneManager {
     /** @type {Container|null} Currently active scene container */
     this.currentScene = null;
 
-    /** @type {Container|null} Transition wrapper container to avoid mutating scene containers directly */
-    this.transitionContainer = null;
-
     /** @type {import('pixi.js').Application|null} PixiJS application reference */
     this.app = null;
   }
@@ -63,46 +60,31 @@ class SceneManager {
         this.currentScene.container.interactiveChildren = false;
       }
 
-      // Animate the transition wrapper container instead of the scene container
-      // to avoid mutating containers with direct Graphics children
-      const fadeContainer = this.transitionContainer || this.currentScene.container;
-
-      await gsap.to(fadeContainer, {
+      await gsap.to(this.currentScene.container, {
         alpha: 0,
         duration: 0.3,
         ease: 'power2.inOut',
       });
 
-      this.app.stage.removeChild(fadeContainer);
+      this.app.stage.removeChild(this.currentScene.container);
       this.currentScene.destroy();
       this.currentScene = null;
-      this.transitionContainer = null;
     }
 
     // ── Create & fade in new scene ───────────────────────────────────────
     const newScene = new SceneClass(data);
-    
-    // Create a plain transition wrapper container that contains the scene
-    const transitionContainer = new Container();
-    transitionContainer.enableRenderGroup();
-    transitionContainer.alpha = 0;
 
-    if (newScene.container) {
-      newScene.container.enableRenderGroup();
-    }
-    
-    transitionContainer.addChild(newScene.container);
-    
-    this.app.stage.addChild(transitionContainer);
+    // Add scene container directly to stage (no wrapper)
+    newScene.container.alpha = 0;
+    this.app.stage.addChild(newScene.container);
 
-    await gsap.to(transitionContainer, {
+    await gsap.to(newScene.container, {
       alpha: 1,
       duration: 0.3,
       ease: 'power2.inOut',
     });
 
     this.currentScene = newScene;
-    this.transitionContainer = transitionContainer;
   }
 
   /**
