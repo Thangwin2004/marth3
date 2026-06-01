@@ -184,7 +184,7 @@ export class BattleScene {
         const currentRound = Math.floor((this.turnCount - 1) / 2) + 1;
 
         // Check if Boss should enter Enraged (Cuồng Nộ) state
-        if (currentRound > 12 && this.hud && this.hud.bossSprite && !this.hud.bossSprite.isEnraged) {
+        if (currentRound > 18 && this.hud && this.hud.bossSprite && !this.hud.bossSprite.isEnraged) {
             this.hud.bossSprite.setEnraged(true);
             this.hud.setLog('🔥 WARNING: The Boss has entered ENRAGED state! Sát thương Boss tăng thêm!');
             await this.turnIndicator.show('💀 BOSS ENRAGED! 💀', '#ff1744');

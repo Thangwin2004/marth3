@@ -79,16 +79,18 @@ export class DamageSystem {
                 
                 matchDamage *= bossScale;
 
-                // Enrage Timer (Cuồng Nộ) — after round 12, damage increases.
-                // Rounds 13-20: +25% damage per round (cumulative).
+                // Enrage Timer (Cuồng Nộ) — after round 18, damage increases.
+                // Rounds 19-20: +25% damage per round (cumulative).
                 // Round 21 onwards: +20% damage per round (cumulative).
-                if (currentRound > 12) {
-                    const extraRounds = currentRound - 12;
+                if (currentRound > 18) {
+                    const extraRounds = currentRound - 18;
                     let enrageBonus = 0;
-                    if (extraRounds <= 8) {
+                    if (currentRound <= 20) {
                         enrageBonus = extraRounds * 0.25;
                     } else {
-                        enrageBonus = (8 * 0.25) + (extraRounds - 8) * 0.20;
+                        // 2 rounds of 25% (Rounds 19 & 20) = +50% (0.50)
+                        // Subsequent rounds (from 21 onwards) add 20% (0.20)
+                        enrageBonus = 0.50 + (currentRound - 20) * 0.20;
                     }
                     matchDamage *= (1 + enrageBonus);
                 }
