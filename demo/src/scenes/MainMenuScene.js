@@ -122,7 +122,7 @@ export class MainMenuScene {
         const skillCount = save.unlockedSkills?.length || 0;
 
         const infoText = new Text({
-            text: `📂 Level ${currentLevel} | Skills: ${skillCount}/9`,
+            text: `📂 Level ${currentLevel} | Hero Lvl ${save.heroLevel || 1} | Vàng: ${save.gold || 0}g`,
             style: { fontFamily: 'Arial', fontSize: 16, fill: '#888888' },
         });
         infoText.anchor.set(0.5);
@@ -173,20 +173,18 @@ export class MainMenuScene {
             }
         );
 
-        // Reset save button
-        if (currentLevel > 1) {
-            this.createMenuButton(
-                '🗑️ Reset Progress',
-                Config.canvas.width / 2, btnStartY + 195,
-                0x8b0000, 200,
-                async () => {
-                    saveManager.reset();
-                    // Refresh menu
-                    const { MainMenuScene } = await import('./MainMenuScene.js');
-                    await sceneManager.switchTo(MainMenuScene);
-                }
-            );
-        }
+        // Unified Reset save button (always visible so players can wipe gold, elements, gear, level progress, etc.)
+        this.createMenuButton(
+            '🗑️ Reset Toàn Bộ Dữ Liệu',
+            Config.canvas.width / 2, btnStartY + (currentLevel > 1 ? 195 : 130),
+            0x8b0000, 260,
+            async () => {
+                saveManager.reset();
+                // Refresh menu
+                const { MainMenuScene } = await import('./MainMenuScene.js');
+                await sceneManager.switchTo(MainMenuScene);
+            }
+        );
 
         // === BOTTOM INFO ===
         const versionText = new Text({
