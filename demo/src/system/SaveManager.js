@@ -19,7 +19,7 @@ function defaultSave() {
   return {
     currentLevel: 1,
     unlockedLevels: [1],
-    unlockedSkills: [],
+    unlockedSkills: ['fireball'],
     bestScores: {},
     // RPG PROGRESSION DATA
     gold: 200, // Bắt đầu với 200 Vàng (tăng một chút để người chơi dễ tiếp cận trang bị sớm)
@@ -84,11 +84,26 @@ class SaveManager {
       
       // Dynamic auto-equipment for passives based on level completion:
       const unlockedLevels = loaded.unlockedLevels || defaults.unlockedLevels;
-      if (unlockedLevels.includes(3)) {
-        equippedSkills.passives = ['elem_crit', 'nat_regrow'];
-      } else {
-        equippedSkills.passives = [];
+      equippedSkills.passives = [];
+      if (unlockedLevels.includes(2)) {
+        equippedSkills.passives.push('elem_crit');
       }
+      if (unlockedLevels.includes(3)) {
+        equippedSkills.passives.push('nat_regrow');
+      }
+      
+      // Ensure custom active skills rewarded outside standard LEVELS config are unlocked
+      const unlockedSkills = loaded.unlockedSkills || defaults.unlockedSkills || [];
+      if (!unlockedSkills.includes('fireball')) {
+        unlockedSkills.push('fireball');
+      }
+      if (unlockedLevels.includes(4) && !unlockedSkills.includes('meteor_shower')) {
+        unlockedSkills.push('meteor_shower');
+      }
+      if (unlockedLevels.includes(6) && !unlockedSkills.includes('quartz_fortress')) {
+        unlockedSkills.push('quartz_fortress');
+      }
+      loaded.unlockedSkills = unlockedSkills;
       
       return {
         ...defaults,
@@ -234,6 +249,14 @@ class SaveManager {
     }
     if (level > data.currentLevel) {
       data.currentLevel = level;
+    }
+    // Auto-unlock meteor_shower and quartz_fortress when level 4 (Map 3 beaten) and level 6 (Map 5 beaten) are unlocked
+    data.unlockedSkills = data.unlockedSkills || [];
+    if (level === 4 && !data.unlockedSkills.includes('meteor_shower')) {
+      data.unlockedSkills.push('meteor_shower');
+    }
+    if (level === 6 && !data.unlockedSkills.includes('quartz_fortress')) {
+      data.unlockedSkills.push('quartz_fortress');
     }
     this.save(data);
   }

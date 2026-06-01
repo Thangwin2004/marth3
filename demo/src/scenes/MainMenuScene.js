@@ -175,7 +175,7 @@ export class MainMenuScene {
 
         // Unified Reset save button (always visible so players can wipe gold, elements, gear, level progress, etc.)
         this.createMenuButton(
-            '🗑️ Reset Toàn Bộ Dữ Liệu',
+            '🗑️ Reset Data',
             Config.canvas.width / 2, btnStartY + (currentLevel > 1 ? 195 : 130),
             0x8b0000, 260,
             async () => {

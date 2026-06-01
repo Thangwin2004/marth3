@@ -744,6 +744,20 @@ export class HeroSanctuaryScene {
             activeSkillGrid.y = my + 122;
             this.masteryPanel.addChild(activeSkillGrid);
 
+            const mapRequirements = {
+                fireball: 1,
+                heal: 2,
+                shuffle: 3,
+                meteor_shower: 3,
+                barrier: 4,
+                lightning: 5,
+                quartz_fortress: 5,
+                purify: 6,
+                bomb: 7,
+                rainbow: 8,
+                extraTurn: 9
+            };
+
             const allSkills = Object.values(SKILLS);
             const cardSize = 54;
             const gap = 12;
@@ -755,7 +769,7 @@ export class HeroSanctuaryScene {
                 const kx = col * (cardSize + gap);
                 const ky = row * (cardSize + gap);
 
-                const isUnlocked = save.unlockedLevels && save.unlockedLevels.includes(skill.unlockedAtLevel);
+                const isUnlocked = skill.id === 'fireball' || (save.unlockedSkills && save.unlockedSkills.includes(skill.id));
                 const isEquipped = save.equippedSkills ? (save.equippedSkills.active === skill.id) : (skill.id === 'fireball');
 
                 const skillCard = new Container();
@@ -788,7 +802,7 @@ export class HeroSanctuaryScene {
 
                 if (!isUnlocked) {
                     const lockLbl = new Text({
-                        text: `Map ${skill.unlockedAtLevel - 1}`,
+                        text: `Map ${mapRequirements[skill.id] || 1}`,
                         style: { fontFamily: 'Arial', fontSize: 8, fill: '#888888', fontWeight: 'bold' }
                     });
                     lockLbl.anchor.set(0.5);
@@ -846,7 +860,6 @@ export class HeroSanctuaryScene {
             pasSub.y = my + 102;
             this.masteryPanel.addChild(pasSub);
 
-            const isPassiveUnlocked = save.unlockedLevels && save.unlockedLevels.includes(3);
             const allPassives = Object.values(PASSIVE_SKILLS);
             allPassives.forEach((passive, index) => {
                 const px = mx + 325;
@@ -854,16 +867,18 @@ export class HeroSanctuaryScene {
                 const pW = 285;
                 const pH = 110;
 
+                const isUnlocked = save.unlockedLevels && save.unlockedLevels.includes(passive.id === 'elem_crit' ? 2 : 3);
+
                 const passCard = new Container();
                 passCard.x = px;
                 passCard.y = py;
-                if (!isPassiveUnlocked) {
+                if (!isUnlocked) {
                     passCard.alpha = 0.5;
                     passCard.eventMode = 'none';
                 }
                 this.masteryPanel.addChild(passCard);
 
-                const isEquipped = isPassiveUnlocked; // Automatically active once unlocked
+                const isEquipped = isUnlocked; // Automatically active once unlocked
 
                 const passBg = new Graphics();
                 passBg.roundRect(0, 0, pW, pH, 12);
@@ -887,7 +902,7 @@ export class HeroSanctuaryScene {
                 pDesc.y = 38;
                 passCard.addChild(pDesc);
 
-                if (!isPassiveUnlocked) {
+                if (!isUnlocked) {
                     // Glassmorphic lock overlay
                     const lockBg = new Graphics();
                     lockBg.roundRect(15, pH - 38, pW - 30, 26, 6);
@@ -896,7 +911,7 @@ export class HeroSanctuaryScene {
                     passCard.addChild(lockBg);
 
                     const lockText = new Text({
-                        text: '🔒 Khóa (Vượt 2 map đầu)',
+                        text: passive.id === 'elem_crit' ? '🔒 Khóa (Vượt map 1)' : '🔒 Khóa (Vượt map 2)',
                         style: { fontFamily: 'Arial', fontSize: 10, fontWeight: 'bold', fill: '#ff5252' }
                     });
                     lockText.anchor.set(0.5);
