@@ -84,7 +84,13 @@ class SceneManager {
     
     // Create a plain transition wrapper container that contains the scene
     const transitionContainer = new Container();
+    transitionContainer.enableRenderGroup();
     transitionContainer.alpha = 0;
+
+    if (newScene.container) {
+      newScene.container.enableRenderGroup();
+    }
+    
     transitionContainer.addChild(newScene.container);
     
     this.app.stage.addChild(transitionContainer);

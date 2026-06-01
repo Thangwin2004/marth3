@@ -9,6 +9,7 @@ import { saveManager } from '../system/SaveManager.js';
 export class MainMenuScene {
     constructor(data = {}) {
         this.container = new Container();
+        this.container.enableRenderGroup();
         this.container.sortableChildren = true;
 
         App.setBackgroundColor(0x0a0a1a);

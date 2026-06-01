@@ -52,6 +52,7 @@ export class BattleScene {
 
         // Root container
         this.container = new Container();
+        this.container.enableRenderGroup();
         this.container.sortableChildren = true;
 
         // State
