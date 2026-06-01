@@ -42,6 +42,12 @@ export class StatusEffectManager {
    * @param {StatusEffect} effect - The effect to apply (will be shallow-cloned).
    */
   addEffect(entity, effect) {
+    // Quartz Fortress Stun Immunity Check
+    if (effect.type === 'stun' && entity.name === 'Player' && entity.quartzImmunityTurns > 0) {
+      console.log('[StatusEffects] Player is immune to Stun due to Quartz Fortress!');
+      return;
+    }
+
     const clone = { ...effect };
     const existing = entity.statusEffects.find(e => e.type === clone.type);
 

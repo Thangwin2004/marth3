@@ -38,7 +38,11 @@ function defaultSave() {
       armor: null,
       relic: null
     },
-    inventory: []
+    inventory: [],
+    equippedSkills: {
+      active: 'fireball',
+      passives: []
+    }
   };
 }
 
@@ -75,6 +79,7 @@ class SaveManager {
       const elementShards = { ...defaults.elementShards, ...loaded.elementShards };
       const masteryLevels = { ...defaults.masteryLevels, ...loaded.masteryLevels };
       const equippedItems = { ...defaults.equippedItems, ...loaded.equippedItems };
+      const equippedSkills = { ...defaults.equippedSkills, ...loaded.equippedSkills };
       const inventory = loaded.inventory || [];
       
       return {
@@ -83,6 +88,7 @@ class SaveManager {
         elementShards,
         masteryLevels,
         equippedItems,
+        equippedSkills,
         inventory
       };
     } catch (err) {
@@ -173,6 +179,37 @@ class SaveManager {
   unequipGear(slot) {
     const data = this.load();
     data.equippedItems[slot] = null;
+    this.save(data);
+    return true;
+  }
+
+  equipActiveSkill(skillId) {
+    const data = this.load();
+    // Default to fireball if null
+    data.equippedSkills.active = skillId || 'fireball';
+    this.save(data);
+    return true;
+  }
+
+  togglePassiveSkill(passiveId) {
+    const data = this.load();
+    data.equippedSkills.passives = data.equippedSkills.passives || [];
+
+    const index = data.equippedSkills.passives.indexOf(passiveId);
+    if (index !== -1) {
+      // Unequip if already equipped
+      data.equippedSkills.passives.splice(index, 1);
+    } else {
+      // Equip if not equipped, max 2 passives
+      if (data.equippedSkills.passives.length < 2) {
+        data.equippedSkills.passives.push(passiveId);
+      } else {
+        // Swap out the first one
+        data.equippedSkills.passives.shift();
+        data.equippedSkills.passives.push(passiveId);
+      }
+    }
+
     this.save(data);
     return true;
   }

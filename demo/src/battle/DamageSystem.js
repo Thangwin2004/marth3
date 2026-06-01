@@ -109,7 +109,21 @@ export class DamageSystem {
 
             // Elemental weakness/resistance (defender-specific)
             if (defender.getWeaknessMultiplier) {
-                matchDamage *= defender.getWeaknessMultiplier(tileType);
+                const mult = defender.getWeaknessMultiplier(tileType);
+                if (mult > 1.0) {
+                    let critMult = 1.0;
+                    if (attacker.name === 'Player') {
+                        const saveData = saveManager.load();
+                        const equippedSkills = saveData.equippedSkills || {};
+                        const passives = equippedSkills.passives || [];
+                        if (passives.includes('elem_crit')) {
+                            critMult = 1.3;
+                        }
+                    }
+                    matchDamage *= (mult * critMult);
+                } else {
+                    matchDamage *= mult;
+                }
             }
 
             totalDamage += matchDamage;

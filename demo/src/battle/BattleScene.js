@@ -245,6 +245,14 @@ export class BattleScene {
         if (who === 'player') {
             this.playerTurnsCount = (this.playerTurnsCount || 0) + 1;
 
+            // Decrement Quartz Fortress immunity turns
+            if (this.player.quartzImmunityTurns > 0) {
+                this.player.quartzImmunityTurns--;
+                if (this.player.quartzImmunityTurns === 0) {
+                    this.hud.setLog('💎 [Pháo Đài Thạch Anh] Hiệu ứng miễn nhiễm Choáng đã kết thúc.');
+                }
+            }
+
             // Check Time Hourglass Relic (Cleanse every 5 player turns)
             const saveData = saveManager.load();
             const equipped = saveData.equippedItems || {};
@@ -254,6 +262,22 @@ export class BattleScene {
                 const playerPos = this.hud.getSpritePosition('player');
                 DamagePopup.show(this.container, playerPos.x, playerPos.y - 50, '✨ Cleanse!', 'heal');
                 this.updateUI();
+            }
+
+            // Check Natural Regrowth Passive (Heal 5% of Max HP)
+            const equippedSkills = saveData.equippedSkills || {};
+            const passives = equippedSkills.passives || [];
+            if (passives.includes('nat_regrow')) {
+                const healAmt = Math.floor(this.player.maxHP * 0.05);
+                if (healAmt > 0) {
+                    const healed = this.player.heal(healAmt);
+                    if (healed > 0) {
+                        this.hud.setLog(`🌿💚 [Hồi Phục Tự Nhiên] tự động hồi +${healed} HP!`);
+                        const playerPos = this.hud.getSpritePosition('player');
+                        DamagePopup.show(this.container, playerPos.x, playerPos.y - 50, `+${healed}`, 'heal');
+                        this.updateUI();
+                    }
+                }
             }
         }
 

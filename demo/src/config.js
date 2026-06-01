@@ -22,7 +22,7 @@ export const Config = {
     },
 
     /** Tile size in pixels */
-    tileSize: 50,
+    tileSize: 65,
 
     /**
      * All tile types available in the game.

@@ -137,6 +137,29 @@ export class SkillSystem {
                 this.player.useSkill(skillId, skill.cooldown);
                 return { success: true, endsTurn: false, result };
             }
+
+            case 'meteor_shower': {
+                if (target && target.boss) {
+                    result.damage = 40;
+                    defender.takeDamage(40);
+                    result.type = 'damage';
+                    // Clear 5 red (fire) tiles
+                    if (board && board.destroyRandomOfType) {
+                        board.destroyRandomOfType('fire', 5);
+                    }
+                } else {
+                    return { success: false, endsTurn: false, result: null };
+                }
+                break;
+            }
+
+            case 'quartz_fortress': {
+                this.player.addShield(40);
+                result.type = 'shield';
+                result.amount = 40;
+                this.player.quartzImmunityTurns = 3; // Immune for 2 player turns (expires at start of player turn 3)
+                break;
+            }
         }
 
         // Set cooldown

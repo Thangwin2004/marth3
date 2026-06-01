@@ -677,6 +677,36 @@ export class Board {
     }
 
     /**
+     * Destroy random tiles of a specific color X.
+     * Used by skills like Meteor Shower.
+     * 
+     * @param {string} color - The color/element name to clear
+     * @param {number} count - Maximum number of tiles to clear
+     * @returns {Tile[]} Array of actually destroyed Tile objects
+     */
+    destroyRandomOfType(color, count) {
+        const matchingFields = [];
+        this.fields.forEach(field => {
+            if (field.tile && !field.isVoid && field.tile.color === color && !field.tile.isStone) {
+                matchingFields.push(field);
+            }
+        });
+
+        // Shuffle matchingFields and pick up to 'count'
+        const chosenFields = matchingFields
+            .sort(() => 0.5 - Math.random())
+            .slice(0, count);
+
+        const tiles = [];
+        chosenFields.forEach(field => {
+            tiles.push(field.tile);
+            this._removeTileOverlays(field.tile);
+            field.tile.remove();
+        });
+        return tiles;
+    }
+
+    /**
      * Destroy all tiles in an NxN area centered at (centerRow, centerCol).
      * 
      * @param {number} centerRow - Center row

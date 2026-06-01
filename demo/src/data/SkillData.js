@@ -110,4 +110,41 @@ export const SKILLS = {
     unlockedAtLevel: 9,
     targetType: 'self',
   },
+  meteor_shower: {
+    id: 'meteor_shower',
+    name: 'Mưa Thiên Thạch',
+    icon: '☄️',
+    color: 0xff3d00,
+    description: 'Gây 40 sát thương lên Boss và phá hủy 5 viên ngọc Đỏ 🔥 trên bàn cờ',
+    cooldown: 6,
+    unlockedAtLevel: 3,
+    targetType: 'boss',
+  },
+  quartz_fortress: {
+    id: 'quartz_fortress',
+    name: 'Pháo Đài Thạch Anh',
+    icon: '💎',
+    color: 0x00e5ff,
+    description: 'Nhận +40 Giáp và miễn nhiễm Choáng 2 lượt',
+    cooldown: 7,
+    unlockedAtLevel: 5,
+    targetType: 'self',
+  },
 };
+
+/** @type {Object.<string, {id:string, name:string, icon:string, description:string}>} */
+export const PASSIVE_SKILLS = {
+  elem_crit: {
+    id: 'elem_crit',
+    name: 'Bạo Kích Nguyên Tố',
+    icon: '🎯💥',
+    description: 'Nổ ngọc hệ khắc chế tăng +30% sát thương chí mạng.'
+  },
+  nat_regrow: {
+    id: 'nat_regrow',
+    name: 'Hồi Phục Tự Nhiên',
+    icon: '🌿💚',
+    description: 'Tự động hồi 5% HP tối đa mỗi lượt chơi của mình.'
+  }
+};
+

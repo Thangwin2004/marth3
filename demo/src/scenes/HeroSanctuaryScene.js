@@ -5,6 +5,7 @@ import { App } from '../system/App';
 import { sceneManager } from '../system/SceneManager';
 import { saveManager } from '../system/SaveManager';
 import { GEAR_DATABASE, getGearItemById } from '../data/GearData';
+import { SKILLS, PASSIVE_SKILLS } from '../data/SkillData';
 
 export class HeroSanctuaryScene {
     constructor(data = {}) {
@@ -13,7 +14,7 @@ export class HeroSanctuaryScene {
 
         App.setBackgroundColor(0x070b19);
 
-        // Active tab state: 'mastery' or 'gear'
+        // Active tab state: 'mastery', 'gear', or 'talent'
         this.activeTab = 'mastery';
 
         // === 1. MONOLITHIC BACKGROUND & PARTICLES ===
@@ -167,26 +168,33 @@ export class HeroSanctuaryScene {
         header.y = sy + 30;
         this.statsPanel.addChild(header);
 
+        // Active Loadout display on Stats Panel
+        const currentEquippedSkillId = save.equippedSkills ? (save.equippedSkills.active || 'fireball') : 'fireball';
+        const activeSkillObj = SKILLS[currentEquippedSkillId] || SKILLS.fireball;
+        const passiveCount = save.equippedSkills && save.equippedSkills.passives ? save.equippedSkills.passives.length : 0;
+
         // Stats Lines
         const statsConfig = [
-            { text: `🧙 Hero Level: ${heroLvl}`, color: '#ffffff', y: 90 },
-            { text: `✨ EXP: ${heroExp} / ${expNeeded}`, color: '#e0e0e0', y: 130 },
-            { text: `💚 Max HP: ${finalMaxHP}` + (finalMaxHP > maxHP ? ` (+50)` : ''), color: '#81c784', y: 180 },
-            { text: `🛡️ Giáp Khởi Đầu: ${finalShield}`, color: '#80d8ff', y: 220 },
-            { text: `⚔️ Base ATK: +${dmgBonusPercent}%` + (equipped.weapon === 'magic_sword' ? ` (+15 Lôi)` : ''), color: '#ffb300', y: 260 },
-            { text: `💰 Gold: ${gold}`, color: '#ffd54f', y: 310 }
+            { text: `🧙 Hero Level: ${heroLvl}`, color: '#ffffff', y: 80 },
+            { text: `✨ EXP: ${heroExp} / ${expNeeded}`, color: '#e0e0e0', y: 115 },
+            { text: `💚 Max HP: ${finalMaxHP}` + (finalMaxHP > maxHP ? ` (+50)` : ''), color: '#81c784', y: 155 },
+            { text: `🛡️ Giáp Khởi Đầu: ${finalShield}`, color: '#80d8ff', y: 195 },
+            { text: `⚔️ Base ATK: +${dmgBonusPercent}%` + (equipped.weapon === 'magic_sword' ? ` (+15 Lôi)` : ''), color: '#ffb300', y: 235 },
+            { text: `☄️ Active: ${activeSkillObj.icon} ${activeSkillObj.name}`, color: '#00e5ff', y: 275 },
+            { text: `📜 Passives: ${passiveCount} / 2`, color: '#69f0ae', y: 310 },
+            { text: `💰 Gold: ${gold}`, color: '#ffd54f', y: 350 }
         ];
 
         // Draw EXP bar
         const expBarBg = new Graphics();
-        expBarBg.roundRect(sx + 30, sy + 155, sw - 60, 8, 4);
+        expBarBg.roundRect(sx + 30, sy + 138, sw - 60, 6, 3);
         expBarBg.fill({ color: 0x1a237e, alpha: 0.6 });
         this.statsPanel.addChild(expBarBg);
 
         const expPercent = Math.min(1.0, heroExp / expNeeded);
         if (expPercent > 0) {
             const expBarFill = new Graphics();
-            expBarFill.roundRect(sx + 30, sy + 155, (sw - 60) * expPercent, 8, 4);
+            expBarFill.roundRect(sx + 30, sy + 138, (sw - 60) * expPercent, 6, 3);
             expBarFill.fill({ color: 0x29b6f6 });
             this.statsPanel.addChild(expBarFill);
         }
@@ -194,7 +202,7 @@ export class HeroSanctuaryScene {
         statsConfig.forEach(cfg => {
             const txt = new Text({
                 text: cfg.text,
-                style: { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: cfg.color }
+                style: { fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold', fill: cfg.color }
             });
             txt.x = sx + 30;
             txt.y = sy + cfg.y;
@@ -207,11 +215,11 @@ export class HeroSanctuaryScene {
 
         const upBtn = new Container();
         upBtn.x = sx + sw / 2;
-        upBtn.y = sy + 400;
+        upBtn.y = sy + 415;
         this.statsPanel.addChild(upBtn);
 
         const upBg = new Graphics();
-        upBg.roundRect(-100, -22, 200, 44, 12);
+        upBg.roundRect(-100, -20, 200, 40, 10);
         upBg.fill({ color: canUpgrade ? 0xffb300 : 0x3d3521 });
         upBg.stroke({ color: 0xffffff, width: 1.5, alpha: canUpgrade ? 0.35 : 0.1 });
         upBg.eventMode = canUpgrade ? 'static' : 'none';
@@ -220,7 +228,7 @@ export class HeroSanctuaryScene {
 
         const upText = new Text({
             text: `Thăng Cấp (${upCost} Vàng)`,
-            style: { fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold', fill: canUpgrade ? '#ffffff' : '#888888' }
+            style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: canUpgrade ? '#ffffff' : '#888888' }
         });
         upText.anchor.set(0.5);
         upBtn.addChild(upText);
@@ -250,9 +258,9 @@ export class HeroSanctuaryScene {
         masteryBg.stroke({ color: 0xffb300, width: 2, alpha: 0.3 });
         this.masteryPanel.addChild(masteryBg);
 
-        // --- DRAW TABS AT THE TOP ---
+        // --- DRAW THREE TABS AT THE TOP ---
         const tab1 = new Container();
-        tab1.x = mx + 30;
+        tab1.x = mx + 25;
         tab1.y = my + 25;
         this.masteryPanel.addChild(tab1);
 
@@ -282,13 +290,13 @@ export class HeroSanctuaryScene {
         });
 
         const tab2 = new Container();
-        tab2.x = mx + 230;
+        tab2.x = mx + 220;
         tab2.y = my + 25;
         this.masteryPanel.addChild(tab2);
 
         const isGear = this.activeTab === 'gear';
         const tab2Bg = new Graphics();
-        tab2Bg.roundRect(0, 0, 200, 36, 8);
+        tab2Bg.roundRect(0, 0, 185, 36, 8);
         tab2Bg.fill({ color: isGear ? 0x2c385e : 0x141a29, alpha: 0.8 });
         tab2Bg.stroke({ color: isGear ? 0xffb300 : 0xffffff, width: 1.5, alpha: isGear ? 0.8 : 0.2 });
         tab2Bg.eventMode = 'static';
@@ -300,7 +308,7 @@ export class HeroSanctuaryScene {
             style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ffffff' }
         });
         tab2Text.anchor.set(0.5);
-        tab2Text.x = 100;
+        tab2Text.x = 92.5;
         tab2Text.y = 18;
         tab2.addChild(tab2Text);
 
@@ -308,6 +316,36 @@ export class HeroSanctuaryScene {
         tab2Bg.on('pointerout', () => gsap.to(tab2.scale, { x: 1, y: 1, duration: 0.1 }));
         tab2Bg.on('pointerdown', () => {
             this.activeTab = 'gear';
+            this.renderAll();
+        });
+
+        const tab3 = new Container();
+        tab3.x = mx + 420;
+        tab3.y = my + 25;
+        this.masteryPanel.addChild(tab3);
+
+        const isTalent = this.activeTab === 'talent';
+        const tab3Bg = new Graphics();
+        tab3Bg.roundRect(0, 0, 195, 36, 8);
+        tab3Bg.fill({ color: isTalent ? 0x2c385e : 0x141a29, alpha: 0.8 });
+        tab3Bg.stroke({ color: isTalent ? 0xffb300 : 0xffffff, width: 1.5, alpha: isTalent ? 0.8 : 0.2 });
+        tab3Bg.eventMode = 'static';
+        tab3Bg.cursor = 'pointer';
+        tab3.addChild(tab3Bg);
+
+        const tab3Text = new Text({
+            text: '📜 Thiên Phú Loadout',
+            style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ffffff' }
+        });
+        tab3Text.anchor.set(0.5);
+        tab3Text.x = 97.5;
+        tab3Text.y = 18;
+        tab3.addChild(tab3Text);
+
+        tab3Bg.on('pointerover', () => gsap.to(tab3.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
+        tab3Bg.on('pointerout', () => gsap.to(tab3.scale, { x: 1, y: 1, duration: 0.1 }));
+        tab3Bg.on('pointerdown', () => {
+            this.activeTab = 'talent';
             this.renderAll();
         });
 
@@ -424,12 +462,10 @@ export class HeroSanctuaryScene {
                     });
                 }
             });
-        } else {
+        } else if (isGear) {
             // ==========================================
             // TAB 2: COV AT & TRANG BI (GEAR) CONTENT
             // ==========================================
-            
-            // --- LEFT COLUMN: EQUIPPED ---
             const eqHeader = new Text({
                 text: '🛡️ ĐANG TRANG BỊ',
                 style: { fontFamily: 'Arial', fontSize: 15, fontWeight: 'bold', fill: '#80d8ff' }
@@ -471,7 +507,6 @@ export class HeroSanctuaryScene {
                 slotContainer.addChild(slotBg);
 
                 if (item) {
-                    // Item Emoji + Name
                     const itemText = new Text({
                         text: `${item.emoji} ${item.name}`,
                         style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ffffff' }
@@ -480,7 +515,6 @@ export class HeroSanctuaryScene {
                     itemText.y = 12;
                     slotContainer.addChild(itemText);
 
-                    // Slot Label
                     const labelText = new Text({
                         text: slot.label,
                         style: { fontFamily: 'Arial', fontSize: 10, fill: '#ffb300' }
@@ -489,7 +523,6 @@ export class HeroSanctuaryScene {
                     labelText.y = 32;
                     slotContainer.addChild(labelText);
 
-                    // Short Description Wrap
                     const descText = new Text({
                         text: item.description,
                         style: { fontFamily: 'Arial', fontSize: 9, fill: '#cccccc', wordWrap: true, wordWrapWidth: 190 }
@@ -498,7 +531,6 @@ export class HeroSanctuaryScene {
                     descText.y = 48;
                     slotContainer.addChild(descText);
 
-                    // Unequip Button
                     const unBtn = new Container();
                     unBtn.x = slotW - 35;
                     unBtn.y = 20;
@@ -527,7 +559,6 @@ export class HeroSanctuaryScene {
                         }
                     });
                 } else {
-                    // Empty state
                     const emptyEmojiText = new Text({
                         text: slot.defaultEmoji,
                         style: { fontSize: 24 }
@@ -548,7 +579,6 @@ export class HeroSanctuaryScene {
                 }
             });
 
-            // --- RIGHT COLUMN: SHOP / INVENTORY ---
             const shopHeader = new Text({
                 text: '🎒 CỬA HÀNG TRANG BỊ & HÀNH TRANG',
                 style: { fontFamily: 'Arial', fontSize: 15, fontWeight: 'bold', fill: '#ffd54f' }
@@ -583,7 +613,6 @@ export class HeroSanctuaryScene {
                 itemBg.stroke({ color: item.color, width: 1.5, alpha: isEquipped ? 0.8 : 0.25 });
                 itemContainer.addChild(itemBg);
 
-                // Emoji
                 const itemEmoji = new Text({
                     text: item.emoji,
                     style: { fontSize: 20 }
@@ -592,7 +621,6 @@ export class HeroSanctuaryScene {
                 itemEmoji.y = 12;
                 itemContainer.addChild(itemEmoji);
 
-                // Title + Slot Label
                 const nameText = new Text({
                     text: `${item.name}`,
                     style: { fontFamily: 'Arial', fontSize: 12, fontWeight: 'bold', fill: '#ffffff' }
@@ -609,7 +637,6 @@ export class HeroSanctuaryScene {
                 slotText.y = 24;
                 itemContainer.addChild(slotText);
 
-                // Brief Description
                 const descText = new Text({
                     text: item.description,
                     style: { fontFamily: 'Arial', fontSize: 9, fill: '#aaaaaa', wordWrap: true, wordWrapWidth: 195 }
@@ -618,7 +645,6 @@ export class HeroSanctuaryScene {
                 descText.y = 35;
                 itemContainer.addChild(descText);
 
-                // Action Button on the right
                 const actionBtn = new Container();
                 actionBtn.x = itemW - 55;
                 actionBtn.y = itemH / 2;
@@ -636,15 +662,15 @@ export class HeroSanctuaryScene {
 
                 if (isEquipped) {
                     btnLabel = 'Đang Dùng';
-                    btnColor = 0x4caf50; // green
+                    btnColor = 0x4caf50;
                     active = false;
                 } else if (isOwned) {
                     btnLabel = 'Trang Bị';
-                    btnColor = 0x2196f3; // blue
+                    btnColor = 0x2196f3;
                     active = true;
                 } else {
                     btnLabel = `${item.price}g Mua`;
-                    btnColor = gold >= item.price ? 0xffb300 : 0x444444; // golden or gray
+                    btnColor = gold >= item.price ? 0xffb300 : 0x444444;
                     active = gold >= item.price;
                 }
 
@@ -665,13 +691,11 @@ export class HeroSanctuaryScene {
                     btnBg.on('pointerout', () => gsap.to(actionBtn.scale, { x: 1, y: 1, duration: 0.1 }));
                     btnBg.on('pointerdown', () => {
                         if (isOwned) {
-                            // Equip
                             if (saveManager.equipGear(item.id, item.slot)) {
                                 this.playSparkleEffect(cxGrid + itemW / 2, cyGrid + itemH / 2);
                                 this.renderAll();
                             }
                         } else {
-                            // Buy
                             if (saveManager.buyGearItem(item.id, item.price)) {
                                 this.playSparkleEffect(cxGrid + itemW / 2, cyGrid + itemH / 2);
                                 this.renderAll();
@@ -679,6 +703,207 @@ export class HeroSanctuaryScene {
                         }
                     });
                 }
+            });
+        } else {
+            // ==========================================
+            // TAB 3: THIEN PHU CONTENT (TALENTS)
+            // ==========================================
+            // Left Column: Active Skills Selection
+            const actHeader = new Text({
+                text: '☄️ KỸ NĂNG CHỦ ĐỘNG',
+                style: { fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold', fill: '#00e5ff' }
+            });
+            actHeader.x = mx + 28;
+            actHeader.y = my + 82;
+            this.masteryPanel.addChild(actHeader);
+
+            const actSub = new Text({
+                text: 'Di chuyển chuột qua để xem mô tả. Click để Trang Bị.',
+                style: { fontFamily: 'Arial', fontSize: 10, fill: '#aaaaaa' }
+            });
+            actSub.x = mx + 28;
+            actSub.y = my + 102;
+            this.masteryPanel.addChild(actSub);
+
+            const activeSkillGrid = new Container();
+            activeSkillGrid.x = mx + 28;
+            activeSkillGrid.y = my + 122;
+            this.masteryPanel.addChild(activeSkillGrid);
+
+            const allSkills = Object.values(SKILLS);
+            const cardSize = 54;
+            const gap = 12;
+            const colsCount = 4; // 4 columns grid is super clean!
+
+            allSkills.forEach((skill, index) => {
+                const col = index % colsCount;
+                const row = Math.floor(index / colsCount);
+                const kx = col * (cardSize + gap);
+                const ky = row * (cardSize + gap);
+
+                const isUnlocked = heroLvl >= skill.unlockedAtLevel;
+                const isEquipped = save.equippedSkills ? (save.equippedSkills.active === skill.id) : (skill.id === 'fireball');
+
+                const skillCard = new Container();
+                skillCard.x = kx;
+                skillCard.y = ky;
+                activeSkillGrid.addChild(skillCard);
+
+                const skBg = new Graphics();
+                skBg.roundRect(0, 0, cardSize, cardSize, 10);
+                
+                if (isUnlocked) {
+                    skBg.fill({ color: isEquipped ? 0x2c385e : 0x1f293d, alpha: 0.8 });
+                    skBg.stroke({ color: isEquipped ? 0x00e5ff : skill.color, width: isEquipped ? 2.5 : 1.5, alpha: isEquipped ? 1.0 : 0.4 });
+                    skBg.eventMode = 'static';
+                    skBg.cursor = 'pointer';
+                } else {
+                    skBg.fill({ color: 0x141a29, alpha: 0.5 });
+                    skBg.stroke({ color: 0xffffff, width: 1, alpha: 0.1 });
+                }
+                skillCard.addChild(skBg);
+
+                // Skill Icon (Emoji)
+                const iconTxt = new Text({
+                    text: isUnlocked ? skill.icon : '🔒',
+                    style: { fontSize: 20 }
+                });
+                iconTxt.anchor.set(0.5);
+                iconTxt.x = cardSize / 2;
+                iconTxt.y = cardSize / 2 - (isUnlocked ? 0 : 2);
+                skillCard.addChild(iconTxt);
+
+                // Locked Level Label
+                if (!isUnlocked) {
+                    const lockLbl = new Text({
+                        text: `Lvl ${skill.unlockedAtLevel}`,
+                        style: { fontFamily: 'Arial', fontSize: 9, fill: '#888888', fontWeight: 'bold' }
+                    });
+                    lockLbl.anchor.set(0.5);
+                    lockLbl.x = cardSize / 2;
+                    lockLbl.y = cardSize - 10;
+                    skillCard.addChild(lockLbl);
+                } else {
+                    skBg.on('pointerover', () => {
+                        gsap.to(skillCard.scale, { x: 1.08, y: 1.08, duration: 0.1 });
+                        if (this.tooltipText) {
+                            this.tooltipText.text = `⚡ [${skill.name}]: ${skill.description}`;
+                        }
+                    });
+                    skBg.on('pointerout', () => {
+                        gsap.to(skillCard.scale, { x: 1, y: 1, duration: 0.1 });
+                    });
+                    skBg.on('pointerdown', () => {
+                        if (saveManager.equipActiveSkill(skill.id)) {
+                            this.playSparkleEffect(mx + 28 + kx + cardSize / 2, my + 122 + ky + cardSize / 2);
+                            this.renderAll();
+                        }
+                    });
+                }
+            });
+
+            // Dynamic Tooltip label under Active skills
+            const tooltipBox = new Graphics();
+            tooltipBox.roundRect(mx + 28, my + 382, 260, 52, 6);
+            tooltipBox.fill({ color: 0x141a29, alpha: 0.5 });
+            tooltipBox.stroke({ color: 0xffffff, width: 1, alpha: 0.1 });
+            this.masteryPanel.addChild(tooltipBox);
+
+            // Default tooltip text
+            const currentEquippedSkillId = save.equippedSkills ? (save.equippedSkills.active || 'fireball') : 'fireball';
+            const currSkill = SKILLS[currentEquippedSkillId] || SKILLS.fireball;
+
+            this.tooltipText = new Text({
+                text: `⚡ [${currSkill.name}]: ${currSkill.description}`,
+                style: { fontFamily: 'Arial', fontSize: 9, fill: '#ffb300', wordWrap: true, wordWrapWidth: 240 }
+            });
+            this.tooltipText.x = mx + 38;
+            this.tooltipText.y = my + 390;
+            this.masteryPanel.addChild(this.tooltipText);
+
+            // Right Column: Passive Skills Selection
+            const pasHeader = new Text({
+                text: '📜 KỸ NĂNG BỊ ĐỘNG (Tối đa 2)',
+                style: { fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold', fill: '#69f0ae' }
+            });
+            pasHeader.x = mx + 325;
+            pasHeader.y = my + 82;
+            this.masteryPanel.addChild(pasHeader);
+
+            const pasSub = new Text({
+                text: 'Được kích hoạt vĩnh viễn trong suốt trận đấu',
+                style: { fontFamily: 'Arial', fontSize: 10, fill: '#aaaaaa' }
+            });
+            pasSub.x = mx + 325;
+            pasSub.y = my + 102;
+            this.masteryPanel.addChild(pasSub);
+
+            const allPassives = Object.values(PASSIVE_SKILLS);
+            allPassives.forEach((passive, index) => {
+                const px = mx + 325;
+                const py = my + 122 + index * 125;
+                const pW = 285;
+                const pH = 110;
+
+                const passCard = new Container();
+                passCard.x = px;
+                passCard.y = py;
+                this.masteryPanel.addChild(passCard);
+
+                const isEquipped = save.equippedSkills && save.equippedSkills.passives ? save.equippedSkills.passives.includes(passive.id) : false;
+
+                const passBg = new Graphics();
+                passBg.roundRect(0, 0, pW, pH, 12);
+                passBg.fill({ color: 0x1f293d, alpha: 0.6 });
+                passBg.stroke({ color: isEquipped ? 0x69f0ae : 0xffffff, width: 1.5, alpha: isEquipped ? 0.9 : 0.15 });
+                passCard.addChild(passBg);
+
+                const pName = new Text({
+                    text: `${passive.icon} ${passive.name}`,
+                    style: { fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold', fill: '#ffffff' }
+                });
+                pName.x = 15;
+                pName.y = 15;
+                passCard.addChild(pName);
+
+                const pDesc = new Text({
+                    text: passive.description,
+                    style: { fontFamily: 'Arial', fontSize: 10, fill: '#cccccc', wordWrap: true, wordWrapWidth: 255 }
+                });
+                pDesc.x = 15;
+                pDesc.y = 38;
+                passCard.addChild(pDesc);
+
+                const actBtn = new Container();
+                actBtn.x = pW / 2;
+                actBtn.y = pH - 24;
+                passCard.addChild(actBtn);
+
+                const btnW = 120;
+                const btnH = 26;
+
+                const abg = new Graphics();
+                abg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
+                abg.fill({ color: isEquipped ? 0x4caf50 : 0x2196f3 });
+                abg.eventMode = 'static';
+                abg.cursor = 'pointer';
+                actBtn.addChild(abg);
+
+                const abgTxt = new Text({
+                    text: isEquipped ? 'Đang Kích Hoạt' : 'Kích Hoạt',
+                    style: { fontFamily: 'Arial', fontSize: 10, fontWeight: 'bold', fill: '#ffffff' }
+                });
+                abgTxt.anchor.set(0.5);
+                actBtn.addChild(abgTxt);
+
+                abg.on('pointerover', () => gsap.to(actBtn.scale, { x: 1.05, y: 1.05, duration: 0.1 }));
+                abg.on('pointerout', () => gsap.to(actBtn.scale, { x: 1, y: 1, duration: 0.1 }));
+                abg.on('pointerdown', () => {
+                    if (saveManager.togglePassiveSkill(passive.id)) {
+                        this.playSparkleEffect(px + pW / 2, py + pH / 2);
+                        this.renderAll();
+                    }
+                });
             });
         }
     }
