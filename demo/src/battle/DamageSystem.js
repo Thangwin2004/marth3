@@ -9,6 +9,7 @@
 import { Config } from '../config.js';
 import { TILE_DAMAGE } from '../data/LevelData.js';
 import { statusEffectManager } from './StatusEffects.js';
+import { saveManager } from '../system/SaveManager.js';
 
 export class DamageSystem {
     /**
@@ -59,9 +60,13 @@ export class DamageSystem {
                 matchDamage *= (1 - this.terrain.debuff[tileType]);
             }
 
-            // Scale player damage with level progress! (+15% damage per level above Level 1)
+            // Scale player damage with Hero Level progress (+10% per level) and Element Mastery (+5% per mastery level)
             if (attacker.name === 'Player') {
-                const dmgMultiplier = 1 + (this.levelNum - 1) * 0.15;
+                const saveData = saveManager.load();
+                const heroLvl = saveData.heroLevel || 1;
+                const masteryLvl = saveData.masteryLevels ? (saveData.masteryLevels[tileType] || 0) : 0;
+                
+                const dmgMultiplier = (1 + (heroLvl - 1) * 0.10) * (1 + masteryLvl * 0.05);
                 matchDamage *= dmgMultiplier;
             } else {
                 // Scale Boss damage based on level to prevent early bosses from unexpectedly one-shotting the player.

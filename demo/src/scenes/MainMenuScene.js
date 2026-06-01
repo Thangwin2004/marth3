@@ -162,11 +162,22 @@ export class MainMenuScene {
             }
         );
 
+        // Hero Sanctuary button (Anh Hùng Điện)
+        this.createMenuButton(
+            '🧙 Hero Sanctuary',
+            Config.canvas.width / 2, btnStartY + (currentLevel > 1 ? 130 : 65),
+            0xffb300, 260,
+            async () => {
+                const { HeroSanctuaryScene } = await import('./HeroSanctuaryScene.js');
+                await sceneManager.switchTo(HeroSanctuaryScene);
+            }
+        );
+
         // Reset save button
         if (currentLevel > 1) {
             this.createMenuButton(
                 '🗑️ Reset Progress',
-                Config.canvas.width / 2, btnStartY + 130,
+                Config.canvas.width / 2, btnStartY + 195,
                 0x8b0000, 200,
                 async () => {
                     saveManager.reset();

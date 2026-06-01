@@ -96,8 +96,9 @@ export class BattleScene {
 
     initEntities() {
         const savedSkills = saveManager.getUnlockedSkills();
-        // Scale player Max HP: 100 base + 30 HP per level above Level 1 (makes higher levels balanced!)
-        const playerMaxHP = 100 + (this.levelNum - 1) * 30;
+        const saveData = saveManager.load();
+        // Scale player Max HP: 100 base + 15 HP per level above Level 1 (RPG progression!)
+        const playerMaxHP = 100 + ((saveData.heroLevel || 1) - 1) * 15;
         this.player = new Player(savedSkills, playerMaxHP);
         this.boss = new Boss(this.levelConfig);
     }
@@ -1008,10 +1009,42 @@ export class BattleScene {
             saveManager.unlockSkill(skillReward);
         }
 
-        await this.turnIndicator.show('🎉 VICTORY!', '#ffdd57');
-        this.hud.setLog(`Boss defeated! ${skillReward ? `Unlocked: ${skillReward}` : 'Congratulations!'}`);
+        // Map level to elemental shards
+        const shardRewards = {
+            1: 'nature',
+            2: 'fire',
+            3: 'ice',
+            4: 'lightning',
+            5: 'water',
+            6: 'earth',
+            7: 'poison-death',
+            8: 'psychic-eye',
+            9: 'wind-air',
+            10: 'sun'
+        };
 
-        await this.delay(1500);
+        // Add Gold & EXP & Shards!
+        const expGained = this.levelNum * 40;
+        const goldGained = this.levelNum * 30;
+        const shardColor = shardRewards[this.levelNum] || 'nature';
+        const shardsGained = 10;
+
+        saveManager.addGold(goldGained);
+        saveManager.addShards(shardColor, shardsGained);
+        const lvlUpResult = saveManager.addExp(expGained);
+
+        await this.turnIndicator.show('🎉 VICTORY!', '#ffdd57');
+        
+        let rewardText = `Boss defeated! Nhận: EXP +${expGained}, Vàng +${goldGained}, Mảnh ${shardColor.toUpperCase()} +${shardsGained}!`;
+        if (lvlUpResult.leveledUp) {
+            rewardText += ` 🌟 LEVEL UP! (Lvl ${lvlUpResult.level}) 🌟`;
+        }
+        if (skillReward) {
+            rewardText += ` Unlocked skill: ${skillReward.toUpperCase()}!`;
+        }
+        this.hud.setLog(rewardText);
+
+        await this.delay(2000);
         this.showEndScreen('victory');
     }
 
