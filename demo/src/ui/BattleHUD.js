@@ -206,8 +206,10 @@ export class BattleHUD {
         // Shield text
         this.playerShieldText.text = this.player.shield > 0 ? `🛡 ${this.player.shield}` : '';
 
-        // Turn text
-        this.turnText.text = `Turn ${turnCount || 0} | ${currentTurn === 'player' ? '⚔️ Your Turn' : '💀 Boss Turn'}`;
+        // Turn text with Round count and Enrage visual indicator
+        const currentRound = Math.floor(((turnCount || 1) - 1) / 2) + 1;
+        const enragedStr = this.bossSprite.isEnraged ? ' 🔥 [ENRAGED]' : '';
+        this.turnText.text = `Round ${currentRound} (Turn ${turnCount || 0}) | ${currentTurn === 'player' ? '⚔️ Your Turn' : '💀 Boss Turn'}${enragedStr}`;
 
         // Skill bar
         const skillStates = this.player.getSkillStates();

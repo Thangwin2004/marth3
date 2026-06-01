@@ -15,10 +15,36 @@ export class CharacterSprite {
         this.body = new Graphics();
         this.statusContainer = new Container();
         this.nameText = null;
+        this.isEnraged = false;
         
         this.draw();
         this.playIdle();
     }
+
+    setEnraged(enraged) {
+        if (this.isEnraged === enraged) return;
+        this.isEnraged = enraged;
+        if (enraged) {
+            gsap.killTweensOf(this.body);
+            // Pulse y position more violently
+            gsap.to(this.body, {
+                y: -6, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut'
+            });
+            // Pulse scale
+            gsap.to(this.body.scale, {
+                x: 1.08, y: 1.08, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut'
+            });
+            // Tint body red/orange to make it glow red
+            this.body.tint = 0xff5555;
+        } else {
+            this.body.tint = 0xffffff;
+            if (this.body.scale) {
+                this.body.scale.set(1);
+            }
+            this.playIdle();
+        }
+    }
+
     
     draw() {
         // Draw character using Graphics primitives

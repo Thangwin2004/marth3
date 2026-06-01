@@ -27,9 +27,10 @@ export class DamageSystem {
      * @param {import('./BattleEntity.js').BattleEntity} attacker - Who made the match
      * @param {import('./BattleEntity.js').BattleEntity} defender - Who receives damage
      * @param {number} comboChain - Current combo chain count (1-based)
+     * @param {number} currentRound - Current round number of the battle
      * @returns {{ totalDamage: number, effects: Array, healAmount: number, shieldAmount: number }}
      */
-    calculate(matches, attacker, defender, comboChain = 1) {
+    calculate(matches, attacker, defender, comboChain = 1, currentRound = 1) {
         let totalDamage = 0;
         let healAmount = 0;
         let shieldAmount = 0;
@@ -77,6 +78,20 @@ export class DamageSystem {
                 else if (this.levelNum === 9) bossScale = 0.90;
                 
                 matchDamage *= bossScale;
+
+                // Enrage Timer (Cuồng Nộ) — after round 12, damage increases.
+                // Rounds 13-20: +25% damage per round (cumulative).
+                // Round 21 onwards: +20% damage per round (cumulative).
+                if (currentRound > 12) {
+                    const extraRounds = currentRound - 12;
+                    let enrageBonus = 0;
+                    if (extraRounds <= 8) {
+                        enrageBonus = extraRounds * 0.25;
+                    } else {
+                        enrageBonus = (8 * 0.25) + (extraRounds - 8) * 0.20;
+                    }
+                    matchDamage *= (1 + enrageBonus);
+                }
             }
 
             // Elemental weakness/resistance (defender-specific)

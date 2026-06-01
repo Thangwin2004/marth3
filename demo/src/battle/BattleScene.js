@@ -181,6 +181,18 @@ export class BattleScene {
         this.turnCount++;
         this.comboCount = 0;
 
+        const currentRound = Math.floor((this.turnCount - 1) / 2) + 1;
+
+        // Check if Boss should enter Enraged (Cuồng Nộ) state
+        if (currentRound > 12 && this.hud && this.hud.bossSprite && !this.hud.bossSprite.isEnraged) {
+            this.hud.bossSprite.setEnraged(true);
+            this.hud.setLog('🔥 WARNING: The Boss has entered ENRAGED state! Sát thương Boss tăng thêm!');
+            await this.turnIndicator.show('💀 BOSS ENRAGED! 💀', '#ff1744');
+            // Play a scary screen shake / roar animation (boss hurts)
+            await this.hud.playHurt('boss');
+        }
+
+
         // Tick status effects for the active entity
         const entity = who === 'player' ? this.player : this.boss;
         const dotResult = statusEffectManager.tickEffects(entity);
@@ -492,9 +504,10 @@ export class BattleScene {
 
         // 2. ATTACK / ACTION PHASE (Board has fully settled!)
         if (allMatchesThisTurn.length > 0) {
+            const currentRound = Math.floor((this.turnCount - 1) / 2) + 1;
             // Calculate total damage/effects for all accumulated matches
             const { totalDamage, effects, healAmount, shieldAmount } =
-                this.damageSystem.calculate(allMatchesThisTurn, attacker, defender, this.comboCount);
+                this.damageSystem.calculate(allMatchesThisTurn, attacker, defender, this.comboCount, currentRound);
 
             // Check for poisoned tiles in all matches
             let poisonSelfDamage = 0;
