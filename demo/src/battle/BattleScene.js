@@ -98,9 +98,57 @@ export class BattleScene {
         const savedSkills = saveManager.getUnlockedSkills();
         const saveData = saveManager.load();
         // Scale player Max HP: 100 base + 15 HP per level above Level 1 (RPG progression!)
-        const playerMaxHP = 100 + ((saveData.heroLevel || 1) - 1) * 15;
+        let playerMaxHP = 100 + ((saveData.heroLevel || 1) - 1) * 15;
+
+        // Apply Stone Plate Armor HP Buff (+50 HP)
+        const equipped = saveData.equippedItems || {};
+        if (equipped.armor === 'stone_plate') {
+            playerMaxHP += 50;
+        }
+
         this.player = new Player(savedSkills, playerMaxHP);
+
+        // Apply Stone Plate Armor Shield Buff (+20 starting Shield)
+        if (equipped.armor === 'stone_plate') {
+            this.player.addShield(20);
+        }
+
         this.boss = new Boss(this.levelConfig);
+
+        // Apply Chaos Eye Relic boss element manipulation
+        if (equipped.relic === 'chaos_eye') {
+            // Find player's strongest mastery element, defaulting to fire if none upgraded
+            let bestElement = 'fire';
+            let maxM = -1;
+            const masteryLevels = saveData.masteryLevels || {};
+            for (const [el, lvl] of Object.entries(masteryLevels)) {
+                if (lvl > maxM) {
+                    maxM = lvl;
+                    bestElement = el;
+                }
+            }
+
+            const ELEMENT_CHART = {
+                fire: { weak: ['nature', 'ice'] },
+                water: { weak: ['fire', 'earth'] },
+                nature: { weak: ['water', 'earth', 'poison-death'] },
+                ice: { weak: ['nature', 'wind-air'] },
+                lightning: { weak: ['water', 'wind-air'] },
+                earth: { weak: ['fire', 'lightning', 'poison-death'] },
+                'wind-air': { weak: ['nature', 'lightning'] },
+                'psychic-eye': { weak: ['poison-death', 'sun'] },
+                sun: { weak: ['poison-death', 'ice'] },
+                'poison-death': { weak: ['psychic-eye', 'sun'] }
+            };
+
+            const weakTypes = ELEMENT_CHART[bestElement]?.weak || ['nature'];
+            const targetBossType = weakTypes[0];
+
+            this.boss.bossType = targetBossType;
+            this.chaosEyeTriggered = true;
+            this.chaosEyeTargetType = targetBossType;
+            this.chaosEyeBestElement = bestElement;
+        }
     }
 
     initBoard() {
@@ -166,6 +214,18 @@ export class BattleScene {
     // ================================================================
 
     async startBattle() {
+        // Chaos Eye log at battle start
+        if (this.chaosEyeTriggered) {
+            const emojiMap = {
+                fire: '🔥', water: '💧', nature: '🌿', ice: '❄️', lightning: '⚡',
+                earth: '⛰️', 'wind-air': '💨', 'psychic-eye': '👁️', sun: '☀️', 'poison-death': '☠️'
+            };
+            const bossEmoji = emojiMap[this.chaosEyeTargetType] || '';
+            const playerEmoji = emojiMap[this.chaosEyeBestElement] || '';
+            this.hud.setLog(`👁️🌪️ [Mắt Bão Hỗn Loạn] đã ép hệ của Boss chuyển sang hệ ${this.chaosEyeTargetType.toUpperCase()} ${bossEmoji}! Hệ này cực kỳ sợ hệ ${this.chaosEyeBestElement.toUpperCase()} ${playerEmoji} của bạn! (Gây x2.0 Sát thương!)`);
+            this.chaosEyeTriggered = false;
+        }
+
         // Animated coin flip
         const result = await CoinFlip.play(this.container);
         this.currentTurn = result;
@@ -181,6 +241,21 @@ export class BattleScene {
         this.currentTurn = who;
         this.turnCount++;
         this.comboCount = 0;
+
+        if (who === 'player') {
+            this.playerTurnsCount = (this.playerTurnsCount || 0) + 1;
+
+            // Check Time Hourglass Relic (Cleanse every 5 player turns)
+            const saveData = saveManager.load();
+            const equipped = saveData.equippedItems || {};
+            if (equipped.relic === 'time_hourglass' && this.playerTurnsCount % 5 === 0) {
+                statusEffectManager.cleanse(this.player);
+                this.hud.setLog(`⏳✨ [Đồng Hồ Cát] kích hoạt! Tự động thanh tẩy toàn bộ hiệu ứng bất lợi!`);
+                const playerPos = this.hud.getSpritePosition('player');
+                DamagePopup.show(this.container, playerPos.x, playerPos.y - 50, '✨ Cleanse!', 'heal');
+                this.updateUI();
+            }
+        }
 
         const currentRound = Math.floor((this.turnCount - 1) / 2) + 1;
 
@@ -688,6 +763,26 @@ export class BattleScene {
                 // Apply defender damage
                 this.damageSystem.applyDamage(defender, totalDamage, effects);
                 this.hud.showDamage(defenderSide, totalDamage, 'damage');
+
+                // Stone Plate Armor physical reflection logic
+                if (who === 'boss' && totalDamage > 0) {
+                    const saveData = saveManager.load();
+                    const equipped = saveData.equippedItems || {};
+                    if (equipped.armor === 'stone_plate') {
+                        const reflectDmg = Math.floor(totalDamage * 0.20);
+                        if (reflectDmg > 0) {
+                            // Apply damage to Boss
+                            this.boss.takeDamage(reflectDmg);
+
+                            // Log it
+                            this.hud.setLog(`🛡️⛰️ [Giáp Gai Thạch Bản] phản lại ${reflectDmg} sát thương hệ Thổ lên Boss!`);
+
+                            // Show damage popup on boss
+                            const bossPos = this.hud.getSpritePosition('boss');
+                            DamagePopup.show(this.container, bossPos.x, bossPos.y - 50, `⛰️ ${reflectDmg}`, 'damage');
+                        }
+                    }
+                }
             }
 
             // Apply self heals
@@ -718,6 +813,34 @@ export class BattleScene {
 
             // Apply status effects
             this.damageSystem.applyEffects(effects, attacker, defender, this.board);
+
+            // Magic Sword Combo 4+ effect
+            if (who === 'player' && this.comboCount >= 4) {
+                const saveData = saveManager.load();
+                const equipped = saveData.equippedItems || {};
+                if (equipped.weapon === 'magic_sword') {
+                    // Find a regular tile on the board to transform
+                    const regularFields = [];
+                    for (let r = 0; r < this.board.rows; r++) {
+                        for (let c = 0; c < this.board.cols; c++) {
+                            const field = this.board.getField(r, c);
+                            if (field && field.tile && !field.tile.isRune && !field.tile.isRainbow && !field.tile.frozen && !field.tile.isStone && !field.tile.isVoid && field.tile.color !== 'lightning') {
+                                regularFields.push(field);
+                            }
+                        }
+                    }
+
+                    if (regularFields.length > 0) {
+                        const targetField = regularFields[Math.floor(Math.random() * regularFields.length)];
+                        const tile = targetField.tile;
+                        tile.color = 'lightning';
+                        tile.draw(); // redraw the tile with the new lightning color
+
+                        this.hud.setLog(`⚡⚔️ [Kiếm Ma Thuật] kích hoạt! Combo x${this.comboCount} đã biến 1 ô ngọc thường thành Lôi Ngọc!`);
+                        DamagePopup.show(this.container, tile.sprite.x, tile.sprite.y - 20, '⚡ LÔI KIẾM!', 'combo');
+                    }
+                }
+            }
 
             // Update UI
             this.updateUI();

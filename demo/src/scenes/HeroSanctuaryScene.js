@@ -4,6 +4,7 @@ import { Config } from '../config';
 import { App } from '../system/App';
 import { sceneManager } from '../system/SceneManager';
 import { saveManager } from '../system/SaveManager';
+import { GEAR_DATABASE, getGearItemById } from '../data/GearData';
 
 export class HeroSanctuaryScene {
     constructor(data = {}) {
@@ -11,6 +12,9 @@ export class HeroSanctuaryScene {
         this.container.sortableChildren = true;
 
         App.setBackgroundColor(0x070b19);
+
+        // Active tab state: 'mastery' or 'gear'
+        this.activeTab = 'mastery';
 
         // === 1. MONOLITHIC BACKGROUND & PARTICLES ===
         const bg = new Sprite(Texture.WHITE);
@@ -129,6 +133,16 @@ export class HeroSanctuaryScene {
         const maxHP = 100 + (heroLvl - 1) * 15;
         const dmgBonusPercent = (heroLvl - 1) * 10;
 
+        // Apply equipment HP bonus
+        const equipped = save.equippedItems || {};
+        let finalMaxHP = maxHP;
+        let finalShield = 0;
+        
+        if (equipped.armor === 'stone_plate') {
+            finalMaxHP += 50;
+            finalShield += 20;
+        }
+
         // =========================================================================
         // ⚔️ LEFT PANEL: HERO STATS
         // =========================================================================
@@ -157,9 +171,10 @@ export class HeroSanctuaryScene {
         const statsConfig = [
             { text: `🧙 Hero Level: ${heroLvl}`, color: '#ffffff', y: 90 },
             { text: `✨ EXP: ${heroExp} / ${expNeeded}`, color: '#e0e0e0', y: 130 },
-            { text: `💚 Max HP: ${maxHP}`, color: '#81c784', y: 180 },
-            { text: `⚔️ Base ATK: +${dmgBonusPercent}%`, color: '#ffb300', y: 220 },
-            { text: `💰 Gold: ${gold}`, color: '#ffd54f', y: 270 }
+            { text: `💚 Max HP: ${finalMaxHP}` + (finalMaxHP > maxHP ? ` (+50)` : ''), color: '#81c784', y: 180 },
+            { text: `🛡️ Giáp Khởi Đầu: ${finalShield}`, color: '#80d8ff', y: 220 },
+            { text: `⚔️ Base ATK: +${dmgBonusPercent}%` + (equipped.weapon === 'magic_sword' ? ` (+15 Lôi)` : ''), color: '#ffb300', y: 260 },
+            { text: `💰 Gold: ${gold}`, color: '#ffd54f', y: 310 }
         ];
 
         // Draw EXP bar
@@ -192,7 +207,7 @@ export class HeroSanctuaryScene {
 
         const upBtn = new Container();
         upBtn.x = sx + sw / 2;
-        upBtn.y = sy + 380;
+        upBtn.y = sy + 400;
         this.statsPanel.addChild(upBtn);
 
         const upBg = new Graphics();
@@ -222,7 +237,7 @@ export class HeroSanctuaryScene {
         }
 
         // =========================================================================
-        // 🔮 RIGHT PANEL: ELEMENT MASTERY
+        // 🔮 RIGHT PANEL: CONTAINING TABS & CONTENT
         // =========================================================================
         const mx = 400;
         const my = 140;
@@ -235,131 +250,437 @@ export class HeroSanctuaryScene {
         masteryBg.stroke({ color: 0xffb300, width: 2, alpha: 0.3 });
         this.masteryPanel.addChild(masteryBg);
 
-        // Header right
-        const masteryHeader = new Text({
-            text: '🔥 TINH THÔNG NGUYÊN TỐ',
-            style: { fontFamily: 'Arial', fontSize: 22, fontWeight: 'bold', fill: '#ffffff' }
+        // --- DRAW TABS AT THE TOP ---
+        const tab1 = new Container();
+        tab1.x = mx + 30;
+        tab1.y = my + 25;
+        this.masteryPanel.addChild(tab1);
+
+        const isMastery = this.activeTab === 'mastery';
+        const tab1Bg = new Graphics();
+        tab1Bg.roundRect(0, 0, 180, 36, 8);
+        tab1Bg.fill({ color: isMastery ? 0x2c385e : 0x141a29, alpha: 0.8 });
+        tab1Bg.stroke({ color: isMastery ? 0xffb300 : 0xffffff, width: 1.5, alpha: isMastery ? 0.8 : 0.2 });
+        tab1Bg.eventMode = 'static';
+        tab1Bg.cursor = 'pointer';
+        tab1.addChild(tab1Bg);
+
+        const tab1Text = new Text({
+            text: '🔮 Tinh Thông',
+            style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ffffff' }
         });
-        masteryHeader.x = mx + 30;
-        masteryHeader.y = my + 30;
-        this.masteryPanel.addChild(masteryHeader);
+        tab1Text.anchor.set(0.5);
+        tab1Text.x = 90;
+        tab1Text.y = 18;
+        tab1.addChild(tab1Text);
 
-        // Grid parameters: 5 columns x 2 rows
-        const elements = [
-            { id: 'fire', name: 'Hỏa', emoji: '🔥', color: 0xff5252 },
-            { id: 'water', name: 'Thủy', emoji: '💧', color: 0x40c4ff },
-            { id: 'nature', name: 'Mộc', emoji: '🌿', color: 0x69f0ae },
-            { id: 'ice', name: 'Băng', emoji: '❄️', color: 0x80d8ff },
-            { id: 'lightning', name: 'Lôi', emoji: '⚡', color: 0xffd740 },
-            { id: 'earth', name: 'Thổ', emoji: '⛰️', color: 0xbcaaa4 },
-            { id: 'wind-air', name: 'Phong', emoji: '💨', color: 0x90caf9 },
-            { id: 'psychic-eye', name: 'Linh', emoji: '👁️', color: 0xe040fb },
-            { id: 'sun', name: 'Quang', emoji: '☀️', color: 0xffff00 },
-            { id: 'poison-death', name: 'Độc', emoji: '☠️', color: 0xb388ff }
-        ];
+        tab1Bg.on('pointerover', () => gsap.to(tab1.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
+        tab1Bg.on('pointerout', () => gsap.to(tab1.scale, { x: 1, y: 1, duration: 0.1 }));
+        tab1Bg.on('pointerdown', () => {
+            this.activeTab = 'mastery';
+            this.renderAll();
+        });
 
-        const cardW = 105;
-        const cardH = 160;
-        const gapX = 14;
-        const gapY = 20;
-        const startGridX = mx + 28;
-        const startGridY = my + 85;
+        const tab2 = new Container();
+        tab2.x = mx + 230;
+        tab2.y = my + 25;
+        this.masteryPanel.addChild(tab2);
 
-        elements.forEach((el, index) => {
-            const col = index % 5;
-            const row = Math.floor(index / 5);
-            const cx = startGridX + col * (cardW + gapX);
-            const cy = startGridY + row * (cardH + gapY);
+        const isGear = this.activeTab === 'gear';
+        const tab2Bg = new Graphics();
+        tab2Bg.roundRect(0, 0, 200, 36, 8);
+        tab2Bg.fill({ color: isGear ? 0x2c385e : 0x141a29, alpha: 0.8 });
+        tab2Bg.stroke({ color: isGear ? 0xffb300 : 0xffffff, width: 1.5, alpha: isGear ? 0.8 : 0.2 });
+        tab2Bg.eventMode = 'static';
+        tab2Bg.cursor = 'pointer';
+        tab2.addChild(tab2Bg);
 
-            const mLevel = save.masteryLevels ? (save.masteryLevels[el.id] || 0) : 0;
-            const mShards = save.elementShards ? (save.elementShards[el.id] || 0) : 0;
-            const shardCost = (mLevel + 1) * 5;
-            const canAfford = mShards >= shardCost;
+        const tab2Text = new Text({
+            text: '🎒 Cổ Vật & Trang Bị',
+            style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ffffff' }
+        });
+        tab2Text.anchor.set(0.5);
+        tab2Text.x = 100;
+        tab2Text.y = 18;
+        tab2.addChild(tab2Text);
 
-            // Element Card container
-            const elCard = new Container();
-            elCard.x = cx;
-            elCard.y = cy;
-            this.masteryPanel.addChild(elCard);
+        tab2Bg.on('pointerover', () => gsap.to(tab2.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
+        tab2Bg.on('pointerout', () => gsap.to(tab2.scale, { x: 1, y: 1, duration: 0.1 }));
+        tab2Bg.on('pointerdown', () => {
+            this.activeTab = 'gear';
+            this.renderAll();
+        });
 
-            // Card background
-            const elBg = new Graphics();
-            elBg.roundRect(0, 0, cardW, cardH, 12);
-            elBg.fill({ color: 0x1f293d, alpha: 0.65 });
-            elBg.stroke({ color: el.color, width: 1.5, alpha: canAfford ? 0.6 : 0.2 });
-            elCard.addChild(elBg);
 
-            // Emoji
-            const emojiText = new Text({
-                text: el.emoji,
-                style: { fontSize: 24 }
-            });
-            emojiText.anchor.set(0.5);
-            emojiText.x = cardW / 2;
-            emojiText.y = 30;
-            elCard.addChild(emojiText);
+        if (isMastery) {
+            // ==========================================
+            // TAB 1: ELEMENT MASTERY CONTENT
+            // ==========================================
+            const elements = [
+                { id: 'fire', name: 'Hỏa', emoji: '🔥', color: 0xff5252 },
+                { id: 'water', name: 'Thủy', emoji: '💧', color: 0x40c4ff },
+                { id: 'nature', name: 'Mộc', emoji: '🌿', color: 0x69f0ae },
+                { id: 'ice', name: 'Băng', emoji: '❄️', color: 0x80d8ff },
+                { id: 'lightning', name: 'Lôi', emoji: '⚡', color: 0xffd740 },
+                { id: 'earth', name: 'Thổ', emoji: '⛰️', color: 0xbcaaa4 },
+                { id: 'wind-air', name: 'Phong', emoji: '💨', color: 0x90caf9 },
+                { id: 'psychic-eye', name: 'Linh', emoji: '👁️', color: 0xe040fb },
+                { id: 'sun', name: 'Quang', emoji: '☀️', color: 0xffff00 },
+                { id: 'poison-death', name: 'Độc', emoji: '☠️', color: 0xb388ff }
+            ];
 
-            // Element name & level
-            const nameText = new Text({
-                text: `${el.name} Lvl ${mLevel}`,
-                style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ffffff' }
-            });
-            nameText.anchor.set(0.5);
-            nameText.x = cardW / 2;
-            nameText.y = 65;
-            elCard.addChild(nameText);
+            const cardW = 105;
+            const cardH = 160;
+            const gapX = 14;
+            const gapY = 20;
+            const startGridX = mx + 28;
+            const startGridY = my + 85;
 
-            // Mastery bonus text
-            const bonusText = new Text({
-                text: `+${mLevel * 5}% Dame`,
-                style: { fontFamily: 'Arial', fontSize: 11, fill: '#888888' }
-            });
-            bonusText.anchor.set(0.5);
-            bonusText.x = cardW / 2;
-            bonusText.y = 85;
-            elCard.addChild(bonusText);
+            elements.forEach((el, index) => {
+                const col = index % 5;
+                const row = Math.floor(index / 5);
+                const cx = startGridX + col * (cardW + gapX);
+                const cy = startGridY + row * (cardH + gapY);
 
-            // Shards count vs cost
-            const shardText = new Text({
-                text: `💎 ${mShards}/${shardCost}`,
-                style: { fontFamily: 'Arial', fontSize: 11, fontWeight: 'bold', fill: canAfford ? '#69f0ae' : '#ff5252' }
-            });
-            shardText.anchor.set(0.5);
-            shardText.x = cardW / 2;
-            shardText.y = 110;
-            elCard.addChild(shardText);
+                const mLevel = save.masteryLevels ? (save.masteryLevels[el.id] || 0) : 0;
+                const mShards = save.elementShards ? (save.elementShards[el.id] || 0) : 0;
+                const shardCost = (mLevel + 1) * 5;
+                const canAfford = mShards >= shardCost;
 
-            // Upgrade icon (+)
-            const plusBtn = new Container();
-            plusBtn.x = cardW / 2;
-            plusBtn.y = 138;
-            elCard.addChild(plusBtn);
+                const elCard = new Container();
+                elCard.x = cx;
+                elCard.y = cy;
+                this.masteryPanel.addChild(elCard);
 
-            const plusBg = new Graphics();
-            plusBg.circle(0, 0, 13);
-            plusBg.fill({ color: canAfford ? el.color : 0x444444 });
-            plusBg.eventMode = canAfford ? 'static' : 'none';
-            plusBg.cursor = canAfford ? 'pointer' : 'default';
-            plusBtn.addChild(plusBg);
+                const elBg = new Graphics();
+                elBg.roundRect(0, 0, cardW, cardH, 12);
+                elBg.fill({ color: 0x1f293d, alpha: 0.65 });
+                elBg.stroke({ color: el.color, width: 1.5, alpha: canAfford ? 0.6 : 0.2 });
+                elCard.addChild(elBg);
 
-            const plusText = new Text({
-                text: '+',
-                style: { fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold', fill: '#ffffff' }
-            });
-            plusText.anchor.set(0.5);
-            plusBtn.addChild(plusText);
-
-            if (canAfford) {
-                plusBg.on('pointerover', () => gsap.to(plusBtn.scale, { x: 1.2, y: 1.2, duration: 0.12 }));
-                plusBg.on('pointerout', () => gsap.to(plusBtn.scale, { x: 1, y: 1, duration: 0.12 }));
-                plusBg.on('pointerdown', () => {
-                    if (saveManager.upgradeMastery(el.id)) {
-                        this.playSparkleEffect(cx + cardW / 2, cy + cardH / 2);
-                        this.renderAll();
-                    }
+                const emojiText = new Text({
+                    text: el.emoji,
+                    style: { fontSize: 24 }
                 });
-            }
-        });
+                emojiText.anchor.set(0.5);
+                emojiText.x = cardW / 2;
+                emojiText.y = 30;
+                elCard.addChild(emojiText);
+
+                const nameText = new Text({
+                    text: `${el.name} Lvl ${mLevel}`,
+                    style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ffffff' }
+                });
+                nameText.anchor.set(0.5);
+                nameText.x = cardW / 2;
+                nameText.y = 65;
+                elCard.addChild(nameText);
+
+                const bonusText = new Text({
+                    text: `+${mLevel * 5}% Dame`,
+                    style: { fontFamily: 'Arial', fontSize: 11, fill: '#888888' }
+                });
+                bonusText.anchor.set(0.5);
+                bonusText.x = cardW / 2;
+                bonusText.y = 85;
+                elCard.addChild(bonusText);
+
+                const shardText = new Text({
+                    text: `💎 ${mShards}/${shardCost}`,
+                    style: { fontFamily: 'Arial', fontSize: 11, fontWeight: 'bold', fill: canAfford ? '#69f0ae' : '#ff5252' }
+                });
+                shardText.anchor.set(0.5);
+                shardText.x = cardW / 2;
+                shardText.y = 110;
+                elCard.addChild(shardText);
+
+                const plusBtn = new Container();
+                plusBtn.x = cardW / 2;
+                plusBtn.y = 138;
+                elCard.addChild(plusBtn);
+
+                const plusBg = new Graphics();
+                plusBg.circle(0, 0, 13);
+                plusBg.fill({ color: canAfford ? el.color : 0x444444 });
+                plusBg.eventMode = canAfford ? 'static' : 'none';
+                plusBg.cursor = canAfford ? 'pointer' : 'default';
+                plusBtn.addChild(plusBg);
+
+                const plusText = new Text({
+                    text: '+',
+                    style: { fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold', fill: '#ffffff' }
+                });
+                plusText.anchor.set(0.5);
+                plusBtn.addChild(plusText);
+
+                if (canAfford) {
+                    plusBg.on('pointerover', () => gsap.to(plusBtn.scale, { x: 1.2, y: 1.2, duration: 0.12 }));
+                    plusBg.on('pointerout', () => gsap.to(plusBtn.scale, { x: 1, y: 1, duration: 0.12 }));
+                    plusBg.on('pointerdown', () => {
+                        if (saveManager.upgradeMastery(el.id)) {
+                            this.playSparkleEffect(cx + cardW / 2, cy + cardH / 2);
+                            this.renderAll();
+                        }
+                    });
+                }
+            });
+        } else {
+            // ==========================================
+            // TAB 2: COV AT & TRANG BI (GEAR) CONTENT
+            // ==========================================
+            
+            // --- LEFT COLUMN: EQUIPPED ---
+            const eqHeader = new Text({
+                text: '🛡️ ĐANG TRANG BỊ',
+                style: { fontFamily: 'Arial', fontSize: 15, fontWeight: 'bold', fill: '#80d8ff' }
+            });
+            eqHeader.x = mx + 28;
+            eqHeader.y = my + 82;
+            this.masteryPanel.addChild(eqHeader);
+
+            const slots = [
+                { key: 'weapon', label: 'Vũ Khí (Weapon)', defaultEmoji: '⚔️' },
+                { key: 'armor', label: 'Giáp (Armor)', defaultEmoji: '🛡️' },
+                { key: 'relic', label: 'Cổ Vật (Relic)', defaultEmoji: '🔮' }
+            ];
+
+            slots.forEach((slot, index) => {
+                const sxGrid = mx + 28;
+                const syGrid = my + 112 + index * 108;
+                const slotW = 210;
+                const slotH = 96;
+
+                const slotContainer = new Container();
+                slotContainer.x = sxGrid;
+                slotContainer.y = syGrid;
+                this.masteryPanel.addChild(slotContainer);
+
+                const itemId = equipped[slot.key];
+                const item = getGearItemById(itemId);
+
+                const slotBg = new Graphics();
+                slotBg.roundRect(0, 0, slotW, slotH, 10);
+                
+                if (item) {
+                    slotBg.fill({ color: 0x1f293d, alpha: 0.8 });
+                    slotBg.stroke({ color: item.color || 0xffb300, width: 1.5, alpha: 0.75 });
+                } else {
+                    slotBg.fill({ color: 0x141a29, alpha: 0.4 });
+                    slotBg.stroke({ color: 0xffffff, width: 1.5, alpha: 0.15, dash: [4, 4] });
+                }
+                slotContainer.addChild(slotBg);
+
+                if (item) {
+                    // Item Emoji + Name
+                    const itemText = new Text({
+                        text: `${item.emoji} ${item.name}`,
+                        style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ffffff' }
+                    });
+                    itemText.x = 10;
+                    itemText.y = 12;
+                    slotContainer.addChild(itemText);
+
+                    // Slot Label
+                    const labelText = new Text({
+                        text: slot.label,
+                        style: { fontFamily: 'Arial', fontSize: 10, fill: '#ffb300' }
+                    });
+                    labelText.x = 10;
+                    labelText.y = 32;
+                    slotContainer.addChild(labelText);
+
+                    // Short Description Wrap
+                    const descText = new Text({
+                        text: item.description,
+                        style: { fontFamily: 'Arial', fontSize: 9, fill: '#cccccc', wordWrap: true, wordWrapWidth: 190 }
+                    });
+                    descText.x = 10;
+                    descText.y = 48;
+                    slotContainer.addChild(descText);
+
+                    // Unequip Button
+                    const unBtn = new Container();
+                    unBtn.x = slotW - 35;
+                    unBtn.y = 20;
+                    slotContainer.addChild(unBtn);
+
+                    const unBg = new Graphics();
+                    unBg.roundRect(-25, -10, 50, 20, 6);
+                    unBg.fill({ color: 0xe53935 });
+                    unBg.eventMode = 'static';
+                    unBg.cursor = 'pointer';
+                    unBtn.addChild(unBg);
+
+                    const unTxt = new Text({
+                        text: 'Tháo',
+                        style: { fontFamily: 'Arial', fontSize: 10, fontWeight: 'bold', fill: '#ffffff' }
+                    });
+                    unTxt.anchor.set(0.5);
+                    unBtn.addChild(unTxt);
+
+                    unBg.on('pointerover', () => gsap.to(unBtn.scale, { x: 1.05, y: 1.05, duration: 0.1 }));
+                    unBg.on('pointerout', () => gsap.to(unBtn.scale, { x: 1, y: 1, duration: 0.1 }));
+                    unBg.on('pointerdown', () => {
+                        if (saveManager.unequipGear(slot.key)) {
+                            this.playSparkleEffect(sxGrid + slotW / 2, syGrid + slotH / 2);
+                            this.renderAll();
+                        }
+                    });
+                } else {
+                    // Empty state
+                    const emptyEmojiText = new Text({
+                        text: slot.defaultEmoji,
+                        style: { fontSize: 24 }
+                    });
+                    emptyEmojiText.anchor.set(0.5);
+                    emptyEmojiText.x = 35;
+                    emptyEmojiText.y = slotH / 2;
+                    emptyEmojiText.alpha = 0.2;
+                    slotContainer.addChild(emptyEmojiText);
+
+                    const emptyText = new Text({
+                        text: `Trống\n[${slot.label}]`,
+                        style: { fontFamily: 'Arial', fontSize: 11, fontWeight: 'bold', fill: '#888888', align: 'left' }
+                    });
+                    emptyText.x = 65;
+                    emptyText.y = slotH / 2 - 14;
+                    slotContainer.addChild(emptyText);
+                }
+            });
+
+            // --- RIGHT COLUMN: SHOP / INVENTORY ---
+            const shopHeader = new Text({
+                text: '🎒 CỬA HÀNG TRANG BỊ & HÀNH TRANG',
+                style: { fontFamily: 'Arial', fontSize: 15, fontWeight: 'bold', fill: '#ffd54f' }
+            });
+            shopHeader.x = mx + 270;
+            shopHeader.y = my + 82;
+            this.masteryPanel.addChild(shopHeader);
+
+            const shopItems = [
+                ...GEAR_DATABASE.weapons,
+                ...GEAR_DATABASE.armor,
+                ...GEAR_DATABASE.relics
+            ];
+
+            shopItems.forEach((item, index) => {
+                const cxGrid = mx + 270;
+                const cyGrid = my + 112 + index * 66;
+                const itemW = 340;
+                const itemH = 60;
+
+                const itemContainer = new Container();
+                itemContainer.x = cxGrid;
+                itemContainer.y = cyGrid;
+                this.masteryPanel.addChild(itemContainer);
+
+                const isOwned = save.inventory ? save.inventory.includes(item.id) : false;
+                const isEquipped = equipped[item.slot] === item.id;
+
+                const itemBg = new Graphics();
+                itemBg.roundRect(0, 0, itemW, itemH, 10);
+                itemBg.fill({ color: 0x1f293d, alpha: 0.6 });
+                itemBg.stroke({ color: item.color, width: 1.5, alpha: isEquipped ? 0.8 : 0.25 });
+                itemContainer.addChild(itemBg);
+
+                // Emoji
+                const itemEmoji = new Text({
+                    text: item.emoji,
+                    style: { fontSize: 20 }
+                });
+                itemEmoji.x = 10;
+                itemEmoji.y = 12;
+                itemContainer.addChild(itemEmoji);
+
+                // Title + Slot Label
+                const nameText = new Text({
+                    text: `${item.name}`,
+                    style: { fontFamily: 'Arial', fontSize: 12, fontWeight: 'bold', fill: '#ffffff' }
+                });
+                nameText.x = 42;
+                nameText.y = 8;
+                itemContainer.addChild(nameText);
+
+                const slotText = new Text({
+                    text: `${item.slot.toUpperCase()}`,
+                    style: { fontFamily: 'Arial', fontSize: 8, fontWeight: 'bold', fill: item.color }
+                });
+                slotText.x = 42;
+                slotText.y = 24;
+                itemContainer.addChild(slotText);
+
+                // Brief Description
+                const descText = new Text({
+                    text: item.description,
+                    style: { fontFamily: 'Arial', fontSize: 9, fill: '#aaaaaa', wordWrap: true, wordWrapWidth: 195 }
+                });
+                descText.x = 42;
+                descText.y = 35;
+                itemContainer.addChild(descText);
+
+                // Action Button on the right
+                const actionBtn = new Container();
+                actionBtn.x = itemW - 55;
+                actionBtn.y = itemH / 2;
+                itemContainer.addChild(actionBtn);
+
+                const btnW = 85;
+                const btnH = 26;
+
+                const btnBg = new Graphics();
+                btnBg.roundRect(-btnW/2, -btnH/2, btnW, btnH, 6);
+
+                let btnLabel = '';
+                let btnColor = 0xffb300;
+                let active = false;
+
+                if (isEquipped) {
+                    btnLabel = 'Đang Dùng';
+                    btnColor = 0x4caf50; // green
+                    active = false;
+                } else if (isOwned) {
+                    btnLabel = 'Trang Bị';
+                    btnColor = 0x2196f3; // blue
+                    active = true;
+                } else {
+                    btnLabel = `${item.price}g Mua`;
+                    btnColor = gold >= item.price ? 0xffb300 : 0x444444; // golden or gray
+                    active = gold >= item.price;
+                }
+
+                btnBg.fill({ color: btnColor });
+                btnBg.eventMode = active ? 'static' : 'none';
+                btnBg.cursor = active ? 'pointer' : 'default';
+                actionBtn.addChild(btnBg);
+
+                const btnText = new Text({
+                    text: btnLabel,
+                    style: { fontFamily: 'Arial', fontSize: 10, fontWeight: 'bold', fill: '#ffffff' }
+                });
+                btnText.anchor.set(0.5);
+                actionBtn.addChild(btnText);
+
+                if (active) {
+                    btnBg.on('pointerover', () => gsap.to(actionBtn.scale, { x: 1.05, y: 1.05, duration: 0.1 }));
+                    btnBg.on('pointerout', () => gsap.to(actionBtn.scale, { x: 1, y: 1, duration: 0.1 }));
+                    btnBg.on('pointerdown', () => {
+                        if (isOwned) {
+                            // Equip
+                            if (saveManager.equipGear(item.id, item.slot)) {
+                                this.playSparkleEffect(cxGrid + itemW / 2, cyGrid + itemH / 2);
+                                this.renderAll();
+                            }
+                        } else {
+                            // Buy
+                            if (saveManager.buyGearItem(item.id, item.price)) {
+                                this.playSparkleEffect(cxGrid + itemW / 2, cyGrid + itemH / 2);
+                                this.renderAll();
+                            }
+                        }
+                    });
+                }
+            });
+        }
     }
 
     playSparkleEffect(x, y) {

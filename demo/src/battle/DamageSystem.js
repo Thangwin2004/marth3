@@ -66,6 +66,12 @@ export class DamageSystem {
                 const heroLvl = saveData.heroLevel || 1;
                 const masteryLvl = saveData.masteryLevels ? (saveData.masteryLevels[tileType] || 0) : 0;
                 
+                // Add weapon slot flat damage (+15 for Lightning)
+                const equipped = saveData.equippedItems || {};
+                if (equipped.weapon === 'magic_sword' && tileType === 'lightning') {
+                    matchDamage += 15;
+                }
+                
                 const dmgMultiplier = (1 + (heroLvl - 1) * 0.10) * (1 + masteryLvl * 0.05);
                 matchDamage *= dmgMultiplier;
             } else {
@@ -146,6 +152,56 @@ export class DamageSystem {
         }
 
         totalDamage = Math.floor(totalDamage);
+
+        // Vampiric Fang Relic lifesteal calculation (15% of Fire/Poison damage matches)
+        if (attacker.name === 'Player' && totalDamage > 0) {
+            const saveData = saveManager.load();
+            const equipped = saveData.equippedItems || {};
+            if (equipped.relic === 'vampiric_fang') {
+                let firePoisonDamage = 0;
+                for (const match of matches) {
+                    const tileType = match.tiles[0]?.color;
+                    if (tileType === 'fire' || tileType === 'poison-death') {
+                        const tileInfo = TILE_DAMAGE[tileType];
+                        if (tileInfo) {
+                            let mDmg = tileInfo.baseDmg * match.tiles.length;
+                            const lengthKey = Math.min(match.length, 6);
+                            const lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[6];
+                            mDmg *= lengthMult;
+
+                            // Terrain
+                            if (this.terrain.buff && this.terrain.buff[tileType]) mDmg *= (1 + this.terrain.buff[tileType]);
+                            if (this.terrain.debuff && this.terrain.debuff[tileType]) mDmg *= (1 - this.terrain.debuff[tileType]);
+
+                            // Mastery & Level
+                            const heroLvl = saveData.heroLevel || 1;
+                            const masteryLvl = saveData.masteryLevels ? (saveData.masteryLevels[tileType] || 0) : 0;
+                            mDmg *= (1 + (heroLvl - 1) * 0.10) * (1 + masteryLvl * 0.05);
+
+                            // Weakness
+                            if (defender.getWeaknessMultiplier) {
+                                mDmg *= defender.getWeaknessMultiplier(tileType);
+                            }
+                            firePoisonDamage += mDmg;
+                        }
+                    }
+                }
+
+                // Factoring in combo and curse
+                firePoisonDamage *= comboMult;
+                if (statusEffectManager.hasEffect(attacker, 'curse')) {
+                    const curse = statusEffectManager.getEffect(attacker, 'curse');
+                    firePoisonDamage *= (1 - (curse.damageReduction || 0.3));
+                }
+
+                if (firePoisonDamage > 0) {
+                    const lifesteal = Math.floor(firePoisonDamage * 0.15);
+                    if (lifesteal > 0) {
+                        healAmount += lifesteal;
+                    }
+                }
+            }
+        }
 
         return { totalDamage, effects, healAmount, shieldAmount };
     }

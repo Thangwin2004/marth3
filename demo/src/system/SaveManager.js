@@ -22,7 +22,7 @@ function defaultSave() {
     unlockedSkills: [],
     bestScores: {},
     // RPG PROGRESSION DATA
-    gold: 100, // Bắt đầu với 100 Vàng
+    gold: 200, // Bắt đầu với 200 Vàng (tăng một chút để người chơi dễ tiếp cận trang bị sớm)
     heroLevel: 1,
     heroExp: 0,
     elementShards: {
@@ -32,7 +32,13 @@ function defaultSave() {
     masteryLevels: {
       fire: 0, water: 0, nature: 0, ice: 0, lightning: 0,
       earth: 0, 'wind-air': 0, 'psychic-eye': 0, sun: 0, 'poison-death': 0
-    }
+    },
+    equippedItems: {
+      weapon: null,
+      armor: null,
+      relic: null
+    },
+    inventory: []
   };
 }
 
@@ -68,12 +74,16 @@ class SaveManager {
       // Merge nested objects deep enough
       const elementShards = { ...defaults.elementShards, ...loaded.elementShards };
       const masteryLevels = { ...defaults.masteryLevels, ...loaded.masteryLevels };
+      const equippedItems = { ...defaults.equippedItems, ...loaded.equippedItems };
+      const inventory = loaded.inventory || [];
       
       return {
         ...defaults,
         ...loaded,
         elementShards,
-        masteryLevels
+        masteryLevels,
+        equippedItems,
+        inventory
       };
     } catch (err) {
       console.warn('[SaveManager] Corrupt save data, resetting:', err);
@@ -137,6 +147,34 @@ class SaveManager {
       return true;
     }
     return false;
+  }
+
+  buyGearItem(itemId, price) {
+    const data = this.load();
+    if (data.gold >= price && !data.inventory.includes(itemId)) {
+      data.gold -= price;
+      data.inventory.push(itemId);
+      this.save(data);
+      return true;
+    }
+    return false;
+  }
+
+  equipGear(itemId, slot) {
+    const data = this.load();
+    if (data.inventory.includes(itemId)) {
+      data.equippedItems[slot] = itemId;
+      this.save(data);
+      return true;
+    }
+    return false;
+  }
+
+  unequipGear(slot) {
+    const data = this.load();
+    data.equippedItems[slot] = null;
+    this.save(data);
+    return true;
   }
 
   /**
