@@ -82,6 +82,14 @@ class SaveManager {
       const equippedSkills = { ...defaults.equippedSkills, ...loaded.equippedSkills };
       const inventory = loaded.inventory || [];
       
+      // Dynamic auto-equipment for passives based on level completion:
+      const unlockedLevels = loaded.unlockedLevels || defaults.unlockedLevels;
+      if (unlockedLevels.includes(3)) {
+        equippedSkills.passives = ['elem_crit', 'nat_regrow'];
+      } else {
+        equippedSkills.passives = [];
+      }
+      
       return {
         ...defaults,
         ...loaded,

@@ -755,7 +755,7 @@ export class HeroSanctuaryScene {
                 const kx = col * (cardSize + gap);
                 const ky = row * (cardSize + gap);
 
-                const isUnlocked = heroLvl >= skill.unlockedAtLevel;
+                const isUnlocked = save.unlockedLevels && save.unlockedLevels.includes(skill.unlockedAtLevel);
                 const isEquipped = save.equippedSkills ? (save.equippedSkills.active === skill.id) : (skill.id === 'fireball');
 
                 const skillCard = new Container();
@@ -788,8 +788,8 @@ export class HeroSanctuaryScene {
 
                 if (!isUnlocked) {
                     const lockLbl = new Text({
-                        text: `Lvl ${skill.unlockedAtLevel}`,
-                        style: { fontFamily: 'Arial', fontSize: 9, fill: '#888888', fontWeight: 'bold' }
+                        text: `Map ${skill.unlockedAtLevel - 1}`,
+                        style: { fontFamily: 'Arial', fontSize: 8, fill: '#888888', fontWeight: 'bold' }
                     });
                     lockLbl.anchor.set(0.5);
                     lockLbl.x = cardSize / 2;
@@ -846,6 +846,7 @@ export class HeroSanctuaryScene {
             pasSub.y = my + 102;
             this.masteryPanel.addChild(pasSub);
 
+            const isPassiveUnlocked = save.unlockedLevels && save.unlockedLevels.includes(3);
             const allPassives = Object.values(PASSIVE_SKILLS);
             allPassives.forEach((passive, index) => {
                 const px = mx + 325;
@@ -856,9 +857,13 @@ export class HeroSanctuaryScene {
                 const passCard = new Container();
                 passCard.x = px;
                 passCard.y = py;
+                if (!isPassiveUnlocked) {
+                    passCard.alpha = 0.5;
+                    passCard.eventMode = 'none';
+                }
                 this.masteryPanel.addChild(passCard);
 
-                const isEquipped = save.equippedSkills && save.equippedSkills.passives ? save.equippedSkills.passives.includes(passive.id) : false;
+                const isEquipped = isPassiveUnlocked; // Automatically active once unlocked
 
                 const passBg = new Graphics();
                 passBg.roundRect(0, 0, pW, pH, 12);
@@ -882,36 +887,43 @@ export class HeroSanctuaryScene {
                 pDesc.y = 38;
                 passCard.addChild(pDesc);
 
-                const actBtn = new Container();
-                actBtn.x = pW / 2;
-                actBtn.y = pH - 24;
-                passCard.addChild(actBtn);
+                if (!isPassiveUnlocked) {
+                    // Glassmorphic lock overlay
+                    const lockBg = new Graphics();
+                    lockBg.roundRect(15, pH - 38, pW - 30, 26, 6);
+                    lockBg.fill({ color: 0x3d2727, alpha: 0.85 });
+                    lockBg.stroke({ color: 0xff5252, width: 1, alpha: 0.5 });
+                    passCard.addChild(lockBg);
 
-                const btnW = 120;
-                const btnH = 26;
+                    const lockText = new Text({
+                        text: '🔒 Khóa (Vượt 2 map đầu)',
+                        style: { fontFamily: 'Arial', fontSize: 10, fontWeight: 'bold', fill: '#ff5252' }
+                    });
+                    lockText.anchor.set(0.5);
+                    lockText.x = pW / 2;
+                    lockText.y = pH - 25;
+                    passCard.addChild(lockText);
+                } else {
+                    const actBtn = new Container();
+                    actBtn.x = pW / 2;
+                    actBtn.y = pH - 24;
+                    passCard.addChild(actBtn);
 
-                const abg = new Graphics();
-                abg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
-                abg.fill({ color: isEquipped ? 0x4caf50 : 0x2196f3 });
-                abg.eventMode = 'static';
-                abg.cursor = 'pointer';
-                actBtn.addChild(abg);
+                    const btnW = 120;
+                    const btnH = 26;
 
-                const abgTxt = new Text({
-                    text: isEquipped ? 'Đang Kích Hoạt' : 'Kích Hoạt',
-                    style: { fontFamily: 'Arial', fontSize: 10, fontWeight: 'bold', fill: '#ffffff' }
-                });
-                abgTxt.anchor.set(0.5);
-                actBtn.addChild(abgTxt);
+                    const abg = new Graphics();
+                    abg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
+                    abg.fill({ color: 0x4caf50 }); // Green for auto-active
+                    actBtn.addChild(abg);
 
-                abg.on('pointerover', () => gsap.to(actBtn.scale, { x: 1.05, y: 1.05, duration: 0.1 }));
-                abg.on('pointerout', () => gsap.to(actBtn.scale, { x: 1, y: 1, duration: 0.1 }));
-                abg.on('pointerdown', () => {
-                    if (saveManager.togglePassiveSkill(passive.id)) {
-                        this.playSparkleEffect(px + pW / 2, py + pH / 2);
-                        this.renderAll();
-                    }
-                });
+                    const abgTxt = new Text({
+                        text: 'Đang Kích Hoạt',
+                        style: { fontFamily: 'Arial', fontSize: 10, fontWeight: 'bold', fill: '#ffffff' }
+                    });
+                    abgTxt.anchor.set(0.5);
+                    actBtn.addChild(abgTxt);
+                }
             });
         }
     }

@@ -1172,7 +1172,7 @@ export class BattleScene {
 
         // Add Gold & EXP & Shards!
         const expGained = this.levelNum * 40;
-        const goldGained = this.levelNum * 30;
+        const goldGained = this.levelNum * 50;
         const shardColor = shardRewards[this.levelNum] || 'nature';
         const shardsGained = 10;
 
