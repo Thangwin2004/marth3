@@ -832,7 +832,18 @@ export class BattleScene {
         let matches = this.combinationManager.getMatches();
         let safety = 0;
         while (matches.length && safety < 100) {
-            this.removeMatches(matches);
+            // Use immediate (synchronous) removal during init — no GSAP animation.
+            // This prevents ghost sprites accumulating in the container before
+            // the first frame renders, which can cause PixiJS v8 render errors.
+            const removed = new Set();
+            matches.forEach(match => {
+                match.tiles.forEach(tile => {
+                    if (!removed.has(tile)) {
+                        removed.add(tile);
+                        tile.remove(true);  // immediate = true
+                    }
+                });
+            });
             const emptyFields = this.board.fields.filter(f => f.tile === null && !f.isVoid);
             emptyFields.forEach(field => this.board.createTile(field));
             matches = this.combinationManager.getMatches();
@@ -1046,17 +1057,23 @@ export class BattleScene {
     }
 
     destroy() {
+        // Prevent any pending game logic (turn callbacks, delays) from running
+        this.isGameOver = true;
+        this.disabled = true;
+
         const killTweensRecursive = (obj) => {
+            if (!obj) return;
             gsap.killTweensOf(obj);
             if (obj.scale) gsap.killTweensOf(obj.scale);
             if (obj.children) {
-                obj.children.forEach(killTweensRecursive);
+                // Copy array to avoid issues if children are modified during iteration
+                [...obj.children].forEach(killTweensRecursive);
             }
         };
         killTweensRecursive(this.container);
 
-        this.hud.destroy();
-        this.turnIndicator.destroy();
+        if (this.hud) this.hud.destroy();
+        if (this.turnIndicator) this.turnIndicator.destroy();
         this.container.destroy({ children: true });
     }
 }

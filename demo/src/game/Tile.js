@@ -239,7 +239,8 @@ export class Tile {
         const parent = this.sprite.parent;
         const zIndex = this.sprite.zIndex;
 
-        // Destroy old sprite and create new one
+        // Remove from parent before destroying (PixiJS v8 render group fix)
+        if (parent) parent.removeChild(this.sprite);
         this.sprite.destroy();
         this.sprite = App.sprite(newColor);
         this.sprite.anchor.set(0.5);
@@ -259,9 +260,14 @@ export class Tile {
      * Uses PixiJS v8 Graphics API to draw tinted overlay on the sprite.
      */
     updateStateOverlay() {
-        // Remove existing overlay
+        // Remove existing overlay — removeChild before destroy (PixiJS v8 fix)
         if (this.stateOverlay) {
-            this.stateOverlay.destroy();
+            if (this.stateOverlay.parent) {
+                this.stateOverlay.parent.removeChild(this.stateOverlay);
+            }
+            if (!this.stateOverlay.destroyed) {
+                this.stateOverlay.destroy();
+            }
             this.stateOverlay = null;
         }
 
@@ -327,37 +333,91 @@ export class Tile {
      * Phải gọi sprite.destroy() để PixiJS giải phóng texture khỏi GPU.
      * Nếu chỉ set sprite = null, texture vẫn chiếm bộ nhớ GPU → memory leak!
      */
-    remove() {
+    /**
+     * Xóa tile khỏi game
+     *
+     * @param {boolean} immediate - If true, remove synchronously without animation
+     *                              (used during board initialization)
+     */
+    remove(immediate = false) {
         if (!this.sprite) return;  // Đã bị xóa rồi (tránh xóa 2 lần)
 
-        // Animation biến mất
-        gsap.to(this.sprite.scale, {
-            x: 0.1,                           // Thu nhỏ theo X
-            y: 0.1,                           // Thu nhỏ theo Y
-            duration: 0.15,
-        });
-        gsap.to(this.sprite, {
-            alpha: 0,                         // Mờ dần
-            duration: 0.15,
-            ease: 'power2.in',               // Nhanh dần (tăng tốc)
-            onComplete: () => {
-                if (this.sprite) {
-                    this.sprite.destroy();    // Giải phóng GPU memory
-                    this.sprite = null;       // Xóa tham chiếu
-                }
-            },
-        });
+        // Capture sprite reference for the async GSAP callback.
+        // Prevents stale 'this.sprite' references if the tile is reused.
+        const spriteRef = this.sprite;
+        this.sprite = null;  // Clear immediately to prevent double-removal
 
-        // Destroy state overlay
+        if (immediate) {
+            // Synchronous removal — no animation (used during board init)
+            if (spriteRef.parent) {
+                spriteRef.parent.removeChild(spriteRef);
+            }
+            if (!spriteRef.destroyed) {
+                spriteRef.destroy();
+            }
+        } else {
+            // Animation biến mất
+            gsap.to(spriteRef.scale, {
+                x: 0.1,                           // Thu nhỏ theo X
+                y: 0.1,                           // Thu nhỏ theo Y
+                duration: 0.15,
+            });
+            gsap.to(spriteRef, {
+                alpha: 0,                         // Mờ dần
+                duration: 0.15,
+                ease: 'power2.in',               // Nhanh dần (tăng tốc)
+                onComplete: () => {
+                    // PixiJS v8 fix: removeChild BEFORE destroy to prevent
+                    // "updateRenderable" errors from stale render group refs
+                    if (spriteRef.parent) {
+                        spriteRef.parent.removeChild(spriteRef);
+                    }
+                    if (!spriteRef.destroyed) {
+                        spriteRef.destroy();    // Giải phóng GPU memory
+                    }
+                },
+            });
+        }
+
+        // Destroy state overlay (managed by Tile.updateStateOverlay)
         if (this.stateOverlay) {
-            this.stateOverlay.destroy();
+            if (this.stateOverlay.parent) {
+                this.stateOverlay.parent.removeChild(this.stateOverlay);
+            }
+            if (!this.stateOverlay.destroyed) {
+                this.stateOverlay.destroy();
+            }
             this.stateOverlay = null;
         }
+
+        // Clean up board-managed overlays (frozen, corrupt, poison)
+        this._cleanupBoardOverlays();
 
         // Xóa tham chiếu 2 chiều
         if (this.field) {
             this.field.tile = null;   // Field không còn tile
             this.field = null;        // Tile không còn field
+        }
+    }
+
+    /**
+     * Remove board-managed overlay Graphics (frozen, corrupt, poison).
+     * These are created by Board.freezeRandom, Board.corruptRandom, Board.poisonRandom
+     * and need explicit cleanup when a tile is removed via match/cascade.
+     * @private
+     */
+    _cleanupBoardOverlays() {
+        const overlayKeys = ['_frozenOverlay', '_corruptOverlay', '_poisonOverlay'];
+        for (const key of overlayKeys) {
+            if (this[key]) {
+                if (this[key].parent) {
+                    this[key].parent.removeChild(this[key]);
+                }
+                if (!this[key].destroyed) {
+                    this[key].destroy();
+                }
+                this[key] = null;
+            }
         }
     }
 }
