@@ -23,6 +23,9 @@ class SceneManager {
     /** @type {Container|null} Currently active scene container */
     this.currentScene = null;
 
+    /** @type {Container|null} Transition wrapper container to avoid mutating scene containers directly */
+    this.transitionContainer = null;
+
     /** @type {import('pixi.js').Application|null} PixiJS application reference */
     this.app = null;
   }
@@ -60,29 +63,40 @@ class SceneManager {
         this.currentScene.container.interactiveChildren = false;
       }
 
-      await gsap.to(this.currentScene.container, {
+      // Animate the transition wrapper container instead of the scene container
+      // to avoid mutating containers with direct Graphics children
+      const fadeContainer = this.transitionContainer || this.currentScene.container;
+
+      await gsap.to(fadeContainer, {
         alpha: 0,
         duration: 0.3,
         ease: 'power2.inOut',
       });
 
-      this.app.stage.removeChild(this.currentScene.container);
+      this.app.stage.removeChild(fadeContainer);
       this.currentScene.destroy();
       this.currentScene = null;
+      this.transitionContainer = null;
     }
 
     // ── Create & fade in new scene ───────────────────────────────────────
     const newScene = new SceneClass(data);
-    newScene.container.alpha = 0;
-    this.app.stage.addChild(newScene.container);
+    
+    // Create a plain transition wrapper container that contains the scene
+    const transitionContainer = new Container();
+    transitionContainer.alpha = 0;
+    transitionContainer.addChild(newScene.container);
+    
+    this.app.stage.addChild(transitionContainer);
 
-    await gsap.to(newScene.container, {
+    await gsap.to(transitionContainer, {
       alpha: 1,
       duration: 0.3,
       ease: 'power2.inOut',
     });
 
     this.currentScene = newScene;
+    this.transitionContainer = transitionContainer;
   }
 
   /**
