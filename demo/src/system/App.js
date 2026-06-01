@@ -30,6 +30,7 @@ class GameApp {
             backgroundColor: 0x0a0a1a,
             resolution: window.devicePixelRatio || 1,
             autoDensity: true,
+            preference: 'webgl',
         });
 
         document.getElementById('pixi-container').appendChild(this.app.canvas);
