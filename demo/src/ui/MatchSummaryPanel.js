@@ -39,7 +39,9 @@ export class MatchSummaryPanel {
             bg.roundRect(-width / 2, -height / 2, width, height, 16);
             bg.fill({ color: 0x070b19, alpha: 0.95 });
             bg.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.7 });
-            container.addChild(bg);
+            const bgWrapper = new Container();
+            bgWrapper.addChild(bg);
+            container.addChild(bgWrapper);
 
             // --- Title: COMBO COUNT ---
             const comboText = new Text({

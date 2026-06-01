@@ -73,7 +73,10 @@ export class LevelSelectScene {
         backBg.stroke({ color: 0xffffff, width: 1, alpha: 0.2 });
         backBg.eventMode = 'static';
         backBg.cursor = 'pointer';
-        backBtn.addChild(backBg);
+
+        const backBgWrapper = new Container();
+        backBgWrapper.addChild(backBg);
+        backBtn.addChild(backBgWrapper);
 
         const backText = new Text({
             text: '← Back',
@@ -121,13 +124,18 @@ export class LevelSelectScene {
             cardBg.fill({ color: 0x1a1a1a, alpha: 0.8 });
             cardBg.stroke({ color: 0x333333, width: 1 });
         }
-        card.addChild(cardBg);
+        const cardBgWrapper = new Container();
+        cardBgWrapper.addChild(cardBg);
+        card.addChild(cardBgWrapper);
 
         // Level number badge
         const badge = new Graphics();
         badge.circle(w - 20, 20, 16);
         badge.fill({ color: isUnlocked ? 0x4fc3f7 : 0x333333 });
-        card.addChild(badge);
+        
+        const badgeWrapper = new Container();
+        badgeWrapper.addChild(badge);
+        card.addChild(badgeWrapper);
 
         const numText = new Text({
             text: `${levelNum}`,

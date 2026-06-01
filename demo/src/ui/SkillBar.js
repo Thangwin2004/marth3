@@ -47,7 +47,9 @@ export class SkillBar {
                 bg.fill({ color: 0x2a2a3e, alpha: 0.8 });
                 bg.stroke({ color: 0x555555, width: 1 });
             }
-            btn.addChild(bg);
+            const bgWrapper = new Container();
+            bgWrapper.addChild(bg);
+            btn.addChild(bgWrapper);
             
             // Icon
             const icon = new Text({

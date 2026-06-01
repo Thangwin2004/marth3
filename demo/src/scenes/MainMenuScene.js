@@ -56,12 +56,14 @@ export class MainMenuScene {
         this.container.addChild(titleContainer);
 
         // Glow behind title
+        const glowWrapper = new Container();
         const glow = new Graphics();
         glow.circle(0, 0, 120);
         glow.fill({ color: 0x4fc3f7, alpha: 0.08 });
-        titleContainer.addChild(glow);
-        gsap.to(glow, { alpha: 0.15, duration: 2, yoyo: true, repeat: -1, ease: 'sine.inOut' });
-        gsap.to(glow.scale, { x: 1.2, y: 1.2, duration: 3, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        glowWrapper.addChild(glow);
+        titleContainer.addChild(glowWrapper);
+        gsap.to(glowWrapper, { alpha: 0.15, duration: 2, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        gsap.to(glowWrapper.scale, { x: 1.2, y: 1.2, duration: 3, yoyo: true, repeat: -1, ease: 'sine.inOut' });
 
         // Main title
         const title = new Text({
@@ -88,11 +90,14 @@ export class MainMenuScene {
         titleContainer.addChild(subtitle);
 
         // Decorative line
+        const lineWrapper = new Container();
         const line = new Graphics();
         line.rect(-150, 0, 300, 2);
         line.fill({ color: 0x4fc3f7, alpha: 0.4 });
-        line.y = 75;
-        titleContainer.addChild(line);
+        lineWrapper.addChild(line);
+        
+        lineWrapper.y = 75;
+        titleContainer.addChild(lineWrapper);
 
         // === SAVE INFO ===
         const save = saveManager.load();
@@ -199,13 +204,19 @@ export class MainMenuScene {
         bg.stroke({ color: 0xffffff, width: 1, alpha: 0.2 });
         bg.eventMode = 'static';
         bg.cursor = 'pointer';
-        btn.addChild(bg);
+
+        const bgWrapper = new Container();
+        bgWrapper.addChild(bg);
+        btn.addChild(bgWrapper);
 
         // Subtle shine
         const shine = new Graphics();
         shine.roundRect(-halfW, -24, width, 24, 12);
         shine.fill({ color: 0xffffff, alpha: 0.08 });
-        btn.addChild(shine);
+        
+        const shineWrapper = new Container();
+        shineWrapper.addChild(shine);
+        btn.addChild(shineWrapper);
 
         const text = new Text({
             text: label,

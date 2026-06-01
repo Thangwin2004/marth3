@@ -57,7 +57,9 @@ export class ElementGuidePanel {
             // Inner decorative glass line border
             bg.roundRect(-width / 2 + 6, -height / 2 + 6, width - 12, height - 12, 16);
             bg.stroke({ color: 0xffffff, width: 1, alpha: 0.08 });
-            overlay.addChild(bg);
+            const bgWrapper = new Container();
+            bgWrapper.addChild(bg);
+            overlay.addChild(bgWrapper);
 
             // --- Header Title ---
             const title = new Text({
@@ -126,7 +128,9 @@ export class ElementGuidePanel {
                 // Pill accent bar
                 cBg.roundRect(8, 8, 4, cardH - 16, 2);
                 cBg.fill({ color: detail.color, alpha: 0.95 });
-                card.addChild(cBg);
+                const cBgWrapper = new Container();
+                cBgWrapper.addChild(cBg);
+                card.addChild(cBgWrapper);
 
                 // Element Icon + Name
                 const nameTxt = new Text({
@@ -196,7 +200,9 @@ export class ElementGuidePanel {
             btnBg.stroke({ color: 0xffffff, width: 1, alpha: 0.3 });
             btnBg.eventMode = 'static';
             btnBg.cursor = 'pointer';
-            closeBtn.addChild(btnBg);
+            const btnBgWrapper = new Container();
+            btnBgWrapper.addChild(btnBg);
+            closeBtn.addChild(btnBgWrapper);
 
             const btnText = new Text({
                 text: '❌ Close',
