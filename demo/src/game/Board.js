@@ -624,6 +624,59 @@ export class Board {
     }
 
     /**
+     * Destroy all tiles in a cross (+) centered at (row, col).
+     * Used by Rune Tiles when matched.
+     * 
+     * @param {number} row - Center row
+     * @param {number} col - Center col
+     * @returns {Tile[]} Array of actually destroyed Tile objects
+     */
+    destroyCross(row, col) {
+        const destroyedFields = new Set();
+        // Row
+        for (let c = 0; c < this.cols; c++) {
+            const field = this.getField(row, c);
+            if (field && field.tile && !field.isVoid) {
+                destroyedFields.add(field);
+            }
+        }
+        // Column
+        for (let r = 0; r < this.rows; r++) {
+            const field = this.getField(r, col);
+            if (field && field.tile && !field.isVoid) {
+                destroyedFields.add(field);
+            }
+        }
+
+        const tiles = [];
+        destroyedFields.forEach(field => {
+            tiles.push(field.tile);
+            this._removeTileOverlays(field.tile);
+            field.tile.remove();
+        });
+        return tiles;
+    }
+
+    /**
+     * Destroy all tiles on the board of a specific color X.
+     * Used by Rainbow Gems.
+     * 
+     * @param {string} color - The color/element name to clear
+     * @returns {Tile[]} Array of actually destroyed Tile objects
+     */
+    destroyAllOfColor(color) {
+        const tiles = [];
+        this.fields.forEach(field => {
+            if (field.tile && !field.isVoid && field.tile.color === color) {
+                tiles.push(field.tile);
+                this._removeTileOverlays(field.tile);
+                field.tile.remove();
+            }
+        });
+        return tiles;
+    }
+
+    /**
      * Destroy all tiles in an NxN area centered at (centerRow, centerCol).
      * 
      * @param {number} centerRow - Center row

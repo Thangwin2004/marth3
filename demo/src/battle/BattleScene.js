@@ -408,12 +408,64 @@ export class BattleScene {
         this.clearSelection();
         selectedTile.sprite.zIndex = 2;
 
+        // Save swapped tiles to identify where to morph special tiles
+        if (!reverse) {
+            this.lastSwappedTiles = [selectedTile, tile];
+        }
+
         selectedTile.moveTo(tile.field.position, 0.2);
         tile.moveTo(selectedTile.field.position, 0.2).then(() => {
             selectedTile.sprite.zIndex = 1;
             this.board.swap(selectedTile, tile);
 
             if (!reverse) {
+                // Check for Rainbow Gem swap activation
+                let isRainbowSwap = false;
+                let rainbowTile = null;
+                let targetTile = null;
+
+                if (selectedTile.isRainbow) {
+                    rainbowTile = selectedTile;
+                    targetTile = tile;
+                    isRainbowSwap = true;
+                } else if (tile.isRainbow) {
+                    rainbowTile = tile;
+                    targetTile = selectedTile;
+                    isRainbowSwap = true;
+                }
+
+                if (isRainbowSwap && targetTile) {
+                    const targetColor = targetTile.color;
+                    this.hud.setLog(`🌈 Rainbow Gem activated! Hút sạch toàn bộ ngọc màu ${targetColor}!`);
+                    
+                    // Show giant floating text
+                    DamagePopup.show(
+                        this.container,
+                        rainbowTile.sprite.x,
+                        rainbowTile.sprite.y - 20,
+                        'RAINBOW!',
+                        'combo'
+                    );
+
+                    // Destroy the Rainbow Gem itself
+                    rainbowTile.remove();
+
+                    // Destroy all tiles of targetColor
+                    const clearedTiles = this.board.destroyAllOfColor(targetColor);
+                    
+                    // Trigger match processing
+                    if (clearedTiles.length > 0) {
+                        this.comboCount = 0;
+                        this.lastAffectedCols = [];
+                        // Package as a match
+                        const rainbowMatch = { tiles: clearedTiles, length: clearedTiles.length };
+                        this.processMatches([rainbowMatch], who);
+                    } else {
+                        this.switchTurn();
+                    }
+                    return;
+                }
+
                 const { dirtyRows, dirtyCols } =
                     this.combinationManager.getDirtyRegionAfterSwap(selectedTile, tile);
                 const matches = this.combinationManager.getMatchesInRegion(dirtyRows, dirtyCols);
@@ -446,12 +498,40 @@ export class BattleScene {
         const allMatchesThisTurn = [];
         let currentMatches = matches;
         this.comboCount = 0;
+        const morphedTiles = new Set(); // Track morphed tiles to avoid destroying them
 
         while (currentMatches.length > 0) {
             this.comboCount++;
             
             // Add to matches list for damage/effects calculation at the end
             currentMatches.forEach(m => allMatchesThisTurn.push(m));
+
+            // Check for Rune and Rainbow Gem creation in this match iteration
+            currentMatches.forEach(match => {
+                if (match.length === 4) {
+                    // Match-4: Morph 1 tile into a Rune Tile!
+                    const morphTile = match.tiles.find(t => this.lastSwappedTiles && this.lastSwappedTiles.includes(t)) || match.tiles[Math.floor(match.length / 2)];
+                    if (morphTile && !morphTile.isStone && !morphTile.isRainbow) {
+                        morphTile.isRune = true;
+                        morphedTiles.add(morphTile);
+                        morphTile.updateStateOverlay();
+                        this.hud.setLog(`✨ Ghép 4! Tạo ra Ngọc Cổ Tự ${morphTile.color.toUpperCase()}!`);
+                        DamagePopup.show(this.container, morphTile.sprite.x, morphTile.sprite.y - 20, 'RUNE!', 'heal');
+                    }
+                } else if (match.length >= 5) {
+                    // Match-5: Morph 1 tile into a Rainbow Gem!
+                    const morphTile = match.tiles.find(t => this.lastSwappedTiles && this.lastSwappedTiles.includes(t)) || match.tiles[Math.floor(match.length / 2)];
+                    if (morphTile && !morphTile.isStone) {
+                        morphTile.isRainbow = true;
+                        morphTile.isRune = false;
+                        morphTile.color = 'rainbow'; // represent color
+                        morphedTiles.add(morphTile);
+                        morphTile.updateStateOverlay();
+                        this.hud.setLog(`🌈 Ghép 5! Tạo ra Ngọc Siêu Nhiên!`);
+                        DamagePopup.show(this.container, morphTile.sprite.x, morphTile.sprite.y - 20, 'RAINBOW!', 'combo');
+                    }
+                }
+            });
 
             // Check adjacent stones to destroy
             const stonesToDestroy = this.combinationManager.getStonesToDestroy(currentMatches);
@@ -462,8 +542,39 @@ export class BattleScene {
                 }
             });
 
-            // Remove matched tiles visually (starts GSAP fade-out)
-            this.removeMatches(currentMatches);
+            // Check for Rune Tiles in current matches to trigger cross explosions
+            const runesToTrigger = [];
+            currentMatches.forEach(match => {
+                match.tiles.forEach(tile => {
+                    // Check if it is a Rune and it is NOT one of the newly morphed ones this frame
+                    if (tile.isRune && tile.field && !morphedTiles.has(tile)) {
+                        runesToTrigger.push({
+                            row: tile.field.row,
+                            col: tile.field.col,
+                            tile: tile
+                        });
+                    }
+                });
+            });
+
+            // Trigger Rune explosions
+            runesToTrigger.forEach(rune => {
+                this.board._removeTileOverlays(rune.tile);
+                const explodedTiles = this.board.destroyCross(rune.row, rune.col);
+                if (explodedTiles.length > 0) {
+                    this.hud.setLog(`💥 Rune Tile exploded! Hủy diệt chữ thập!`);
+                    // Package as a fake match so they deal damage & cascade
+                    const runeMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                    allMatchesThisTurn.push(runeMatch);
+                    DamagePopup.show(this.container, rune.tile.sprite.x, rune.tile.sprite.y - 20, 'EXPLOSION!', 'damage');
+                }
+            });
+
+            // Remove matched tiles visually (except morphed ones)
+            this.removeMatches(currentMatches, morphedTiles);
+            
+            // Clear morphed list for next cascades so they can be matched
+            morphedTiles.clear();
             
             // Combo display popups on the board during settling
             if (this.comboCount >= 2) {
@@ -627,11 +738,11 @@ export class BattleScene {
         }
     }
 
-    removeMatches(matches) {
+    removeMatches(matches, morphedTiles = new Set()) {
         const removed = new Set();
         matches.forEach(match => {
             match.tiles.forEach(tile => {
-                if (!removed.has(tile)) {
+                if (!removed.has(tile) && !morphedTiles.has(tile)) {
                     removed.add(tile);
                     tile.remove();
                 }

@@ -66,6 +66,8 @@ export class Tile {
         this.isVoid = false;         // Permanent empty (not used on Tile, used on Field)
         this.hidden = false;         // Color hidden (shows '?')
         this.hiddenDuration = 0;     // Turns remaining hidden
+        this.isRune = false;         // Ghép 4: Rune Tile phát nổ chữ thập
+        this.isRainbow = false;      // Ghép 5: Rainbow Gem hút ngọc đồng màu
 
         // Overlay graphics for special states
         this.stateOverlay = null;
@@ -232,6 +234,8 @@ export class Tile {
         this.color = newColor;
         this.corrupt = false;
         this.poisoned = false;
+        this.isRune = false;
+        this.isRainbow = false;
 
         // Save current sprite state
         const oldX = this.sprite.x;
@@ -297,6 +301,34 @@ export class Tile {
             overlay.fill({ color: 0xffffff, alpha: 0.5 });
             overlay.rect(-2, 6, 4, 4);
             overlay.fill({ color: 0xffffff, alpha: 0.5 });
+        } else if (this.isRune) {
+            // Gorgeous golden border + central core glowing symbol for Rune Tiles
+            overlay.roundRect(-tileSize / 2 + 3, -tileSize / 2 + 3, tileSize - 6, tileSize - 6, 12);
+            overlay.stroke({ color: 0xffdd57, width: 3, alpha: 0.9 });
+            overlay.circle(0, 0, 10);
+            overlay.stroke({ color: 0xffdd57, width: 2, alpha: 0.7 });
+            overlay.circle(0, 0, 4);
+            overlay.fill({ color: 0xffffff, alpha: 0.9 });
+            gsap.to(overlay, { alpha: 0.6, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        } else if (this.isRainbow) {
+            // Concentric rainbow spectrum rings + white hot core for Rainbow Gems!
+            const rainbowColors = [0xff1744, 0xff9100, 0xffea00, 0x00e676, 0x2979ff, 0xd500f9];
+            rainbowColors.forEach((c, idx) => {
+                overlay.circle(0, 0, (tileSize / 2.2) * (1 - idx * 0.14));
+                overlay.stroke({ color: c, width: 3.5, alpha: 0.95 });
+            });
+            overlay.circle(0, 0, 3);
+            overlay.fill({ color: 0xffffff, alpha: 1.0 });
+            // Pulsing animation
+            overlay.scale.set(1.0);
+            gsap.to(overlay.scale, {
+                x: 1.12,
+                y: 1.12,
+                duration: 0.55,
+                yoyo: true,
+                repeat: -1,
+                ease: 'sine.inOut'
+            });
         }
 
         if (overlay.geometry && this.sprite.parent) {
