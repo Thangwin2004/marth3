@@ -788,7 +788,7 @@ export class BattleScene {
                 // Fire projectiles in sequence for each matched element!
                 for (const color of matchedColors) {
                     const projColor = colorMap[color] || 0xff6240;
-                    await Projectile.fire(this.container, boardCenter, defenderPos, projColor);
+                    await Projectile.fire(this.container, boardCenter, defenderPos, projColor, color);
                 }
 
                 // Play defender hurt animation
@@ -1012,7 +1012,13 @@ export class BattleScene {
         if (result.result?.type === 'damage') {
             const defenderPos = this.hud.getSpritePosition('boss');
             const playerPos = this.hud.getSpritePosition('player');
-            await Projectile.fire(this.container, playerPos, defenderPos, 0xff6240);
+            
+            // Map active damage skill to custom element style
+            let skillElement = 'fire';
+            if (skillId === 'lightning') skillElement = 'lightning';
+            else if (skillId === 'bomb') skillElement = 'earth';
+            
+            await Projectile.fire(this.container, playerPos, defenderPos, 0xff6240, skillElement);
             await this.hud.playHurt('boss');
             this.hud.showDamage('boss', result.result.damage, 'damage');
             this.hud.setLog(`💥 ${result.result.damage} damage to boss!`);
