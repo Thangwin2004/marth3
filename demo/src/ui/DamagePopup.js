@@ -12,12 +12,15 @@ export class DamagePopup {
      */
     static show(parent, x, y, amount, type = 'damage') {
         const configs = {
-            damage:   { text: `-${amount}`, color: '#ff5252', size: 22, prefix: '' },
-            heal:     { text: `+${amount}`, color: '#69f0ae', size: 20, prefix: '' },
-            shield:   { text: `+${amount}🛡`, color: '#64b5f6', size: 18, prefix: '' },
-            critical: { text: `CRIT -${amount}!`, color: '#ffd740', size: 28, prefix: '' },
-            poison:   { text: `-${amount}☠`, color: '#b388ff', size: 18, prefix: '' },
-            combo:    { text: `COMBO x${amount}!`, color: '#ff9800', size: 24, prefix: '🔥 ' },
+            damage:    { text: `-${amount}`, color: '#ff5252', size: 22, prefix: '' },
+            heal:      { text: `+${amount}`, color: '#69f0ae', size: 20, prefix: '' },
+            shield:    { text: `+${amount}🛡`, color: '#64b5f6', size: 18, prefix: '' },
+            critical:  { text: `CRIT -${amount}!`, color: '#ffd740', size: 28, prefix: '' },
+            poison:    { text: `-${amount}☠`, color: '#b388ff', size: 18, prefix: '' },
+            combo:     { text: `COMBO x${amount}!`, color: '#ff9800', size: 24, prefix: '🔥 ' },
+            effective: { text: `💥 KHẮC HỆ -${amount}!`, color: '#aeea00', size: 26, prefix: '' },
+            resisted:  { text: `🛡️ KHÁNG -${amount}`, color: '#cfd8dc', size: 18, prefix: '' },
+            sleep:     { text: `💤 GIẢ BỘ NGỦ...`, color: '#81d4fa', size: 22, prefix: '' },
         };
         
         const cfg = configs[type] || configs.damage;

@@ -60,6 +60,7 @@ export class BattleScene {
         this.comboCount = 0;
         this.elementGuideActive = false;
         this.bossMissCount = 0;
+        this.bossMercyMiss = false;
         this.disabled = false;
         this.selectedTile = null;
         this.isGameOver = false;
@@ -152,6 +153,23 @@ export class BattleScene {
     }
 
     initBoard() {
+        // Set dynamic tileSize based on board dimensions in levelConfig
+        const boardRows = this.levelConfig.board?.rows || Config.board.rows;
+        const boardCols = this.levelConfig.board?.cols || Config.board.cols;
+
+        let targetTileSize = 65; // default for 8x8 or smaller
+        if (Math.max(boardRows, boardCols) >= 12) {
+            targetTileSize = 46;
+        } else if (Math.max(boardRows, boardCols) >= 10) {
+            targetTileSize = 54;
+        }
+
+        // Update both Config and App.config to ensure consistent scaling everywhere
+        Config.tileSize = targetTileSize;
+        if (App.config) {
+            App.config.tileSize = targetTileSize;
+        }
+
         this.board = new Board(this.levelConfig);
         this.container.addChild(this.board.container);
 
@@ -195,14 +213,46 @@ export class BattleScene {
         this.hud.bossSprite.container.on('pointerdown', () => this.onBossClick());
 
         // Add "📖 Element Guide" button in top bar empty space
-        this.createButton(
-            this.container,
-            '📖 Element Guide',
-            Config.canvas.width / 2 + 160,
-            56,
-            0x4fc3f7,
-            () => this.showElementGuide()
-        );
+        const guideBtnContainer = new Container();
+        guideBtnContainer.x = Config.canvas.width / 2 + 180;
+        guideBtnContainer.y = 38; // beautifully aligned vertically with HP bars
+        this.container.addChild(guideBtnContainer);
+
+        const btnW = 120;
+        const btnH = 28;
+
+        const btnBg = new Graphics();
+        // Glassmorphic look: semi-transparent dark base with a neon cyan stroke
+        btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6);
+        btnBg.fill({ color: 0x070d1a, alpha: 0.85 });
+        btnBg.stroke({ color: 0x00d2ff, width: 1.5, alpha: 0.8 });
+        btnBg.eventMode = 'static';
+        btnBg.cursor = 'pointer';
+        guideBtnContainer.addChild(btnBg);
+
+        const btnText = new Text({
+            text: '📖 Element Guide',
+            style: { 
+                fontFamily: 'Arial, sans-serif', 
+                fontSize: 10, 
+                fontWeight: 'bold', 
+                fill: '#00d2ff',
+                dropShadow: { color: '#000000', blur: 2, distance: 1 }
+            },
+        });
+        btnText.anchor.set(0.5);
+        guideBtnContainer.addChild(btnText);
+
+        // Hover animations using gsap
+        btnBg.on('pointerover', () => {
+            gsap.to(guideBtnContainer.scale, { x: 1.05, y: 1.05, duration: 0.15 });
+            gsap.to(btnBg, { alpha: 1, duration: 0.15 });
+        });
+        btnBg.on('pointerout', () => {
+            gsap.to(guideBtnContainer.scale, { x: 1, y: 1, duration: 0.15 });
+            gsap.to(btnBg, { alpha: 0.85, duration: 0.15 });
+        });
+        btnBg.on('pointerdown', () => this.showElementGuide());
 
         // TurnIndicator — big overlay text
         this.turnIndicator = new TurnIndicator();
@@ -359,7 +409,23 @@ export class BattleScene {
                 await this.hud.playSkillCast('boss');
                 const skillResult = this.bossSkillSystem.executeSkill();
                 if (skillResult) {
+                    const skillNameMap = {
+                        freezeTiles: 'BĂNG PHONG TẬP KÍCH ❄️',
+                        destroyRow: 'HỦY DIỆT HÀNG NGANG 🔥',
+                        destroyCol: 'SẤM SÉT HỦY DIỆT CỘT ⚡',
+                        corruptTiles: 'MA HÓA Ô NGỌC ☠️',
+                        stoneBlock: 'THẠCH BẢN PHONG TỎA ⛰️',
+                        shuffleBoard: 'HỖN LOẠN DỊCH CHUYỂN 🌪️',
+                        poisonTiles: 'KỊ ĐỘC PHỦ LÊN 🤢',
+                        cloneTiles: 'PHÂN THÂN ĐỒNG HÓA 🔮',
+                        voidTiles: 'HƯ VÔ KHÔNG GIAN 👁️'
+                    };
+                    const skillName = skillNameMap[skillResult.skillId] || skillResult.skillId.toUpperCase();
                     this.hud.setLog(`🔮 Boss uses ${skillResult.skillId}: ${skillResult.description}`);
+                    
+                    // Show a gorgeous full screen text banner for Boss Skill casting
+                    await this.turnIndicator.show(`🔮 BOSS SKILL: ${skillName}`, '#ff5252');
+
                     await this.delay(600);
                     await this.processFallDown();
                     await this.addTiles();
@@ -582,7 +648,12 @@ export class BattleScene {
                     this.hud.setLog('❌ Swap missed! You lost your turn!');
                     this.switchTurn();
                 } else {
-                    this.hud.setLog('💀 Boss missed the swap! Turn passes to you!');
+                    if (this.bossMercyMiss) {
+                        this.hud.setLog('💤 Boss ngủ gật trượt lượt! Cơ hội lật kèo của bạn! 💤');
+                        this.bossMercyMiss = false; // Reset flag
+                    } else {
+                        this.hud.setLog('💀 Boss missed the swap! Turn passes to you!');
+                    }
                     this.switchTurn();
                 }
             }
@@ -603,8 +674,16 @@ export class BattleScene {
         while (currentMatches.length > 0) {
             this.comboCount++;
             
+            // Tracks all columns that are affected by any tile destruction/removal in this iteration
+            const affectedCols = new Set();
+
             // Add to matches list for damage/effects calculation at the end
-            currentMatches.forEach(m => allMatchesThisTurn.push(m));
+            currentMatches.forEach(m => {
+                allMatchesThisTurn.push(m);
+                m.tiles.forEach(tile => {
+                    if (tile.field) affectedCols.add(tile.field.col);
+                });
+            });
 
             // 1. Group matched tiles by color to check for L/T-shape matches
             const colorGroups = {};
@@ -642,6 +721,8 @@ export class BattleScene {
                         if (explodedTiles.length > 0) {
                             const lMatch = { tiles: explodedTiles, length: explodedTiles.length };
                             allMatchesThisTurn.push(lMatch);
+                            // Track columns of exploded tiles
+                            explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
                             DamagePopup.show(this.container, posX, posY - 20, '3x3 EXPLOSION!', 'damage');
                         }
                         processedColors.add(color);
@@ -670,6 +751,8 @@ export class BattleScene {
                         if (explodedTiles.length > 0) {
                             const crossMatch = { tiles: explodedTiles, length: explodedTiles.length };
                             allMatchesThisTurn.push(crossMatch);
+                            // Track columns of exploded tiles
+                            explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
                             DamagePopup.show(this.container, posX, posY - 20, 'CROSS BLAST!', 'damage');
                         }
                         processedColors.add(color);
@@ -691,6 +774,8 @@ export class BattleScene {
                             if (explodedTiles.length > 0) {
                                 const rowMatch = { tiles: explodedTiles, length: explodedTiles.length };
                                 allMatchesThisTurn.push(rowMatch);
+                                // Track columns of exploded tiles
+                                explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
                                 DamagePopup.show(this.container, posX, posY - 20, 'ROW CLEAR!', 'damage');
                             }
                         } else {
@@ -699,6 +784,8 @@ export class BattleScene {
                             if (explodedTiles.length > 0) {
                                 const colMatch = { tiles: explodedTiles, length: explodedTiles.length };
                                 allMatchesThisTurn.push(colMatch);
+                                // Track columns of exploded tiles
+                                explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
                                 DamagePopup.show(this.container, posX, posY - 20, 'COLUMN CLEAR!', 'damage');
                             }
                         }
@@ -711,6 +798,7 @@ export class BattleScene {
             const stonesToDestroy = this.combinationManager.getStonesToDestroy(currentMatches);
             stonesToDestroy.forEach(field => {
                 if (field.tile) {
+                    affectedCols.add(field.col); // Track stones columns
                     field.tile.remove();
                     field.tile = null;
                 }
@@ -740,6 +828,8 @@ export class BattleScene {
                     // Package as a fake match so they deal damage & cascade
                     const runeMatch = { tiles: explodedTiles, length: explodedTiles.length };
                     allMatchesThisTurn.push(runeMatch);
+                    // Track columns of exploded tiles
+                    explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
                     DamagePopup.show(this.container, rune.tile.sprite.x, rune.tile.sprite.y - 20, 'EXPLOSION!', 'damage');
                 }
             });
@@ -769,14 +859,7 @@ export class BattleScene {
             await this.addTiles();
             this.updateUI();
 
-            // Find new cascade matches
-            const affectedCols = new Set(this.lastAffectedCols || []);
-            currentMatches.forEach(match => {
-                match.tiles.forEach(tile => {
-                    if (tile.field) affectedCols.add(tile.field.col);
-                });
-            });
-
+            // Find new cascade matches in affected cols only (highly optimized for 12x12 boards)
             const { dirtyRows, dirtyCols } =
                 this.combinationManager.getDirtyRegionAfterCascade([...affectedCols]);
             this.lastAffectedCols = dirtyCols;
@@ -790,11 +873,8 @@ export class BattleScene {
         // 2. ATTACK / ACTION PHASE (Board has fully settled!)
         if (allMatchesThisTurn.length > 0) {
             const currentRound = Math.floor((this.turnCount - 1) / 2) + 1;
-            // Calculate total damage/effects for all accumulated matches
-            const { totalDamage, effects, healAmount, shieldAmount } =
-                this.damageSystem.calculate(allMatchesThisTurn, attacker, defender, this.comboCount, currentRound);
 
-            // Check for poisoned tiles in all matches
+            // Check for poisoned tiles in all matches (can be computed upfront)
             let poisonSelfDamage = 0;
             allMatchesThisTurn.forEach(match => {
                 match.tiles.forEach(tile => {
@@ -827,90 +907,119 @@ export class BattleScene {
             // Show visual match summary panel to display matched tile graphics & combo count
             await MatchSummaryPanel.show(this.container, colorCounts, this.comboCount);
 
-            // ====== ANIMATIONS & EFFECTS ======
-            // Attacker casts/attacks
-            await this.hud.playAttack(who);
+            // Accumulate status effects to apply at the very end
+            const accumulatedEffects = [];
 
-            // Projectile elemental attacks
-            if (totalDamage > 0) {
-                const boardCenter = {
-                    x: this.board.container.x + (this.board.cols * Config.tileSize) / 2,
-                    y: this.board.container.y + (this.board.rows * Config.tileSize) / 2,
-                };
-                const defenderPos = this.hud.getSpritePosition(defenderSide);
+            // ====== SEQUENTIAL ATTACK ANIMATIONS & DAMAGE ======
+            // Process each match in allMatchesThisTurn one by one!
+            for (let i = 0; i < allMatchesThisTurn.length; i++) {
+                const match = allMatchesThisTurn[i];
+                const tileType = match.tiles[0]?.color;
+                if (!tileType) continue;
 
-                // We can fire multiple projectiles, one for each distinct elemental match!
-                const matchedColors = [...new Set(allMatchesThisTurn.map(m => m.tiles[0]?.color).filter(Boolean))];
-                
-                const colorMap = {
-                    fire: 0xff6240, water: 0x42a5f5, nature: 0x66bb6a,
-                    ice: 0x80d8ff, lightning: 0xfff176, earth: 0x8d6e63,
-                    'wind-air': 0x90caf9, 'psychic-eye': 0xce93d8,
-                    sun: 0xffd54f, 'poison-death': 0xb388ff,
-                };
+                // Calculate damage and effects for this single match
+                const { totalDamage, effects: matchEffects, healAmount: matchHeal, shieldAmount: matchShield } =
+                    this.damageSystem.calculate([match], attacker, defender, match.comboStep || 1, currentRound);
 
-                // Fire projectiles in sequence for each matched element!
-                for (const color of matchedColors) {
-                    const projColor = colorMap[color] || 0xff6240;
-                    await Projectile.fire(this.container, boardCenter, defenderPos, projColor, color);
+                if (matchEffects) {
+                    matchEffects.forEach(eff => accumulatedEffects.push(eff));
                 }
 
-                // Play defender hurt animation
-                await this.hud.playHurt(defenderSide);
+                if (totalDamage > 0) {
+                    // Attacker play attack lunge animation
+                    await this.hud.playAttack(who);
 
-                // Apply defender damage
-                this.damageSystem.applyDamage(defender, totalDamage, effects);
-                this.hud.showDamage(defenderSide, totalDamage, 'damage');
+                    // Determine projectile start position (center of match tiles, or fallback to board center)
+                    const boardCenter = {
+                        x: this.board.container.x + (this.board.cols * Config.tileSize) / 2,
+                        y: this.board.container.y + (this.board.rows * Config.tileSize) / 2,
+                    };
+                    const firstTile = match.tiles[0];
+                    const startPos = (firstTile && firstTile.sprite) 
+                        ? { x: firstTile.sprite.x + this.board.container.x, y: firstTile.sprite.y + this.board.container.y } 
+                        : boardCenter;
+                    
+                    const defenderPos = this.hud.getSpritePosition(defenderSide);
 
-                // Stone Plate Armor physical reflection logic
-                if (who === 'boss' && totalDamage > 0) {
-                    const saveData = saveManager.load();
-                    const equipped = saveData.equippedItems || {};
-                    if (equipped.armor === 'stone_plate') {
-                        const reflectDmg = Math.floor(totalDamage * 0.20);
-                        if (reflectDmg > 0) {
-                            // Apply damage to Boss
-                            this.boss.takeDamage(reflectDmg);
+                    const colorMap = {
+                        fire: 0xff6240, water: 0x42a5f5, nature: 0x66bb6a,
+                        ice: 0x80d8ff, lightning: 0xfff176, earth: 0x8d6e63,
+                        'wind-air': 0x90caf9, 'psychic-eye': 0xce93d8,
+                        sun: 0xffd54f, 'poison-death': 0xb388ff,
+                    };
+                    const projColor = colorMap[tileType] || 0xff6240;
 
-                            // Log it
-                            this.hud.setLog(`🛡️⛰️ [Giáp Gai Thạch Bản] phản lại ${reflectDmg} sát thương hệ Thổ lên Boss!`);
+                    // Fire projectile
+                    await Projectile.fire(this.container, startPos, defenderPos, projColor, tileType);
 
-                            // Show damage popup on boss
-                            const bossPos = this.hud.getSpritePosition('boss');
-                            DamagePopup.show(this.container, bossPos.x, bossPos.y - 50, `⛰️ ${reflectDmg}`, 'damage');
+                    // Play defender hurt animation
+                    await this.hud.playHurt(defenderSide);
+
+                    // Apply defender damage
+                    this.damageSystem.applyDamage(defender, totalDamage, matchEffects);
+
+                    // Determine damage type popup: damage, effective, or resisted
+                    let dmgType = 'damage';
+                    if (defender.getWeaknessMultiplier) {
+                        const mult = defender.getWeaknessMultiplier(tileType);
+                        if (mult > 1.0) dmgType = 'effective';
+                        else if (mult < 1.0) dmgType = 'resisted';
+                    }
+
+                    // Show sequential damage popup on defender
+                    this.hud.showDamage(defenderSide, totalDamage, dmgType);
+
+                    // Physical reflection logic for Giáp Gai Thạch Bản (reflected immediately per hit!)
+                    if (who === 'boss') {
+                        const saveData = saveManager.load();
+                        const equipped = saveData.equippedItems || {};
+                        if (equipped.armor === 'stone_plate') {
+                            const reflectDmg = Math.floor(totalDamage * 0.20);
+                            if (reflectDmg > 0) {
+                                this.boss.takeDamage(reflectDmg);
+                                this.hud.setLog(`🛡️⛰️ [Giáp Gai Thạch Bản] phản lại ${reflectDmg} sát thương hệ Thổ lên Boss!`);
+                                const bossPos = this.hud.getSpritePosition('boss');
+                                DamagePopup.show(this.container, bossPos.x, bossPos.y - 50, `⛰️ ${reflectDmg}`, 'damage');
+                            }
                         }
                     }
-                }
-            }
 
-            // Apply self heals
-            if (healAmount > 0) {
-                const healed = attacker.heal(healAmount);
-                if (healed > 0) {
+                    // Small pause between hits to make them feel punchy and sequential
+                    await this.delay(350);
+                }
+
+                // Process heal of this single match immediately
+                if (matchHeal > 0) {
+                    const healed = attacker.heal(matchHeal);
+                    if (healed > 0) {
+                        const attackerPos = this.hud.getSpritePosition(who);
+                        await Projectile.heal(this.container, attackerPos.x, attackerPos.y);
+                        await this.hud.playHeal(who);
+                        this.hud.showDamage(who, healed, 'heal');
+                        await this.delay(300);
+                    }
+                }
+
+                // Process shield of this single match immediately
+                if (matchShield > 0) {
+                    attacker.addShield(matchShield);
                     const attackerPos = this.hud.getSpritePosition(who);
-                    await Projectile.heal(this.container, attackerPos.x, attackerPos.y);
-                    await this.hud.playHeal(who);
-                    this.hud.showDamage(who, healed, 'heal');
+                    await Projectile.shield(this.container, attackerPos.x, attackerPos.y);
+                    await this.hud.playShield(who);
+                    this.hud.showDamage(who, matchShield, 'shield');
+                    await this.delay(300);
                 }
-            }
-
-            // Apply self shields
-            if (shieldAmount > 0) {
-                attacker.addShield(shieldAmount);
-                const attackerPos = this.hud.getSpritePosition(who);
-                await Projectile.shield(this.container, attackerPos.x, attackerPos.y);
-                await this.hud.playShield(who);
-                this.hud.showDamage(who, shieldAmount, 'shield');
             }
 
             // Apply poison self damage
             if (poisonSelfDamage > 0) {
                 attacker.takeDamage(poisonSelfDamage);
                 this.hud.showDamage(who, poisonSelfDamage, 'poison');
+                this.hud.setLog(`🤢 ${attacker.name} dính độc từ ô ngọc bị nhiễm độc! Nhận ${poisonSelfDamage} sát thương!`);
             }
 
-            // Apply status effects
-            this.damageSystem.applyEffects(effects, attacker, defender, this.board);
+            // Apply status effects accumulated throughout all matches
+            this.damageSystem.applyEffects(accumulatedEffects, attacker, defender, this.board);
 
             // Magic Sword Combo 4+ effect
             if (who === 'player' && this.comboCount >= 4) {
@@ -1005,7 +1114,7 @@ export class BattleScene {
     }
 
     shouldBossMiss() {
-        const hpPercent = this.player.hp / this.player.maxHP;
+        const hpPercent = this.player.getHPPercent();
         if (hpPercent <= 0.3) {
             // Player is low HP (<= 30%)
             const maxMisses = this.getBossMaxMisses();
@@ -1022,7 +1131,9 @@ export class BattleScene {
             const missChoice = this.bossAI.findInvalidSwap(this.board, this.combinationManager);
             if (missChoice) {
                 this.bossMissCount++;
-                this.hud.setLog('💀 Boss makes a move...');
+                this.bossMercyMiss = true;
+                this.hud.setLog('💤 Boss phân tâm ngủ gật... Cố tình ghép trượt! 💤');
+                this.hud.showDamage('boss', '', 'sleep');
                 this.swap(missChoice.tile1, missChoice.tile2, false, 'boss');
                 return;
             }
@@ -1389,14 +1500,14 @@ export class BattleScene {
         }
     }
 
-    createButton(parent, label, x, y, color, onClick) {
+    createButton(parent, label, x, y, color, onClick, w = 170, h = 44, fontSize = 16) {
         const btnContainer = new Container();
         btnContainer.x = x;
         btnContainer.y = y;
         parent.addChild(btnContainer);
 
         const bg = new Graphics();
-        bg.roundRect(-85, -22, 170, 44, 10);
+        bg.roundRect(-w / 2, -h / 2, w, h, 8);
         bg.fill({ color });
         bg.stroke({ color: 0xffffff, width: 1, alpha: 0.3 });
         bg.eventMode = 'static';
@@ -1405,7 +1516,7 @@ export class BattleScene {
 
         const text = new Text({
             text: label,
-            style: { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: '#ffffff' },
+            style: { fontFamily: 'Arial', fontSize: fontSize, fontWeight: 'bold', fill: '#ffffff' },
         });
         text.anchor.set(0.5);
         btnContainer.addChild(text);

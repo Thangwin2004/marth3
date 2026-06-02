@@ -519,7 +519,7 @@ export class Game {
         // 7. Thêm tiles mới
         await this.addTiles();
 
-        // 8. Kiểm tra chain combo — CHỈ trong dirty region (affected cols)
+        // 8. Kiểm tra chain combo — CHỈ trong dirty region (affected cols) (Highly optimized for 12x12 boards)
         const { dirtyRows, dirtyCols } =
             this.combinationManager.getDirtyRegionAfterCascade([...affectedCols]);
         this.lastAffectedCols = dirtyCols;

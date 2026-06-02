@@ -39,8 +39,9 @@ export class ElementGuidePanel {
                 originalDestroy(options);
             };
 
-            const width = 860;
-            const height = 620;
+            // SLEEK COMPACT MODAL BOUNDARIES
+            const width = 660;
+            const height = 460;
 
             // --- Dark Modal Background ---
             const bg = new Graphics();
@@ -50,13 +51,14 @@ export class ElementGuidePanel {
             bg.fill({ color: 0x000000, alpha: 0.75 });
 
             // Main Glassmorphic Guide Card
-            bg.roundRect(-width / 2, -height / 2, width, height, 20);
-            bg.fill({ color: 0x0a1124, alpha: 0.96 });
+            bg.roundRect(-width / 2, -height / 2, width, height, 16);
+            bg.fill({ color: 0x070d1a, alpha: 0.95 });
             bg.stroke({ color: 0x00d2ff, width: 2, alpha: 0.8 }); // neon cyan border
             
             // Inner decorative glass line border
-            bg.roundRect(-width / 2 + 6, -height / 2 + 6, width - 12, height - 12, 16);
-            bg.stroke({ color: 0xffffff, width: 1, alpha: 0.08 });
+            bg.roundRect(-width / 2 + 5, -height / 2 + 5, width - 10, height - 10, 12);
+            bg.stroke({ color: 0xffffff, width: 1, alpha: 0.05 });
+            
             const bgWrapper = new Container();
             bgWrapper.addChild(bg);
             overlay.addChild(bgWrapper);
@@ -66,14 +68,16 @@ export class ElementGuidePanel {
                 text: '📖 ELEMENT GUIDE & TYPE COUNTERS',
                 style: {
                     fontFamily: 'Arial, sans-serif',
-                    fontSize: 26,
+                    fontSize: 16,
                     fontWeight: 'bold',
                     fill: '#ffd54f',
-                    dropShadow: { color: '#ff6f00', blur: 6, distance: 0, alpha: 0.6 }
+                    stroke: '#000000',
+                    strokeThickness: 3,
+                    dropShadow: { color: '#ff6f00', blur: 3, distance: 0, alpha: 0.6 }
                 }
             });
             title.anchor.set(0.5);
-            title.y = -height / 2 + 42;
+            title.y = -height / 2 + 25;
             overlay.addChild(title);
 
             // --- Description ---
@@ -81,28 +85,28 @@ export class ElementGuidePanel {
                 text: '💥 Super Effective = 2.0x Damage (Green) | 🛡️ Resistant = 0.5x Damage (Red)',
                 style: {
                     fontFamily: 'Arial, sans-serif',
-                    fontSize: 13,
+                    fontSize: 10,
                     fill: '#b0bec5'
                 }
             });
             subtitle.anchor.set(0.5);
-            subtitle.y = -height / 2 + 78;
+            subtitle.y = -height / 2 + 48;
             overlay.addChild(subtitle);
 
-            // --- Close Click on Backdrop ---
+            // Make backdrop interactive
             bg.eventMode = 'static';
-            bg.cursor = 'default'; // keep default for backdrop
+            bg.cursor = 'default';
 
             // --- 2-Column Grid Layout of Elements ---
             const gridContainer = new Container();
-            gridContainer.y = 8;
+            gridContainer.y = -5;
             overlay.addChild(gridContainer);
 
             const keys = Object.keys(ELEMENT_DETAILS);
-            const cardW = 390;
-            const cardH = 75;
-            const gapX = 24;
-            const gapY = 12;
+            const cardW = 300;
+            const cardH = 56;
+            const gapX = 20;
+            const gapY = 8;
 
             keys.forEach((key, index) => {
                 const col = index < 5 ? 0 : 1;
@@ -113,7 +117,7 @@ export class ElementGuidePanel {
                 card.pivot.set(cardW / 2, cardH / 2);
                 
                 const posX = col === 0 ? -(cardW + gapX / 2) : gapX / 2;
-                const posY = row * (cardH + gapY) - 210;
+                const posY = row * (cardH + gapY) - 135;
                 
                 card.x = posX + cardW / 2;
                 card.y = posY + cardH / 2;
@@ -121,13 +125,14 @@ export class ElementGuidePanel {
 
                 // Card background
                 const cBg = new Graphics();
-                cBg.roundRect(0, 0, cardW, cardH, 12);
+                cBg.roundRect(0, 0, cardW, cardH, 8);
                 cBg.fill({ color: 0x0f172a, alpha: 0.85 });
-                cBg.stroke({ color: detail.color, width: 1.5, alpha: 0.45 });
+                cBg.stroke({ color: detail.color, width: 1.2, alpha: 0.35 });
                 
                 // Pill accent bar
-                cBg.roundRect(8, 8, 4, cardH - 16, 2);
-                cBg.fill({ color: detail.color, alpha: 0.95 });
+                cBg.roundRect(4, 4, 3, cardH - 8, 1.5);
+                cBg.fill({ color: detail.color, alpha: 0.9 });
+                
                 const cBgWrapper = new Container();
                 cBgWrapper.addChild(cBg);
                 card.addChild(cBgWrapper);
@@ -137,26 +142,27 @@ export class ElementGuidePanel {
                     text: `${detail.emoji} ${detail.name}`,
                     style: {
                         fontFamily: 'Arial, sans-serif',
-                        fontSize: 15,
+                        fontSize: 12,
                         fontWeight: 'bold',
                         fill: detail.color
                     }
                 });
-                nameTxt.x = 20;
-                nameTxt.y = 8;
+                nameTxt.x = 14;
+                nameTxt.y = 4;
                 card.addChild(nameTxt);
 
                 // Stats: Base Dmg + Special Effect
                 const statsTxt = new Text({
-                    text: `Dmg: ${detail.dmg} | Effect: ${detail.effect}`,
+                    text: `Dmg: ${detail.dmg}  |  Effect: ${detail.effect}`,
                     style: {
                         fontFamily: 'Arial, sans-serif',
-                        fontSize: 11,
-                        fill: '#b0bec5'
+                        fontSize: 9,
+                        fontWeight: '500',
+                        fill: '#94a3b8'
                     }
                 });
-                statsTxt.x = 20;
-                statsTxt.y = 28;
+                statsTxt.x = 14;
+                statsTxt.y = 20;
                 card.addChild(statsTxt);
 
                 // Strengths and Weaknesses
@@ -164,15 +170,15 @@ export class ElementGuidePanel {
                 const weakEmojis = detail.resist.map(k => ELEMENT_DETAILS[k]?.emoji || '').join(' ');
 
                 const countersTxt = new Text({
-                    text: `⚔️ Deals 2.0x vs: ${strongEmojis}  |  🛡️ Deals 0.5x vs: ${weakEmojis}`,
+                    text: `⚔️ vs: ${strongEmojis} (x2)  |  🛡️ vs: ${weakEmojis} (x0.5)`,
                     style: {
                         fontFamily: 'Arial, sans-serif',
-                        fontSize: 10,
-                        fill: '#90a4ae'
+                        fontSize: 8.5,
+                        fill: '#cbd5e1'
                     }
                 });
-                countersTxt.x = 20;
-                countersTxt.y = 48;
+                countersTxt.x = 14;
+                countersTxt.y = 35;
                 card.addChild(countersTxt);
 
                 // Interactive Hover Micro-animations
@@ -188,18 +194,19 @@ export class ElementGuidePanel {
                 });
             });
 
-            // --- Elegant Close Button ---
+            // --- Elegant Sleek Close Button ---
             const closeBtn = new Container();
             closeBtn.x = 0;
-            closeBtn.y = height / 2 - 35;
+            closeBtn.y = height / 2 - 25;
             overlay.addChild(closeBtn);
 
             const btnBg = new Graphics();
-            btnBg.roundRect(-80, -20, 160, 40, 10);
-            btnBg.fill({ color: 0xff7043 });
-            btnBg.stroke({ color: 0xffffff, width: 1, alpha: 0.3 });
+            btnBg.roundRect(-50, -13, 100, 26, 6);
+            btnBg.fill({ color: 0xef4444 });
+            btnBg.stroke({ color: 0xffffff, width: 1, alpha: 0.2 });
             btnBg.eventMode = 'static';
             btnBg.cursor = 'pointer';
+            
             const btnBgWrapper = new Container();
             btnBgWrapper.addChild(btnBg);
             closeBtn.addChild(btnBgWrapper);
@@ -208,7 +215,7 @@ export class ElementGuidePanel {
                 text: '❌ Close',
                 style: {
                     fontFamily: 'Arial, sans-serif',
-                    fontSize: 15,
+                    fontSize: 11,
                     fontWeight: 'bold',
                     fill: '#ffffff'
                 }
@@ -217,10 +224,11 @@ export class ElementGuidePanel {
             closeBtn.addChild(btnText);
 
             const dismiss = () => {
-                btnBg.off('pointerdown', dismiss);
-                gsap.to(overlay, { alpha: 0, duration: 0.25 });
+                bg.off('pointerdown');
+                btnBg.off('pointerdown');
+                gsap.to(overlay, { alpha: 0, duration: 0.22 });
                 gsap.to(overlay.scale, {
-                    x: 0.5, y: 0.5, duration: 0.25, onComplete: () => {
+                    x: 0.5, y: 0.5, duration: 0.22, onComplete: () => {
                         gsap.killTweensOf(overlay);
                         gsap.killTweensOf(overlay.scale);
                         overlay.destroy({ children: true });
@@ -229,13 +237,27 @@ export class ElementGuidePanel {
                 });
             };
 
+            // Setup click bindings
             btnBg.on('pointerdown', dismiss);
             btnBg.on('pointerover', () => gsap.to(closeBtn.scale, { x: 1.05, y: 1.05, duration: 0.1 }));
             btnBg.on('pointerout', () => gsap.to(closeBtn.scale, { x: 1, y: 1, duration: 0.1 }));
 
+            // DETECT OUTSIDE BACKDROP CLICK (WITH EXTREME ROBUST GLOBAL MATH)
+            bg.on('pointerdown', (e) => {
+                const localPos = overlay.toLocal(e.global);
+                const isInsideCard = (
+                    localPos.x >= -width / 2 && localPos.x <= width / 2 &&
+                    localPos.y >= -height / 2 && localPos.y <= height / 2
+                );
+
+                if (!isInsideCard) {
+                    dismiss();
+                }
+            });
+
             // --- Entrance Animation ---
-            gsap.to(overlay, { alpha: 1, duration: 0.3 });
-            gsap.to(overlay.scale, { x: 1, y: 1, duration: 0.3, ease: 'back.out(1.5)' });
+            gsap.to(overlay, { alpha: 1, duration: 0.28 });
+            gsap.to(overlay.scale, { x: 1, y: 1, duration: 0.28, ease: 'back.out(1.2)' });
         });
     }
 }

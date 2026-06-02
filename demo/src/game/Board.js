@@ -74,9 +74,9 @@ export class Board {
         /** Mảng chứa tất cả Field objects */
         this.fields = [];
 
-        /** Kích thước board (từ config) */
-        this.rows = App.config.board.rows;
-        this.cols = App.config.board.cols;
+        /** Kích thước board (từ config hoặc overridden by levelConfig) */
+        this.rows = levelConfig?.board?.rows || App.config.board.rows;
+        this.cols = levelConfig?.board?.cols || App.config.board.cols;
 
         /**
          * Allowed tile types for this level.

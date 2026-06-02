@@ -155,6 +155,7 @@ export const LEVELS = [
   // ── Level 1 ─────────────────────────────────────────────────────────────
   {
     level: 1,
+    board: { rows: 8, cols: 8 },
     bossName: 'Slime',
     bossEmoji: '🌱',
     terrain: {
@@ -187,6 +188,7 @@ export const LEVELS = [
   // ── Level 2 ─────────────────────────────────────────────────────────────
   {
     level: 2,
+    board: { rows: 8, cols: 8 },
     bossName: 'Goblin',
     bossEmoji: '🔥',
     terrain: {
@@ -219,6 +221,7 @@ export const LEVELS = [
   // ── Level 3 ─────────────────────────────────────────────────────────────
   {
     level: 3,
+    board: { rows: 8, cols: 8 },
     bossName: 'Ice Golem',
     bossEmoji: '🧊',
     terrain: {
@@ -251,6 +254,7 @@ export const LEVELS = [
   // ── Level 4 ─────────────────────────────────────────────────────────────
   {
     level: 4,
+    board: { rows: 8, cols: 8 },
     bossName: 'Thunder Wolf',
     bossEmoji: '⚡',
     terrain: {
@@ -283,6 +287,7 @@ export const LEVELS = [
   // ── Level 5 ─────────────────────────────────────────────────────────────
   {
     level: 5,
+    board: { rows: 10, cols: 10 },
     bossName: 'Sea Serpent',
     bossEmoji: '🌊',
     terrain: {
@@ -315,6 +320,7 @@ export const LEVELS = [
   // ── Level 6 ─────────────────────────────────────────────────────────────
   {
     level: 6,
+    board: { rows: 10, cols: 10 },
     bossName: 'Shadow Knight',
     bossEmoji: '💀',
     terrain: {
@@ -347,6 +353,7 @@ export const LEVELS = [
   // ── Level 7 ─────────────────────────────────────────────────────────────
   {
     level: 7,
+    board: { rows: 10, cols: 10 },
     bossName: 'Lava Dragon',
     bossEmoji: '🌋',
     terrain: {
@@ -379,6 +386,7 @@ export const LEVELS = [
   // ── Level 8 ─────────────────────────────────────────────────────────────
   {
     level: 8,
+    board: { rows: 12, cols: 12 },
     bossName: 'Lich King',
     bossEmoji: '🌑',
     terrain: {
@@ -411,6 +419,7 @@ export const LEVELS = [
   // ── Level 9 ─────────────────────────────────────────────────────────────
   {
     level: 9,
+    board: { rows: 12, cols: 12 },
     bossName: 'Ancient Dragon',
     bossEmoji: '🏔️',
     terrain: {
@@ -443,6 +452,7 @@ export const LEVELS = [
   // ── Level 10 ────────────────────────────────────────────────────────────
   {
     level: 10,
+    board: { rows: 12, cols: 12 },
     bossName: 'Demon Lord',
     bossEmoji: '👑',
     terrain: {

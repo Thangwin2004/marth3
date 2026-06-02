@@ -17,6 +17,18 @@ import { CharacterSprite } from './CharacterSprite.js';
 import { DamagePopup } from './DamagePopup.js';
 import { SKILLS } from '../data/SkillData.js';
 
+const BOSS_SKILL_INFO = {
+    freezeTiles:  { name: 'Đóng Băng', emoji: '❄️', desc: 'Đóng băng ngẫu nhiên các ô ngọc khiến không thể di chuyển trong 2 lượt' },
+    destroyRow:   { name: 'Diệt Hàng', emoji: '🔥', desc: 'Thiêu rụi hoàn toàn một hàng ngọc ngẫu nhiên trên bảng' },
+    destroyCol:   { name: 'Diệt Cột', emoji: '⚡', desc: 'Gọi sấm sét phá hủy hoàn toàn một cột ngọc ngẫu nhiên' },
+    corruptTiles: { name: 'Ma Hóa',   emoji: '☠️', desc: 'Ma hóa các ô ngọc thành ngọc hỏng, khớp không gây sát thương' },
+    stoneBlock:   { name: 'Khối Đá',  emoji: '⛰️', desc: 'Tạo các khối đá cản trở di chuyển và không thể khớp ngọc thường' },
+    shuffleBoard: { name: 'Tráo Bảng', emoji: '🌪️', desc: 'Đảo lộn xáo trộn toàn bộ tất cả các ô ngọc trên bảng đấu' },
+    poisonTiles:  { name: 'Phủ Độc',  emoji: '🤢', desc: 'Nhiễm độc ô ngọc, nếu khớp sẽ gây 5 sát thương độc lên người chơi' },
+    cloneTiles:   { name: 'Đồng Hóa', emoji: '🔮', desc: 'Biến đổi toàn bộ ngọc trong một hàng ngẫu nhiên thành cùng một màu' },
+    voidTiles:    { name: 'Hư Vô',    emoji: '👁️', desc: 'Hủy diệt vĩnh viễn các ô ngọc thành ô hư vô trống rỗng' }
+};
+
 export class BattleHUD {
     /**
      * @param {object} params
@@ -191,6 +203,24 @@ export class BattleHUD {
         this.bossSkillText.x = Config.canvas.width - 25;
         this.bossSkillText.y = Config.canvas.height - 60;
         this.bottomBar.addChild(this.bossSkillText);
+
+        // Boss skills list text
+        const skillNames = this.boss.skills.map(id => {
+            const info = BOSS_SKILL_INFO[id];
+            return info ? `${info.emoji} ${info.name}` : id;
+        }).join(' | ');
+
+        this.bossSkillsListText = new Text({
+            text: skillNames ? `Chiêu: ${skillNames}` : '',
+            style: { fontFamily: 'Arial', fontSize: 9.5, fill: '#aaaaaa' },
+        });
+        this.bossSkillsListText.anchor.set(1, 0.5);
+        this.bossSkillsListText.x = Config.canvas.width - 25;
+        this.bossSkillsListText.y = Config.canvas.height - 40;
+        this.bottomBar.addChild(this.bossSkillsListText);
+
+        // Initialize hover tooltip
+        this.initBossSkillTooltip();
     }
 
     // ===================== UPDATE =====================
@@ -315,7 +345,79 @@ export class BattleHUD {
         return str;
     }
 
+    initBossSkillTooltip() {
+        const tooltip = new Container();
+        tooltip.zIndex = 300;
+        tooltip.visible = false;
+        tooltip.alpha = 0;
+        this.bottomBar.addChild(tooltip);
+        this.skillTooltip = tooltip;
+
+        const w = 310;
+        const h = this.boss.skills.length * 36 + 35; // dynamic height based on number of skills
+
+        // Draw glassmorphic dark container
+        const bg = new Graphics();
+        bg.roundRect(0, 0, w, h, 8);
+        bg.fill({ color: 0x070d1a, alpha: 0.96 });
+        bg.stroke({ color: 0xff5252, width: 1.5, alpha: 0.8 }); // boss red glowing border
+        tooltip.addChild(bg);
+
+        // Tooltip Title
+        const title = new Text({
+            text: '💀 CHIÊU THỨC CỦA BOSS',
+            style: { fontFamily: 'Arial, sans-serif', fontSize: 11, fontWeight: 'bold', fill: '#ffd54f' }
+        });
+        title.x = 12;
+        title.y = 10;
+        tooltip.addChild(title);
+
+        // Populate skills descriptions
+        this.boss.skills.forEach((id, idx) => {
+            const info = BOSS_SKILL_INFO[id] || { name: id, emoji: '🔮', desc: 'Kỹ năng đặc biệt của Boss' };
+            const itemText = new Text({
+                text: `${info.emoji} ${info.name}: ${info.desc}`,
+                style: {
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 9,
+                    fill: '#cfd8dc',
+                    wordWrap: true,
+                    wordWrapWidth: w - 24
+                }
+            });
+            itemText.x = 12;
+            itemText.y = 30 + idx * 36;
+            tooltip.addChild(itemText);
+        });
+
+        // Set position to hover above the bottom right HUD
+        tooltip.x = Config.canvas.width - w - 25;
+        tooltip.y = Config.canvas.height - 65 - h; // floating perfectly above the text
+
+        // Make the trigger text interactive
+        const showTooltip = () => {
+            tooltip.visible = true;
+            gsap.to(tooltip, { alpha: 1, duration: 0.2 });
+        };
+        const hideTooltip = () => {
+            gsap.to(tooltip, { alpha: 0, duration: 0.15, onComplete: () => { tooltip.visible = false; } });
+        };
+
+        this.bossSkillText.eventMode = 'static';
+        this.bossSkillText.cursor = 'help';
+        this.bossSkillText.on('pointerover', showTooltip);
+        this.bossSkillText.on('pointerout', hideTooltip);
+
+        this.bossSkillsListText.eventMode = 'static';
+        this.bossSkillsListText.cursor = 'help';
+        this.bossSkillsListText.on('pointerover', showTooltip);
+        this.bossSkillsListText.on('pointerout', hideTooltip);
+    }
+
     destroy() {
+        if (this.skillTooltip) {
+            gsap.killTweensOf(this.skillTooltip);
+        }
         this.playerSprite.destroy();
         this.bossSprite.destroy();
         this.container.destroy({ children: true });
