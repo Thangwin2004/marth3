@@ -28,7 +28,7 @@ export class HeroSanctuaryScene {
         Assets.load('/assets/backgroud/screen.png').then(texture => {
             if (bg.destroyed) return;
             bg.texture = texture;
-            bg.tint = 0xffffff; // restore original background colors
+            bg.tint = 0x444444; // dim background to 27% brightness for high contrast panels
         }).catch(err => {
             console.error("Failed to load Hero Sanctuary background:", err);
         });

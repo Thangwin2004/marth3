@@ -25,7 +25,7 @@ export class LevelSelectScene {
         Assets.load('/assets/backgroud/screen.png').then(texture => {
             if (bg.destroyed) return;
             bg.texture = texture;
-            bg.tint = 0xffffff; // restore original background colors
+            bg.tint = 0x555555; // dim background to 33% brightness for high contrast
         }).catch(err => {
             console.error("Failed to load Level Select background:", err);
         });
@@ -36,6 +36,7 @@ export class LevelSelectScene {
             style: {
                 fontFamily: 'Arial', fontSize: 36, fontWeight: 'bold',
                 fill: '#ffffff',
+                stroke: '#000000', strokeThickness: 5,
                 dropShadow: { color: '#000000', blur: 6, distance: 3 },
             },
         });
@@ -108,7 +109,11 @@ export class LevelSelectScene {
             const skillIcons = skills.map(id => SKILLS[id]?.icon || '?').join(' ');
             const skillInfo = new Text({
                 text: `🎒 Skills: ${skillIcons}`,
-                style: { fontFamily: 'Arial', fontSize: 14, fill: '#888888' },
+                style: {
+                    fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold',
+                    fill: '#ffffff',
+                    stroke: '#000000', strokeThickness: 3
+                },
             });
             skillInfo.anchor.set(0.5);
             skillInfo.x = Config.canvas.width / 2;

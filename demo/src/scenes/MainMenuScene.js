@@ -23,7 +23,7 @@ export class MainMenuScene {
         Assets.load('/assets/backgroud/screen.png').then(texture => {
             if (bg.destroyed) return;
             bg.texture = texture;
-            bg.tint = 0xffffff; // restore original background colors
+            bg.tint = 0x555555; // dim background to 33% brightness for high contrast
         }).catch(err => {
             console.error("Failed to load Main Menu background:", err);
         });
@@ -96,7 +96,8 @@ export class MainMenuScene {
             style: {
                 fontFamily: 'Arial', fontSize: 56, fontWeight: 'bold',
                 fill: '#ffffff',
-                dropShadow: { color: '#4fc3f7', blur: 12, distance: 0, alpha: 0.8 },
+                stroke: '#000000', strokeThickness: 8,
+                dropShadow: { color: '#000000', blur: 6, distance: 3, alpha: 0.8 },
             },
         });
         title.anchor.set(0.5);
@@ -107,7 +108,9 @@ export class MainMenuScene {
             style: {
                 fontFamily: 'Arial', fontSize: 28, fontWeight: 'bold',
                 fill: '#4fc3f7',
+                stroke: '#000000', strokeThickness: 5,
                 letterSpacing: 8,
+                dropShadow: { color: '#000000', blur: 4, distance: 2, alpha: 0.8 },
             },
         });
         subtitle.anchor.set(0.5);
@@ -118,9 +121,9 @@ export class MainMenuScene {
         const line = new Sprite(Texture.WHITE);
         line.anchor.set(0.5);
         line.width = 300;
-        line.height = 2;
+        line.height = 3;
         line.tint = 0x4fc3f7;
-        line.alpha = 0.4;
+        line.alpha = 0.8;
         line.y = 75;
         titleContainer.addChild(line);
 
@@ -131,7 +134,12 @@ export class MainMenuScene {
 
         const infoText = new Text({
             text: `📂 Level ${currentLevel} | Hero Lvl ${save.heroLevel || 1} | Vàng: ${save.gold || 0}g`,
-            style: { fontFamily: 'Arial', fontSize: 16, fill: '#888888' },
+            style: {
+                fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold',
+                fill: '#ffffff',
+                stroke: '#000000', strokeThickness: 4,
+                dropShadow: { color: '#000000', blur: 4, distance: 2, alpha: 0.9 }
+            },
         });
         infoText.anchor.set(0.5);
         infoText.x = Config.canvas.width / 2;
@@ -197,7 +205,11 @@ export class MainMenuScene {
         // === BOTTOM INFO ===
         const versionText = new Text({
             text: 'v1.0 | PixiJS v8 | 10 Levels | 9 Skills',
-            style: { fontFamily: 'Arial', fontSize: 12, fill: '#444444' },
+            style: {
+                fontFamily: 'Arial', fontSize: 12, fontWeight: 'bold',
+                fill: '#ffffff',
+                stroke: '#000000', strokeThickness: 3
+            },
         });
         versionText.anchor.set(0.5);
         versionText.x = Config.canvas.width / 2;
@@ -208,12 +220,15 @@ export class MainMenuScene {
         const bossEmojis = '🌱 🔥 🧊 ⚡ 🌊 💀 🌋 🌑 🏔️ 👑';
         const parade = new Text({
             text: bossEmojis,
-            style: { fontSize: 24, letterSpacing: 12 },
+            style: {
+                fontSize: 24, letterSpacing: 12,
+                stroke: '#000000', strokeThickness: 3
+            },
         });
         parade.anchor.set(0.5);
         parade.x = Config.canvas.width / 2;
         parade.y = Config.canvas.height - 70;
-        parade.alpha = 0.4;
+        parade.alpha = 0.95; // increase visibility
         this.container.addChild(parade);
 
         // Subtle drift animation on parade
