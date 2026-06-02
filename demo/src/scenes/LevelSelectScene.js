@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text, Assets } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture, Text, Assets } from 'pixi.js';
 import gsap from 'gsap';
 import { Config } from '../config.js';
 import { App } from '../system/App.js';
@@ -15,10 +15,20 @@ export class LevelSelectScene {
         App.setBackgroundColor(0x0a0a1a);
 
         // Background
-        const bg = new Graphics();
-        bg.rect(0, 0, Config.canvas.width, Config.canvas.height);
-        bg.fill({ color: 0x0a0a1a });
+        const bg = new Sprite(Texture.WHITE);
+        bg.width = Config.canvas.width;
+        bg.height = Config.canvas.height;
+        bg.tint = 0x0a0a1a; // dark fallback tint
         this.container.addChild(bg);
+
+        // Load premium custom background design
+        Assets.load('/assets/backgroud/screen.png').then(texture => {
+            if (bg.destroyed) return;
+            bg.texture = texture;
+            bg.tint = 0xffffff; // restore original background colors
+        }).catch(err => {
+            console.error("Failed to load Level Select background:", err);
+        });
 
         // Title
         const title = new Text({

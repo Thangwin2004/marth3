@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture, Text, Assets } from 'pixi.js';
 import gsap from 'gsap';
 import { Config } from '../config';
 import { App } from '../system/App';
@@ -21,8 +21,17 @@ export class HeroSanctuaryScene {
         const bg = new Sprite(Texture.WHITE);
         bg.width = Config.canvas.width;
         bg.height = Config.canvas.height;
-        bg.tint = 0x070b19;
+        bg.tint = 0x070b19; // dark fallback tint
         this.container.addChild(bg);
+
+        // Load premium custom background design
+        Assets.load('/assets/backgroud/screen.png').then(texture => {
+            if (bg.destroyed) return;
+            bg.texture = texture;
+            bg.tint = 0xffffff; // restore original background colors
+        }).catch(err => {
+            console.error("Failed to load Hero Sanctuary background:", err);
+        });
 
         // Drifting stars/dust
         this.particles = [];

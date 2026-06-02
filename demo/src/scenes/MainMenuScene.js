@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture, Text, Assets } from 'pixi.js';
 import gsap from 'gsap';
 import { Config } from '../config.js';
 import { App } from '../system/App.js';
@@ -13,12 +13,20 @@ export class MainMenuScene {
         App.setBackgroundColor(0x0a0a1a);
 
         // === BACKGROUND ===
-        // Use a solid-color Sprite (Texture.WHITE) instead of Graphics to be 100% immune to PixiJS v8 RenderGroup bugs
         const bg = new Sprite(Texture.WHITE);
         bg.width = Config.canvas.width;
         bg.height = Config.canvas.height;
-        bg.tint = 0x0a0a1a;
+        bg.tint = 0x0a0a1a; // dark fallback tint
         this.container.addChild(bg);
+
+        // Load premium custom background design
+        Assets.load('/assets/backgroud/screen.png').then(texture => {
+            if (bg.destroyed) return;
+            bg.texture = texture;
+            bg.tint = 0xffffff; // restore original background colors
+        }).catch(err => {
+            console.error("Failed to load Main Menu background:", err);
+        });
 
         // === PARTICLES ===
         // Draw a circular particle shape ONCE and convert it to a texture for high-performance Sprite rendering
