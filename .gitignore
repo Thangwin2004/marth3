@@ -1,6 +1,6 @@
-# Documentation
-*.md
-*.png
+# Documentation (root level only)
+/*.md
+/*.png
 
 # Node modules
 node_modules/
