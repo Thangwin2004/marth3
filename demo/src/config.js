@@ -38,16 +38,16 @@ export const Config = {
      * PixiJS Assets.load() uses these to cache textures.
      */
     assets: {
-        fire: '/assets/fire.svg',
-        water: '/assets/Water.svg',
-        nature: '/assets/Nature.svg',
-        ice: '/assets/Ice.svg',
-        lightning: '/assets/Lightning.svg',
-        earth: '/assets/Earth.svg',
-        'wind-air': '/assets/Windy.svg',
-        'psychic-eye': '/assets/Psychic.svg',
-        sun: '/assets/Sun.svg',
-        'poison-death': '/assets/Poison.svg',
+        fire: '/assets/tile/fire.svg',
+        water: '/assets/tile/Water.svg',
+        nature: '/assets/tile/Nature.svg',
+        ice: '/assets/tile/Ice.svg',
+        lightning: '/assets/tile/Lightning.svg',
+        earth: '/assets/tile/Earth.svg',
+        'wind-air': '/assets/tile/Windy.svg',
+        'psychic-eye': '/assets/tile/Psychic.svg',
+        sun: '/assets/tile/Sun.svg',
+        'poison-death': '/assets/tile/Poison.svg',
     },
 
     /**

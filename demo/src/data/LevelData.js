@@ -482,3 +482,27 @@ export const LEVELS = [
     skillReward: null,
   },
 ];
+
+// Map boss image folders dynamically
+const bossFolders = [
+  'a_giant_translucent_green_slime_monster_in_a_lush_grassland_environment._high',
+  'a_fierce_red_skinned_goblin_warrior_in_a_dark_cave_environment_with_glowing',
+  'a_massive_translucent_ice_golem_made_of_jagged_blue_ice_in_a_snowy_blizzard',
+  'a_ferocious_thunder_wolf_with_fur_crackling_with_blue_electricity_in_a_stormy',
+  'a_colossal_sea_serpent_with_blue_scales_rising_from_powerful_ocean_waves._high',
+  'a_spectral_shadow_knight_in_dark_heavy_armor_wielding_a_dark_blade_standing_in',
+  'a_winged_lava_dragon_breathing_fire_in_a_volcanic_environment_with_eruptions_',
+  'a_sinister_lich_king_in_dark_robes_holding_a_glowing_staff_in_a_dark_tower_',
+  'a_majestic_ancient_dragon_perched_on_a_snowy_mountain_summit_with_clouds_and',
+  'the_ultimate_demon_lord_sitting_on_a_grand_golden_throne_surrounded_by_chaotic'
+];
+
+LEVELS.forEach((lvl) => {
+  if (lvl && lvl.level) {
+    const idx = lvl.level - 1;
+    if (bossFolders[idx]) {
+      lvl.bossImage = `/assets/stitch_epic_boss_gauntlet/${bossFolders[idx]}/screen.png`;
+    }
+  }
+});
+

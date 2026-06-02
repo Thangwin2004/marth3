@@ -1,4 +1,4 @@
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import gsap from 'gsap';
 import { Config } from '../config.js';
 import { App } from '../system/App.js';
@@ -146,15 +146,36 @@ export class LevelSelectScene {
         numText.y = 20;
         card.addChild(numText);
 
-        // Boss emoji (large)
-        const bossEmoji = new Text({
-            text: isUnlocked ? levelConfig.bossEmoji : '🔒',
-            style: { fontSize: isUnlocked ? 42 : 32 },
-        });
-        bossEmoji.anchor.set(0.5);
-        bossEmoji.x = w / 2;
-        bossEmoji.y = 65;
-        card.addChild(bossEmoji);
+        // Boss image / emoji (large)
+        if (isUnlocked && levelConfig.bossImage) {
+            const bossSprite = Sprite.from(levelConfig.bossImage);
+            bossSprite.anchor.set(0.5);
+            bossSprite.x = w / 2;
+            bossSprite.y = 65;
+            bossSprite.width = 72;
+            bossSprite.height = 72;
+
+            const bMask = new Graphics();
+            bMask.circle(w / 2, 65, 36);
+            bMask.fill({ color: 0xffffff });
+            card.addChild(bMask);
+            bossSprite.mask = bMask;
+            card.addChild(bossSprite);
+
+            const border = new Graphics();
+            border.circle(w / 2, 65, 37);
+            border.stroke({ color: 0xffb300, width: 2, alpha: 0.8 });
+            card.addChild(border);
+        } else {
+            const bossEmoji = new Text({
+                text: isUnlocked ? levelConfig.bossEmoji : '🔒',
+                style: { fontSize: isUnlocked ? 42 : 32 },
+            });
+            bossEmoji.anchor.set(0.5);
+            bossEmoji.x = w / 2;
+            bossEmoji.y = 65;
+            card.addChild(bossEmoji);
+        }
 
         // Boss name
         const nameText = new Text({

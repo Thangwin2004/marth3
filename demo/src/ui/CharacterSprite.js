@@ -1,9 +1,9 @@
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import gsap from 'gsap';
 
 export class CharacterSprite {
     constructor(config = {}) {
-        // config: { side: 'left'|'right', name: string, emoji: string, color: hex, scale: number, isPlayer: boolean }
+        // config: { side: 'left'|'right', name: string, emoji: string, color: hex, scale: number, isPlayer: boolean, imagePath: string }
         this.container = new Container();
         this.side = config.side || 'left';
         this.name = config.name || 'Character';
@@ -11,6 +11,7 @@ export class CharacterSprite {
         this.color = config.color || 0x4fc3f7;
         this.scale = config.scale || 1.0;
         this.isPlayer = config.isPlayer !== false;
+        this.imagePath = config.imagePath || null;
         
         this.body = new Graphics();
         this.statusContainer = new Container();
@@ -47,15 +48,51 @@ export class CharacterSprite {
 
     
     draw() {
-        // Draw character using Graphics primitives
-        // Player: warrior style (helmet, body, sword)
-        // Boss: depends on config but generic monster shape
         const g = this.body;
         g.clear();
         
+        // Remove any old children to avoid duplicate sprites/graphics on re-draw
+        g.removeChildren();
+        
         const s = this.scale;
         
-        if (this.isPlayer) {
+        if (this.imagePath) {
+            // PREMIUM COMBAT CARD RENDERING FOR CUSTOM IMAGES
+            const cardW = 110 * s;
+            const cardH = 150 * s;
+
+            // 1. Shadow background
+            const shadow = new Graphics();
+            shadow.roundRect(-cardW/2 + 4, -cardH/2 + 4, cardW, cardH, 12 * s);
+            shadow.fill({ color: 0x000000, alpha: 0.55 });
+            g.addChild(shadow);
+
+            // 2. Glow Border
+            const glow = new Graphics();
+            glow.roundRect(-cardW/2 - 2, -cardH/2 - 2, cardW + 4, cardH + 4, 14 * s);
+            glow.fill({ color: this.color, alpha: 0.35 });
+            g.addChild(glow);
+
+            // 3. Image Sprite
+            const img = Sprite.from(this.imagePath);
+            img.anchor.set(0.5);
+            img.width = cardW - 6;
+            img.height = cardH - 6;
+
+            // Mask
+            const mask = new Graphics();
+            mask.roundRect(-cardW/2 + 3, -cardH/2 + 3, cardW - 6, cardH - 6, 10 * s);
+            mask.fill({ color: 0xffffff });
+            g.addChild(mask);
+            img.mask = mask;
+            g.addChild(img);
+
+            // 4. Solid Border
+            const border = new Graphics();
+            border.roundRect(-cardW/2, -cardH/2, cardW, cardH, 12 * s);
+            border.stroke({ color: this.color, width: 2.5 });
+            g.addChild(border);
+        } else if (this.isPlayer) {
             // PLAYER: Warrior
             // Body (rectangle with rounded top)
             g.roundRect(-25*s, -10*s, 50*s, 60*s, 8*s);
