@@ -38,118 +38,124 @@ export class DamageSystem {
         const effects = [];
 
         for (const match of matches) {
-            const tileType = match.tiles[0]?.color;
-            if (!tileType) continue;
+            const mainTileType = match.tiles[0]?.color;
+            if (!mainTileType) continue;
 
-            const tileInfo = TILE_DAMAGE[tileType];
-            if (!tileInfo) continue;
+            let matchBaseDamage = 0;
 
-            // Base damage × tile count
-            let matchDamage = tileInfo.baseDmg * match.tiles.length;
+            // Iterate over each tile in the match and sum up its customized damage
+            match.tiles.forEach(tile => {
+                const color = tile.color;
+                const tileInfo = TILE_DAMAGE[color];
+                if (!tileInfo) return;
+
+                let tileDmg = tileInfo.baseDmg;
+
+                // Terrain buff/debuff for this specific element
+                if (this.terrain.buff && this.terrain.buff[color]) {
+                    tileDmg *= (1 + this.terrain.buff[color]);
+                }
+                if (this.terrain.debuff && this.terrain.debuff[color]) {
+                    tileDmg *= (1 - this.terrain.debuff[color]);
+                }
+
+                // Scale player damage with Hero Level, Element Mastery, and Weapons
+                if (attacker.name === 'Player') {
+                    const saveData = saveManager.load();
+                    const heroLvl = saveData.heroLevel || 1;
+                    const masteryLvl = saveData.masteryLevels ? (saveData.masteryLevels[color] || 0) : 0;
+                    
+                    // Add weapon slot flat damage (+15 for Lightning)
+                    const equipped = saveData.equippedItems || {};
+                    if (equipped.weapon === 'magic_sword' && color === 'lightning') {
+                        tileDmg += 15;
+                    }
+                    
+                    const dmgMultiplier = (1 + (heroLvl - 1) * 0.10) * (1 + masteryLvl * 0.05);
+                    tileDmg *= dmgMultiplier;
+                } else {
+                    // Scale Boss damage based on level
+                    let bossScale = 1.0;
+                    if (this.levelNum === 1) bossScale = 0.35;
+                    else if (this.levelNum === 2) bossScale = 0.40;
+                    else if (this.levelNum === 3) bossScale = 0.48;
+                    else if (this.levelNum === 4) bossScale = 0.55;
+                    else if (this.levelNum === 5) bossScale = 0.63;
+                    else if (this.levelNum === 6) bossScale = 0.70;
+                    else if (this.levelNum === 7) bossScale = 0.76;
+                    else if (this.levelNum === 8) bossScale = 0.82;
+                    else if (this.levelNum === 9) bossScale = 0.90;
+                    
+                    tileDmg *= bossScale;
+
+                    // Enrage Timer (Cuồng Nộ) — after round 18, damage increases.
+                    if (currentRound > 18) {
+                        const extraRounds = currentRound - 18;
+                        let enrageBonus = 0;
+                        if (currentRound <= 20) {
+                            enrageBonus = extraRounds * 0.25;
+                        } else {
+                            enrageBonus = 0.50 + (currentRound - 20) * 0.20;
+                        }
+                        tileDmg *= (1 + enrageBonus);
+                    }
+                }
+
+                // Elemental weakness/resistance (defender-specific) for this tile's element
+                if (defender.getWeaknessMultiplier) {
+                    const mult = defender.getWeaknessMultiplier(color);
+                    if (mult > 1.0) {
+                        let critMult = 1.0;
+                        if (attacker.name === 'Player') {
+                            const saveData = saveManager.load();
+                            const equippedSkills = saveData.equippedSkills || {};
+                            const passives = equippedSkills.passives || [];
+                            if (passives.includes('elem_crit')) {
+                                critMult = 1.3;
+                            }
+                        }
+                        tileDmg *= (mult * critMult);
+                    } else {
+                        tileDmg *= mult;
+                    }
+                }
+
+                matchBaseDamage += tileDmg;
+            });
 
             // Match length multiplier (3=×1.0, 4=×1.3, 5=×1.6, 6+=×2.0)
             const lengthKey = Math.min(match.length, 6);
             const lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[6];
-            matchDamage *= lengthMult;
-
-            // Terrain buff/debuff
-            if (this.terrain.buff && this.terrain.buff[tileType]) {
-                matchDamage *= (1 + this.terrain.buff[tileType]);
-            }
-            if (this.terrain.debuff && this.terrain.debuff[tileType]) {
-                matchDamage *= (1 - this.terrain.debuff[tileType]);
-            }
-
-            // Scale player damage with Hero Level progress (+10% per level) and Element Mastery (+5% per mastery level)
-            if (attacker.name === 'Player') {
-                const saveData = saveManager.load();
-                const heroLvl = saveData.heroLevel || 1;
-                const masteryLvl = saveData.masteryLevels ? (saveData.masteryLevels[tileType] || 0) : 0;
-                
-                // Add weapon slot flat damage (+15 for Lightning)
-                const equipped = saveData.equippedItems || {};
-                if (equipped.weapon === 'magic_sword' && tileType === 'lightning') {
-                    matchDamage += 15;
-                }
-                
-                const dmgMultiplier = (1 + (heroLvl - 1) * 0.10) * (1 + masteryLvl * 0.05);
-                matchDamage *= dmgMultiplier;
-            } else {
-                // Scale Boss damage based on level to prevent early bosses from unexpectedly one-shotting the player.
-                // Level 1 starts at 35% damage, gradually scaling up to 100% at Level 10 (Final Boss).
-                let bossScale = 1.0;
-                if (this.levelNum === 1) bossScale = 0.35;
-                else if (this.levelNum === 2) bossScale = 0.40;
-                else if (this.levelNum === 3) bossScale = 0.48;
-                else if (this.levelNum === 4) bossScale = 0.55;
-                else if (this.levelNum === 5) bossScale = 0.63;
-                else if (this.levelNum === 6) bossScale = 0.70;
-                else if (this.levelNum === 7) bossScale = 0.76;
-                else if (this.levelNum === 8) bossScale = 0.82;
-                else if (this.levelNum === 9) bossScale = 0.90;
-                
-                matchDamage *= bossScale;
-
-                // Enrage Timer (Cuồng Nộ) — after round 18, damage increases.
-                // Rounds 19-20: +25% damage per round (cumulative).
-                // Round 21 onwards: +20% damage per round (cumulative).
-                if (currentRound > 18) {
-                    const extraRounds = currentRound - 18;
-                    let enrageBonus = 0;
-                    if (currentRound <= 20) {
-                        enrageBonus = extraRounds * 0.25;
-                    } else {
-                        // 2 rounds of 25% (Rounds 19 & 20) = +50% (0.50)
-                        // Subsequent rounds (from 21 onwards) add 20% (0.20)
-                        enrageBonus = 0.50 + (currentRound - 20) * 0.20;
-                    }
-                    matchDamage *= (1 + enrageBonus);
-                }
-            }
-
-            // Elemental weakness/resistance (defender-specific)
-            if (defender.getWeaknessMultiplier) {
-                const mult = defender.getWeaknessMultiplier(tileType);
-                if (mult > 1.0) {
-                    let critMult = 1.0;
-                    if (attacker.name === 'Player') {
-                        const saveData = saveManager.load();
-                        const equippedSkills = saveData.equippedSkills || {};
-                        const passives = equippedSkills.passives || [];
-                        if (passives.includes('elem_crit')) {
-                            critMult = 1.3;
-                        }
-                    }
-                    matchDamage *= (mult * critMult);
-                } else {
-                    matchDamage *= mult;
-                }
-            }
+            let matchDamage = matchBaseDamage * lengthMult;
 
             totalDamage += matchDamage;
 
-            // --- Self effects (benefit the attacker) ---
-            if (tileInfo.selfEffect) {
-                const se = tileInfo.selfEffect;
-                if (se.type === 'heal') {
-                    healAmount += se.amount;
-                } else if (se.type === 'shield') {
-                    shieldAmount += se.amount;
-                } else if (se.type === 'cleanse') {
-                    effects.push({ target: 'self', type: 'cleanse' });
+            // Apply self and enemy status effects based on the main tile color of the match
+            // (We look at mainTileType so that a mixed explosion doesn't apply 10 status effects at once)
+            const mainTileInfo = TILE_DAMAGE[mainTileType];
+            if (mainTileInfo) {
+                // --- Self effects (benefit the attacker) ---
+                if (mainTileInfo.selfEffect) {
+                    const se = mainTileInfo.selfEffect;
+                    if (se.type === 'heal') {
+                        healAmount += se.amount;
+                    } else if (se.type === 'shield') {
+                        shieldAmount += se.amount;
+                    } else if (se.type === 'cleanse') {
+                        effects.push({ target: 'self', type: 'cleanse' });
+                    }
                 }
-            }
 
-            // --- Enemy effects (applied to defender) ---
-            if (tileInfo.enemyEffect) {
-                const ee = tileInfo.enemyEffect;
-                // Chance-based effects
-                if (ee.chance !== undefined) {
-                    if (Math.random() < ee.chance) {
+                // --- Enemy effects (applied to defender) ---
+                if (mainTileInfo.enemyEffect) {
+                    const ee = mainTileInfo.enemyEffect;
+                    if (ee.chance !== undefined) {
+                        if (Math.random() < ee.chance) {
+                            effects.push({ target: 'enemy', ...ee });
+                        }
+                    } else {
                         effects.push({ target: 'enemy', ...ee });
                     }
-                } else {
-                    effects.push({ target: 'enemy', ...ee });
                 }
             }
         }
@@ -174,31 +180,35 @@ export class DamageSystem {
             if (equipped.relic === 'vampiric_fang') {
                 let firePoisonDamage = 0;
                 for (const match of matches) {
-                    const tileType = match.tiles[0]?.color;
-                    if (tileType === 'fire' || tileType === 'poison-death') {
-                        const tileInfo = TILE_DAMAGE[tileType];
-                        if (tileInfo) {
-                            let mDmg = tileInfo.baseDmg * match.tiles.length;
-                            const lengthKey = Math.min(match.length, 6);
-                            const lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[6];
-                            mDmg *= lengthMult;
+                    let matchFPDamage = 0;
+                    match.tiles.forEach(tile => {
+                        const color = tile.color;
+                        if (color === 'fire' || color === 'poison-death') {
+                            const tileInfo = TILE_DAMAGE[color];
+                            if (tileInfo) {
+                                let tDmg = tileInfo.baseDmg;
 
-                            // Terrain
-                            if (this.terrain.buff && this.terrain.buff[tileType]) mDmg *= (1 + this.terrain.buff[tileType]);
-                            if (this.terrain.debuff && this.terrain.debuff[tileType]) mDmg *= (1 - this.terrain.debuff[tileType]);
+                                // Terrain
+                                if (this.terrain.buff && this.terrain.buff[color]) tDmg *= (1 + this.terrain.buff[color]);
+                                if (this.terrain.debuff && this.terrain.debuff[color]) tDmg *= (1 - this.terrain.debuff[color]);
 
-                            // Mastery & Level
-                            const heroLvl = saveData.heroLevel || 1;
-                            const masteryLvl = saveData.masteryLevels ? (saveData.masteryLevels[tileType] || 0) : 0;
-                            mDmg *= (1 + (heroLvl - 1) * 0.10) * (1 + masteryLvl * 0.05);
+                                // Mastery & Level
+                                const heroLvl = saveData.heroLevel || 1;
+                                const masteryLvl = saveData.masteryLevels ? (saveData.masteryLevels[color] || 0) : 0;
+                                tDmg *= (1 + (heroLvl - 1) * 0.10) * (1 + masteryLvl * 0.05);
 
-                            // Weakness
-                            if (defender.getWeaknessMultiplier) {
-                                mDmg *= defender.getWeaknessMultiplier(tileType);
+                                // Weakness
+                                if (defender.getWeaknessMultiplier) {
+                                    tDmg *= defender.getWeaknessMultiplier(color);
+                                }
+                                matchFPDamage += tDmg;
                             }
-                            firePoisonDamage += mDmg;
                         }
-                    }
+                    });
+                    
+                    const lengthKey = Math.min(match.length, 6);
+                    const lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[6];
+                    firePoisonDamage += matchFPDamage * lengthMult;
                 }
 
                 // Factoring in combo and curse
