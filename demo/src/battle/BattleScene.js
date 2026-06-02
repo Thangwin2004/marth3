@@ -606,10 +606,58 @@ export class BattleScene {
             // Add to matches list for damage/effects calculation at the end
             currentMatches.forEach(m => allMatchesThisTurn.push(m));
 
-            // Check for Rune and Rainbow Gem creation in this match iteration
+            // 1. Group matched tiles by color to check for L/T-shape matches
+            const colorGroups = {};
             currentMatches.forEach(match => {
-                if (match.length === 4) {
-                    // Match-4: Instant Cross Explosion!
+                const firstTile = match.tiles[0];
+                if (!firstTile) return;
+                const color = firstTile.color;
+                if (!colorGroups[color]) {
+                    colorGroups[color] = [];
+                }
+                match.tiles.forEach(tile => {
+                    if (!colorGroups[color].includes(tile)) {
+                        colorGroups[color].push(tile);
+                    }
+                });
+            });
+
+            const processedColors = new Set();
+
+            // 2. Detect L-shape / T-shape intersection tiles
+            Object.entries(colorGroups).forEach(([color, tiles]) => {
+                tiles.forEach(T => {
+                    if (!T.field) return;
+                    const rowTiles = tiles.filter(t => t.field && t.field.row === T.field.row);
+                    const colTiles = tiles.filter(t => t.field && t.field.col === T.field.col);
+                    
+                    if (rowTiles.length >= 3 && colTiles.length >= 3) {
+                        const row = T.field.row;
+                        const col = T.field.col;
+                        const posX = T.sprite ? T.sprite.x : 0;
+                        const posY = T.sprite ? T.sprite.y : 0;
+
+                        this.hud.setLog(`💥 Ghép chữ L/T! Kích hoạt nổ 3x3 quanh giao điểm!`);
+                        const explodedTiles = this.board.destroyArea3x3(row, col);
+                        if (explodedTiles.length > 0) {
+                            const lMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                            allMatchesThisTurn.push(lMatch);
+                            DamagePopup.show(this.container, posX, posY - 20, '3x3 EXPLOSION!', 'damage');
+                        }
+                        processedColors.add(color);
+                    }
+                });
+            });
+
+            // 3. Process remaining straight Match-5 and Match-4 explosions
+            currentMatches.forEach(match => {
+                const firstTile = match.tiles[0];
+                if (!firstTile) return;
+                const color = firstTile.color;
+                if (processedColors.has(color)) return; // already handled by L-shape
+
+                if (match.length >= 5) {
+                    // Match-5: Instant Cross Explosion (+)
                     const triggerTile = match.tiles.find(t => this.lastSwappedTiles && this.lastSwappedTiles.includes(t)) || match.tiles[Math.floor(match.length / 2)];
                     if (triggerTile && triggerTile.field && !triggerTile.isStone) {
                         const row = triggerTile.field.row;
@@ -617,28 +665,44 @@ export class BattleScene {
                         const posX = triggerTile.sprite ? triggerTile.sprite.x : 0;
                         const posY = triggerTile.sprite ? triggerTile.sprite.y : 0;
 
-                        this.hud.setLog(`💥 Ghép 4! Kích hoạt nổ chữ thập (+) tức thời!`);
-                        
-                        // Execute the cross explosion immediately on the board
+                        this.hud.setLog(`💥 Ghép 5 thẳng hàng! Kích hoạt nổ chữ thập (+) tức thời!`);
                         const explodedTiles = this.board.destroyCross(row, col);
                         if (explodedTiles.length > 0) {
-                            // Package as a fake match so they deal damage & cascade
-                            const runeMatch = { tiles: explodedTiles, length: explodedTiles.length };
-                            allMatchesThisTurn.push(runeMatch);
-                            DamagePopup.show(this.container, posX, posY - 20, 'EXPLOSION!', 'damage');
+                            const crossMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                            allMatchesThisTurn.push(crossMatch);
+                            DamagePopup.show(this.container, posX, posY - 20, 'CROSS BLAST!', 'damage');
                         }
+                        processedColors.add(color);
                     }
-                } else if (match.length >= 5) {
-                    // Match-5: Morph 1 tile into a Rainbow Gem!
-                    const morphTile = match.tiles.find(t => this.lastSwappedTiles && this.lastSwappedTiles.includes(t)) || match.tiles[Math.floor(match.length / 2)];
-                    if (morphTile && !morphTile.isStone) {
-                        morphTile.isRainbow = true;
-                        morphTile.isRune = false;
-                        morphTile.color = 'rainbow'; // represent color
-                        morphedTiles.add(morphTile);
-                        morphTile.updateStateOverlay();
-                        this.hud.setLog(`🌈 Ghép 5! Tạo ra Ngọc Siêu Nhiên!`);
-                        DamagePopup.show(this.container, morphTile.sprite.x, morphTile.sprite.y - 20, 'RAINBOW!', 'combo');
+                } else if (match.length === 4) {
+                    // Match-4: Row or Column Explosion!
+                    const triggerTile = match.tiles.find(t => this.lastSwappedTiles && this.lastSwappedTiles.includes(t)) || match.tiles[Math.floor(match.length / 2)];
+                    if (triggerTile && triggerTile.field && !triggerTile.isStone) {
+                        const row = triggerTile.field.row;
+                        const col = triggerTile.field.col;
+                        const posX = triggerTile.sprite ? triggerTile.sprite.x : 0;
+                        const posY = triggerTile.sprite ? triggerTile.sprite.y : 0;
+
+                        // Check if horizontal or vertical
+                        const isHorizontal = match.tiles.every(t => t.field && t.field.row === match.tiles[0].field.row);
+                        if (isHorizontal) {
+                            this.hud.setLog(`💥 Ghép 4 ngang! Phá hủy toàn bộ hàng ${row + 1}!`);
+                            const explodedTiles = this.board.destroyRow(row);
+                            if (explodedTiles.length > 0) {
+                                const rowMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                                allMatchesThisTurn.push(rowMatch);
+                                DamagePopup.show(this.container, posX, posY - 20, 'ROW CLEAR!', 'damage');
+                            }
+                        } else {
+                            this.hud.setLog(`💥 Ghép 4 dọc! Phá hủy toàn bộ cột ${col + 1}!`);
+                            const explodedTiles = this.board.destroyColumn(col);
+                            if (explodedTiles.length > 0) {
+                                const colMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                                allMatchesThisTurn.push(colMatch);
+                                DamagePopup.show(this.container, posX, posY - 20, 'COLUMN CLEAR!', 'damage');
+                            }
+                        }
+                        processedColors.add(color);
                     }
                 }
             });

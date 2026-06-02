@@ -592,35 +592,58 @@ export class Board {
      * @returns {number} Number of tiles destroyed
      */
     destroyRow(row) {
-        let destroyed = 0;
+        const tiles = [];
         for (let col = 0; col < this.cols; col++) {
             const field = this.getField(row, col);
             if (field && field.tile && !field.isVoid) {
+                tiles.push(field.tile);
                 this._removeTileOverlays(field.tile);
                 field.tile.remove();
-                destroyed++;
             }
         }
-        return destroyed;
+        return tiles;
     }
 
     /**
      * Destroy all tiles in a given column.
      * 
      * @param {number} col - Column index (0-based)
-     * @returns {number} Number of tiles destroyed
+     * @returns {Tile[]} Array of actually destroyed Tile objects
      */
     destroyColumn(col) {
-        let destroyed = 0;
+        const tiles = [];
         for (let row = 0; row < this.rows; row++) {
             const field = this.getField(row, col);
             if (field && field.tile && !field.isVoid) {
+                tiles.push(field.tile);
                 this._removeTileOverlays(field.tile);
                 field.tile.remove();
-                destroyed++;
             }
         }
-        return destroyed;
+        return tiles;
+    }
+
+    /**
+     * Destroy all tiles in a 3x3 area centered at (centerRow, centerCol).
+     * 
+     * @param {number} centerRow - Center row
+     * @param {number} centerCol - Center column
+     * @returns {Tile[]} Array of actually destroyed Tile objects
+     */
+    destroyArea3x3(centerRow, centerCol) {
+        const tiles = [];
+        for (let r = centerRow - 1; r <= centerRow + 1; r++) {
+            for (let c = centerCol - 1; c <= centerCol + 1; c++) {
+                if (r < 0 || r >= this.rows || c < 0 || c >= this.cols) continue;
+                const field = this.getField(r, c);
+                if (field && field.tile && !field.isVoid) {
+                    tiles.push(field.tile);
+                    this._removeTileOverlays(field.tile);
+                    field.tile.remove();
+                }
+            }
+        }
+        return tiles;
     }
 
     /**
