@@ -8,7 +8,7 @@ export class Projectile {
      * @param {{ x:number, y:number }} start - Starting coordinates
      * @param {{ x:number, y:number }} end - Target coordinates
      * @param {number} color - Fallback hex color
-     * @param {string} tileType - Element type ('fire', 'water', 'nature', 'ice', 'lightning', 'earth', 'wind-air', 'psychic-eye', 'sun', 'poison-death')
+     * @param {string} tileType - Element type
      * @returns {Promise<void>}
      */
     static async fire(parent, start, end, color = 0xff6240, tileType = 'fire') {
@@ -22,8 +22,16 @@ export class Projectile {
         const dy = end.y - start.y;
         const travelAngle = Math.atan2(dy, dx);
         
+        // Main projectile Container to hold projectile and optional orbits
+        const projContainer = new Container();
+        projContainer.x = start.x;
+        projContainer.y = start.y;
+        projContainer.scale.set(2.3); // Massive base scale of 2.3x!
+        container.addChild(projContainer);
+
         // Main projectile Graphics
         const proj = new Graphics();
+        projContainer.addChild(proj);
         
         // Draw distinct, premium shapes based on tile type
         if (tileType === 'fire') {
@@ -142,45 +150,119 @@ export class Projectile {
             proj.circle(0, 0, 18);
             proj.fill({ color, alpha: 0.3 });
         }
-        
-        proj.x = start.x;
-        proj.y = start.y;
-        container.addChild(proj);
+
+        // --- PREMIUM 1: GSAP Projectile Scale Pulsing Tween ---
+        // Pulsing between 2.3x and 2.7x for epic prominence!
+        gsap.to(projContainer.scale, { x: 2.7, y: 2.7, duration: 0.15, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+
+        // --- PREMIUM 2: Swirling Secondary Elemental Orbit ---
+        if (tileType === 'fire' || tileType === 'psychic-eye' || tileType === 'sun' || tileType === 'lightning') {
+            const orb = new Graphics();
+            orb.circle(0, 0, 4);
+            let orbCol = 0xffea00;
+            if (tileType === 'fire') orbCol = 0xff9100;
+            else if (tileType === 'psychic-eye') orbCol = 0xe040fb;
+            else if (tileType === 'lightning') orbCol = 0xffffff;
+            orb.fill({ color: orbCol });
+            projContainer.addChild(orb);
+            
+            gsap.to(orb, {
+                x: 16,
+                y: 16,
+                duration: 0.22,
+                repeat: -1,
+                ease: 'none',
+                onUpdate: function() {
+                    const ratio = this.targets()[0] ? this.progress() : 0;
+                    const time = ratio * Math.PI * 2;
+                    orb.x = Math.cos(time) * 16;
+                    orb.y = Math.sin(time) * 16;
+                }
+            });
+        }
         
         // Continuous element-themed trail particle emitter
         const spawnTrailParticle = () => {
-            if (container.destroyed || proj.destroyed) return;
+            if (container.destroyed || projContainer.destroyed || proj.destroyed) return;
             const trail = new Graphics();
-            let pSize = 3 + Math.random() * 4;
+            let pSize = 4 + Math.random() * 5; // Upscaled trail particles to match the large orb
             
+            // --- PREMIUM 3: Extremely Detailed Element Trails ---
             if (tileType === 'fire') {
-                trail.circle(0, 0, pSize);
-                trail.fill({ color: Math.random() > 0.5 ? 0xff9100 : 0xff3d00, alpha: 0.85 });
+                if (Math.random() > 0.4) {
+                    // Fiery ember spark
+                    trail.circle(0, 0, pSize);
+                    trail.fill({ color: Math.random() > 0.5 ? 0xff9100 : 0xff3d00, alpha: 0.9 });
+                } else {
+                    // Charcoal drifting smoke
+                    pSize *= 1.5;
+                    trail.circle(0, 0, pSize);
+                    trail.fill({ color: 0x3e2723, alpha: 0.45 });
+                }
             } else if (tileType === 'lightning') {
-                trail.rect(-1, -4, 2, 8);
-                trail.fill({ color: 0xfff59d, alpha: 0.9 });
-                trail.rotation = Math.random() * Math.PI;
+                // Crackling Jagged Electric Arc
+                const length = 14 + Math.random() * 14;
+                const angle = Math.random() * Math.PI * 2;
+                trail.moveTo(0, 0);
+                trail.lineTo(Math.cos(angle) * (length / 2) + (Math.random() - 0.5) * 6, Math.sin(angle) * (length / 2) + (Math.random() - 0.5) * 6);
+                trail.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
+                trail.stroke({ color: 0xffffff, width: 2 });
             } else if (tileType === 'nature') {
-                trail.ellipse(0, 0, pSize, pSize / 2);
-                trail.fill({ color: 0x81c784, alpha: 0.75 });
+                // Swirling nature leaf
+                trail.moveTo(0, -pSize);
+                trail.quadraticCurveTo(pSize / 2, -pSize / 2, 0, pSize);
+                trail.quadraticCurveTo(-pSize / 2, -pSize / 2, 0, -pSize);
+                trail.fill({ color: 0x81c784, alpha: 0.8 });
                 trail.rotation = Math.random() * Math.PI;
             } else if (tileType === 'ice') {
-                trail.rect(-2, -2, 4, 4);
-                trail.fill({ color: 0xb3e5fc, alpha: 0.85 });
+                // Hexagonal Star snowflake
+                trail.moveTo(0, -pSize);
+                trail.lineTo(pSize, -pSize / 2);
+                trail.lineTo(pSize, pSize / 2);
+                trail.lineTo(0, pSize);
+                trail.lineTo(-pSize, pSize / 2);
+                trail.lineTo(-pSize, -pSize / 2);
+                trail.closePath();
+                trail.fill({ color: Math.random() > 0.5 ? 0xffffff : 0xb3e5fc, alpha: 0.85 });
                 trail.rotation = Math.random() * Math.PI;
             } else if (tileType === 'water') {
-                trail.circle(0, 0, pSize - 1);
-                trail.fill({ color: 0x80d8ff, alpha: 0.75 });
+                if (Math.random() > 0.5) {
+                    // Translucent bubble
+                    trail.circle(0, 0, pSize - 1);
+                    trail.stroke({ color: 0x80d8ff, width: 1 });
+                    trail.fill({ color: 0x80d8ff, alpha: 0.25 });
+                } else {
+                    // Liquid droplet
+                    trail.circle(0, 0, pSize - 1);
+                    trail.fill({ color: 0x29b6f6, alpha: 0.75 });
+                }
             } else if (tileType === 'poison-death') {
+                // Bubbling acid globule
                 trail.circle(0, 0, pSize - 1);
-                trail.fill({ color: 0xe040fb, alpha: 0.75 });
+                trail.fill({ color: Math.random() > 0.5 ? 0xe040fb : 0x00e676, alpha: 0.8 });
+            } else if (tileType === 'wind-air') {
+                // Wind Vortex Ring
+                trail.circle(0, 0, pSize * 1.5);
+                trail.stroke({ color: 0xe0f7fa, width: 1.5, alpha: 0.7 });
+            } else if (tileType === 'sun') {
+                // Golden solar flare star
+                trail.moveTo(0, -pSize * 1.2);
+                trail.lineTo(pSize * 0.3, -pSize * 0.3);
+                trail.lineTo(pSize * 1.2, 0);
+                trail.lineTo(pSize * 0.3, pSize * 0.3);
+                trail.lineTo(0, pSize * 1.2);
+                trail.lineTo(-pSize * 0.3, pSize * 0.3);
+                trail.lineTo(-pSize * 1.2, 0);
+                trail.lineTo(-pSize * 0.3, -pSize * 0.3);
+                trail.closePath();
+                trail.fill({ color: 0xffd54f, alpha: 0.85 });
             } else {
                 trail.circle(0, 0, pSize);
                 trail.fill({ color, alpha: 0.6 });
             }
             
-            trail.x = proj.x + (Math.random() - 0.5) * 8;
-            trail.y = proj.y + (Math.random() - 0.5) * 8;
+            trail.x = projContainer.x + (Math.random() - 0.5) * 8;
+            trail.y = projContainer.y + (Math.random() - 0.5) * 8;
             container.addChild(trail);
             
             gsap.to(trail, {
@@ -201,7 +283,7 @@ export class Projectile {
         
         // Main projectile motion
         try {
-            await gsap.to(proj, {
+            await gsap.to(projContainer, {
                 x: end.x,
                 y: end.y,
                 duration: 0.4,
@@ -215,21 +297,25 @@ export class Projectile {
         // Safety check after async movement
         if (parent.destroyed || container.destroyed) return;
         
-        // Unique elemental impact burst
+        // Unique elemental impact burst (shockwave and particles)
         Projectile.burst(container, end.x, end.y, color, tileType);
         
         // Fade out projectile
-        gsap.to(proj, { alpha: 0, duration: 0.15 });
+        gsap.to(projContainer, { alpha: 0, duration: 0.15 });
         
         // Wait for final particles to clear and destroy container
         await new Promise(r => setTimeout(r, 600));
         
+        // --- PREMIUM 5: Recursively Kill All Active Tweens on Destruction to Avoid GSAP 'Cannot set properties of null' Crashes! ---
         if (!container.destroyed) {
-            gsap.killTweensOf(container);
-            container.children.forEach(child => {
-                gsap.killTweensOf(child);
-                if (child.scale) gsap.killTweensOf(child.scale);
-            });
+            const killAllTweens = (obj) => {
+                gsap.killTweensOf(obj);
+                if (obj.scale) gsap.killTweensOf(obj.scale);
+                if (obj.children) {
+                    obj.children.forEach(killAllTweens);
+                }
+            };
+            killAllTweens(container);
             container.destroy({ children: true });
         }
     }
@@ -244,7 +330,79 @@ export class Projectile {
      */
     static burst(parent, x, y, color, tileType = 'fire') {
         if (!parent || parent.destroyed) return;
-        const count = 16; // dense particle explosion
+
+        // --- PREMIUM 4: Cinematic Shockwave Rings / Cracks at Impact (Upscaled!) ---
+        if (tileType === 'fire') {
+            const ring = new Graphics();
+            ring.circle(0, 0, 5);
+            ring.stroke({ color: 0xff3d00, width: 3 });
+            ring.x = x; ring.y = y;
+            parent.addChild(ring);
+            gsap.to(ring.scale, { x: 13, y: 13, duration: 0.45, ease: 'power2.out' });
+            gsap.to(ring, { alpha: 0, duration: 0.45, onComplete: () => ring.destroy() });
+        } else if (tileType === 'water') {
+            const ring = new Graphics();
+            ring.circle(0, 0, 5);
+            ring.stroke({ color: 0x00b0ff, width: 2.5 });
+            ring.x = x; ring.y = y;
+            parent.addChild(ring);
+            gsap.to(ring.scale, { x: 12, y: 12, duration: 0.5, ease: 'power1.out' });
+            gsap.to(ring, { alpha: 0, duration: 0.5, onComplete: () => ring.destroy() });
+        } else if (tileType === 'lightning') {
+            const arcs = new Graphics();
+            arcs.x = x; arcs.y = y;
+            parent.addChild(arcs);
+            // Draw 5 crackling lightning lines shooting outward
+            for (let k = 0; k < 5; k++) {
+                const a = (Math.PI * 2 * k) / 5 + (Math.random() - 0.5) * 0.5;
+                const len = 68 + Math.random() * 42;
+                arcs.moveTo(0, 0);
+                arcs.lineTo(Math.cos(a) * (len / 2) + (Math.random() - 0.5) * 10, Math.sin(a) * (len / 2) + (Math.random() - 0.5) * 10);
+                arcs.lineTo(Math.cos(a) * len, Math.sin(a) * len);
+            }
+            arcs.stroke({ color: 0xffffff, width: 3 });
+            gsap.to(arcs, { alpha: 0, duration: 0.35, ease: 'power2.in', onComplete: () => arcs.destroy() });
+        } else if (tileType === 'earth') {
+            const cracks = new Graphics();
+            cracks.x = x; cracks.y = y;
+            parent.addChild(cracks);
+            // Draw jagged cracks spreading
+            for (let k = 0; k < 4; k++) {
+                const a = (Math.PI / 2) * k + (Math.random() - 0.5) * 0.4;
+                const len = 48 + Math.random() * 32;
+                cracks.moveTo(0, 0);
+                cracks.lineTo(Math.cos(a) * (len * 0.6) + (Math.random() - 0.5) * 5, Math.sin(a) * (len * 0.6) + (Math.random() - 0.5) * 5);
+                cracks.lineTo(Math.cos(a) * len, Math.sin(a) * len);
+            }
+            cracks.stroke({ color: 0x5d4037, width: 2.5 });
+            gsap.to(cracks, { alpha: 0, duration: 0.6, delay: 0.15, onComplete: () => cracks.destroy() });
+        } else if (tileType === 'wind-air') {
+            const windRing = new Graphics();
+            windRing.circle(0, 0, 5);
+            windRing.stroke({ color: 0xb2ebf2, width: 2 });
+            windRing.x = x; windRing.y = y;
+            parent.addChild(windRing);
+            gsap.to(windRing.scale, { x: 14, y: 14, duration: 0.4, ease: 'power2.out' });
+            gsap.to(windRing, { alpha: 0, duration: 0.4, onComplete: () => windRing.destroy() });
+        } else if (tileType === 'psychic-eye') {
+            const ripple = new Graphics();
+            ripple.circle(0, 0, 5);
+            ripple.stroke({ color: 0xe040fb, width: 2.5 });
+            ripple.x = x; ripple.y = y;
+            parent.addChild(ripple);
+            gsap.to(ripple.scale, { x: 13, y: 13, duration: 0.45, ease: 'sine.out' });
+            gsap.to(ripple, { alpha: 0, duration: 0.45, onComplete: () => ripple.destroy() });
+        } else if (tileType === 'sun') {
+            const nova = new Graphics();
+            nova.circle(0, 0, 5);
+            nova.fill({ color: 0xffd54f, alpha: 0.8 });
+            nova.x = x; nova.y = y;
+            parent.addChild(nova);
+            gsap.to(nova.scale, { x: 14, y: 14, duration: 0.35, ease: 'back.out(2)' });
+            gsap.to(nova, { alpha: 0, duration: 0.35, onComplete: () => nova.destroy() });
+        }
+
+        const count = 18; // dense particle explosion
         
         for (let i = 0; i < count; i++) {
             const p = new Graphics();

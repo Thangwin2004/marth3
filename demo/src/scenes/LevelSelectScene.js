@@ -233,18 +233,86 @@ export class LevelSelectScene {
             hpText.y = 150;
             card.addChild(hpText);
 
-            // Weakness/Resistance
-            const weakStr = levelConfig.boss.weakness ? `⬇${levelConfig.boss.weakness}` : '';
-            const resStr = levelConfig.boss.resistance ? `⬆${levelConfig.boss.resistance}` : '';
-            if (weakStr || resStr) {
-                const wrText = new Text({
-                    text: `${weakStr} ${resStr}`.trim(),
-                    style: { fontFamily: 'Arial', fontSize: 10, fill: '#888888' },
+            // Weakness/Resistance Beautiful Display
+            const ELEMENT_STYLES = {
+                fire: { name: 'Fire', emoji: '🔥', color: '#ff7043' },
+                water: { name: 'Water', emoji: '💧', color: '#29b6f6' },
+                nature: { name: 'Nature', emoji: '🌿', color: '#66bb6a' },
+                ice: { name: 'Ice', emoji: '❄️', color: '#80d8ff' },
+                lightning: { name: 'Lightning', emoji: '⚡', color: '#ffd54f' },
+                earth: { name: 'Earth', emoji: '⛰️', color: '#a1887f' },
+                'wind-air': { name: 'Wind', emoji: '💨', color: '#e0e0e0' },
+                'psychic-eye': { name: 'Psychic', emoji: '👁️', color: '#ea80fc' },
+                sun: { name: 'Sun', emoji: '☀️', color: '#ffb74d' },
+                'poison-death': { name: 'Poison', emoji: '☠️', color: '#b388ff' }
+            };
+
+            const wrContainer = new Container();
+            wrContainer.y = 170;
+            card.addChild(wrContainer);
+
+            const items = [];
+
+            if (levelConfig.boss.weakness) {
+                const el = levelConfig.boss.weakness;
+                const style = ELEMENT_STYLES[el] || { name: el, emoji: '', color: '#ffffff' };
+                
+                const item = new Container();
+                
+                // Down arrow (Weakness) -> Green color for bonus damage!
+                const arrow = new Text({
+                    text: '⬇',
+                    style: { fontFamily: 'Arial', fontSize: 12, fontWeight: 'bold', fill: '#00ff66' }
                 });
-                wrText.anchor.set(0.5);
-                wrText.x = w / 2;
-                wrText.y = 170;
-                card.addChild(wrText);
+                arrow.anchor.set(0, 0.5);
+                item.addChild(arrow);
+                
+                const elTxt = new Text({
+                    text: `${style.emoji}${style.name}`,
+                    style: { fontFamily: 'Arial', fontSize: 10, fontWeight: 'bold', fill: style.color }
+                });
+                elTxt.anchor.set(0, 0.5);
+                elTxt.x = 12;
+                item.addChild(elTxt);
+                
+                items.push(item);
+            }
+
+            if (levelConfig.boss.resistance) {
+                const el = levelConfig.boss.resistance;
+                const style = ELEMENT_STYLES[el] || { name: el, emoji: '', color: '#ffffff' };
+                
+                const item = new Container();
+                
+                // Up arrow (Resistance) -> Red color for reduced damage!
+                const arrow = new Text({
+                    text: '⬆',
+                    style: { fontFamily: 'Arial', fontSize: 12, fontWeight: 'bold', fill: '#ff3333' }
+                });
+                arrow.anchor.set(0, 0.5);
+                item.addChild(arrow);
+                
+                const elTxt = new Text({
+                    text: `${style.emoji}${style.name}`,
+                    style: { fontFamily: 'Arial', fontSize: 10, fontWeight: 'bold', fill: style.color }
+                });
+                elTxt.anchor.set(0, 0.5);
+                elTxt.x = 12;
+                item.addChild(elTxt);
+                
+                items.push(item);
+            }
+
+            // Align items horizontally within the card (w = 170)
+            if (items.length === 2) {
+                items[0].x = 12;
+                items[1].x = w / 2 + 6;
+                wrContainer.addChild(items[0]);
+                wrContainer.addChild(items[1]);
+            } else if (items.length === 1) {
+                items[0].x = w / 2;
+                items[0].pivot.x = items[0].width / 2;
+                wrContainer.addChild(items[0]);
             }
 
             // Skill reward

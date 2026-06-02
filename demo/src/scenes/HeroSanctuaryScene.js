@@ -178,8 +178,7 @@ export class HeroSanctuaryScene {
         this.statsPanel.addChild(header);
 
         // Active Loadout display on Stats Panel
-        const currentEquippedSkillId = save.equippedSkills ? (save.equippedSkills.active || 'fireball') : 'fireball';
-        const activeSkillObj = SKILLS[currentEquippedSkillId] || SKILLS.fireball;
+        const unlockedSkills = save.unlockedSkills || ['fireball'];
         const passiveCount = save.equippedSkills && save.equippedSkills.passives ? save.equippedSkills.passives.length : 0;
 
         // Stats Lines
@@ -189,7 +188,7 @@ export class HeroSanctuaryScene {
             { text: `💚 Max HP: ${finalMaxHP}` + (finalMaxHP > maxHP ? ` (+50)` : ''), color: '#81c784', y: 155 },
             { text: `🛡️ Giáp Khởi Đầu: ${finalShield}`, color: '#80d8ff', y: 195 },
             { text: `⚔️ Base ATK: +${dmgBonusPercent}%` + (equipped.weapon === 'magic_sword' ? ` (+15 Lôi)` : ''), color: '#ffb300', y: 235 },
-            { text: `☄️ Active: ${activeSkillObj.icon} ${activeSkillObj.name}`, color: '#00e5ff', y: 275 },
+            { text: `🔮 Kỹ Năng Đã Mở: ${unlockedSkills.length} / 11`, color: '#00e5ff', y: 275 },
             { text: `📜 Passives: ${passiveCount} / 2`, color: '#69f0ae', y: 310 },
             { text: `💰 Gold: ${gold}`, color: '#ffd54f', y: 350 }
         ];
@@ -741,7 +740,7 @@ export class HeroSanctuaryScene {
             this.masteryPanel.addChild(actHeader);
 
             const actSub = new Text({
-                text: 'Di chuyển chuột qua để xem mô tả. Click để Trang Bị.',
+                text: 'Di chuyển chuột qua để xem mô tả. Tất cả kỹ năng đã mở sẽ tự động được sử dụng trong trận!',
                 style: { fontFamily: 'Arial', fontSize: 10, fill: '#aaaaaa' }
             });
             actSub.x = mx + 28;
@@ -779,7 +778,6 @@ export class HeroSanctuaryScene {
                 const ky = row * (cardSize + gap);
 
                 const isUnlocked = skill.id === 'fireball' || (save.unlockedSkills && save.unlockedSkills.includes(skill.id));
-                const isEquipped = save.equippedSkills ? (save.equippedSkills.active === skill.id) : (skill.id === 'fireball');
 
                 const skillCard = new Container();
                 skillCard.x = kx;
@@ -790,8 +788,8 @@ export class HeroSanctuaryScene {
                 skBg.roundRect(0, 0, cardSize, cardSize, 10);
                 
                 if (isUnlocked) {
-                    skBg.fill({ color: isEquipped ? 0x2c385e : 0x1f293d, alpha: 0.8 });
-                    skBg.stroke({ color: isEquipped ? 0x00e5ff : skill.color, width: isEquipped ? 2.5 : 1.5, alpha: isEquipped ? 1.0 : 0.4 });
+                    skBg.fill({ color: 0x1f293d, alpha: 0.8 });
+                    skBg.stroke({ color: skill.color, width: 1.5, alpha: 0.6 });
                     skBg.eventMode = 'static';
                     skBg.cursor = 'pointer';
                 } else {
@@ -828,12 +826,6 @@ export class HeroSanctuaryScene {
                     skBg.on('pointerout', () => {
                         gsap.to(skillCard.scale, { x: 1, y: 1, duration: 0.1 });
                     });
-                    skBg.on('pointerdown', () => {
-                        if (saveManager.equipActiveSkill(skill.id)) {
-                            this.playSparkleEffect(mx + 28 + kx + cardSize / 2, my + 122 + ky + cardSize / 2);
-                            this.renderAll();
-                        }
-                    });
                 }
             });
 
@@ -843,10 +835,8 @@ export class HeroSanctuaryScene {
             tooltipBox.stroke({ color: 0xffffff, width: 1, alpha: 0.1 });
             this.masteryPanel.addChild(tooltipBox);
 
-            const currSkill = SKILLS[currentEquippedSkillId] || SKILLS.fireball;
-
             this.tooltipText = new Text({
-                text: `⚡ [${currSkill.name}]: ${currSkill.description}`,
+                text: '⚡ Rê chuột qua các kỹ năng ở trên để xem mô tả chi tiết!',
                 style: { fontFamily: 'Arial', fontSize: 9, fill: '#ffb300', wordWrap: true, wordWrapWidth: 240 }
             });
             this.tooltipText.x = mx + 38;

@@ -122,4 +122,28 @@ Cơ chế hiệu ứng trạng thái được quản lý bởi `StatusEffects.js
 | **Cleanse (Thanh tẩy)**| Buff | Xóa sạch lập tức toàn bộ các debuff bất lợi (Burn, Poison, Curse, Stun, Freeze) đang dính trên cơ thể. |
 
 ---
+
+## 6. BÁO CÁO CẬP NHẬT TÍNH NĂNG ĐIỆN ẢNH & TƯƠNG TÁC KỸ NĂNG (WEEK 10 UPGRADES)
+
+Trong bản cập nhật mới nhất, hệ thống trình diễn trận đấu và tương tác kỹ năng đã được nâng cấp toàn diện nhằm đem lại trải nghiệm cao cấp và trực quan nhất cho người chơi:
+
+### 🎬 Trải Nghiệm Trận Đấu Điện Ảnh (Cinematic Battle Arena)
+* **Cơ chế trượt bảng đấu thông minh (Board Sliding)**: Tự động di chuyển `board.container` và `boardBg` xuống dưới màn hình `600px` bằng GSAP khi bắt đầu chuỗi đòn đánh. Điều này giúp dọn sạch sân khấu cờ, mở ra không gian giao tranh hoành tráng trực diện giữa hai nhân vật Hero và Boss. Bàn cờ sẽ tự động trượt lên lại vị trí cũ khi kết thúc chuỗi đòn đánh.
+* **Tăng kích thước projectiles cực đại**: Các đạn bay nguyên tố được nâng cấp kích thước cơ bản lên **`2.3x` - `2.7x`** kết hợp với hoạt ảnh sóng xung kích nổ (shockwave) và nứt vỡ đất đá phóng to thêm **`40%`** cho hiệu quả thị giác mãn nhãn.
+* **Hộp phần thưởng Victory trung tâm**: Tái thiết kế màn hình chiến thắng bằng cách đặt một hộp kính mờ (glassmorphism) cỡ lớn `500x180` px có viền vàng neon lấp lánh ngay trung tâm. Bố cục dạng lưới 2x2 hiển thị siêu nét: Vàng (Gold 💰), Kinh nghiệm (EXP ✨), Mảnh nguyên tố (Shards 🔮) được phân màu đẹp mắt, cùng thông tin lên cấp/chiêu thức mới cực kỳ nổi bật.
+
+### ⚡ Hệ Thống Kỹ Năng Luôn Tương Tác & Ra Chiêu Nhanh (UX Skill Bar)
+* **Tương tác liên tục (Always Interactive)**: Khắc phục triệt để tình trạng các thẻ kỹ năng không phản hồi hoặc bị đơ khi bấm. Giờ đây, người chơi có thể nhấp chuột vào bất cứ kỹ năng nào ở thanh công cụ dưới bất kỳ điều kiện nào (kể cả khi đang bị hồi chiêu hay đang bị choáng) để xem chi tiết hướng dẫn và tác dụng của chiêu thức đó.
+* **Bảng hướng dẫn nổi phát sáng neon (Neon Guidance Popups)**: Tích hợp hàm hiển thị thông tin nổi bật `showSkillGuidancePopup` ở chính giữa màn hình đấu (`x=600, y=330`). Viền bảng được thiết kế phát sáng neon đổi màu linh hoạt theo trạng thái:
+  * 🟢 **Xanh lá phát sáng (`0x00e676`)** - Chiêu sẵn sàng và kích hoạt tức thì.
+  * 🟠 **Màu hổ phách (`0xffa726`)** - Chiêu đang hồi (hiện số lượt hồi còn lại).
+  * 🔴 **Màu đỏ thẫm (`0xff1744`)** - Người chơi đang bị choáng không thể dùng chiêu.
+  * 🔵 **Màu xanh ngọc (`0x00e5ff`)** - Bảng ngọc đang bận xử lý đòn đánh.
+  * 🟠 **Màu cam đỏ (`0xff8a65`)** - Đang trong lượt của đối thủ (Boss).
+* **Ra chiêu trực tiếp không qua nhấp Boss**: Giản lược hóa thao tác điều khiển. Bấm vào chiêu tấn công Boss (như Fireball, Lightning, Bomb, Meteor Shower) sẽ tự động kích hoạt thẳng lên Boss ngay lập tức, hoàn toàn loại bỏ bước chọn mục tiêu thủ công rườm rà dễ gây bối rối trước đây.
+
+### 🛡️ Khắc Phục Triệt Để Crash Console
+* **Triệt tiêu Tween rác (Tween Garbage Collection)**: Cài đặt cơ chế kiểm soát GSAP thông minh, thực hiện triệt tiêu đệ quy toàn bộ các tween đang chạy trên các đối tượng hình ảnh trước khi thực hiện hàm hủy đối tượng (`destroy()`). Giúp game vận hành hoàn toàn ổn định và đạt **0 lỗi console (Zero crash error)**.
+
+---
 *Báo cáo được lập bởi Antigravity — Hệ thống Pair Programming AI hàng đầu từ Google DeepMind.*

@@ -680,29 +680,185 @@ export class BattleScene {
     }
 
     // ================================================================
-    //  SKILL BUTTON CLICK
+    //  SKILL BUTTON CLICK & GUIDANCE POPUPS
     // ================================================================
 
+    showSkillGuidancePopup(titleText, description, colorHex = 0xffd54f, skillIcon = '⚡') {
+        // If an existing popup is active, fade it out and destroy it immediately
+        if (this.activeSkillPopup) {
+            const oldPopup = this.activeSkillPopup;
+            gsap.to(oldPopup, {
+                alpha: 0,
+                duration: 0.15,
+                onComplete: () => {
+                    if (oldPopup.parent) oldPopup.parent.removeChild(oldPopup);
+                    oldPopup.destroy({ children: true });
+                }
+            });
+            this.activeSkillPopup = null;
+        }
+
+        // Create new container
+        const popup = new Container();
+        popup.zIndex = 1000; // Above everything else
+        popup.x = Config.canvas.width / 2;
+        popup.y = 330; // Centered vertically in the middle/board area
+        popup.scale.set(0.6);
+        popup.alpha = 0;
+        this.container.addChild(popup);
+        this.activeSkillPopup = popup;
+
+        // Custom override destroy to clean up active GSAP tweens
+        const originalDestroy = popup.destroy.bind(popup);
+        popup.destroy = (options) => {
+            gsap.killTweensOf(popup);
+            gsap.killTweensOf(popup.scale);
+            originalDestroy(options);
+        };
+
+        const width = 450;
+        const height = 125;
+
+        // Draw premium card background with glassmorphism + custom colored neon glow border
+        const bg = new Graphics();
+        bg.roundRect(-width / 2, -height / 2, width, height, 12);
+        bg.fill({ color: 0x0a0c18, alpha: 0.95 });
+        bg.stroke({ color: colorHex, width: 2, alpha: 0.9 });
+        popup.addChild(bg);
+
+        // Add title text
+        const title = new Text({
+            text: titleText,
+            style: {
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 16,
+                fontWeight: 'bold',
+                fill: '#' + colorHex.toString(16).padStart(6, '0'),
+                stroke: '#000000',
+                strokeThickness: 3,
+                dropShadow: { color: '#000000', blur: 3, distance: 2 }
+            }
+        });
+        title.anchor.set(0.5);
+        title.y = -height / 2 + 25;
+        popup.addChild(title);
+
+        // Add divider line
+        const divider = new Graphics();
+        divider.rect(-width / 2 + 20, -height / 2 + 45, width - 40, 1.5);
+        divider.fill({ color: 0xffffff, alpha: 0.15 });
+        popup.addChild(divider);
+
+        // Add description text (word wrap to fit nicely)
+        const descText = new Text({
+            text: description,
+            style: {
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 13,
+                fontWeight: '500',
+                fill: '#e2e8f0',
+                align: 'center',
+                wordWrap: true,
+                wordWrapWidth: width - 40,
+                lineHeight: 18,
+                stroke: '#000000',
+                strokeThickness: 2
+            }
+        });
+        descText.anchor.set(0.5);
+        descText.y = 18;
+        popup.addChild(descText);
+
+        // GSAP premium entrance: scaling up + fading in
+        gsap.to(popup, { alpha: 1, duration: 0.25, ease: 'power2.out' });
+        gsap.to(popup.scale, { x: 1, y: 1, duration: 0.3, ease: 'back.out(1.8)' });
+
+        // Auto fade out and destroy after 2.5 seconds
+        gsap.to(popup, {
+            alpha: 0,
+            duration: 0.4,
+            delay: 2.2,
+            onComplete: () => {
+                if (this.activeSkillPopup === popup) {
+                    this.activeSkillPopup = null;
+                }
+                if (popup.parent) popup.parent.removeChild(popup);
+                popup.destroy({ children: true });
+            }
+        });
+    }
+
     onSkillButtonClick(skillId) {
-        if (this.disabled || this.currentTurn !== 'player') return;
-        // For skills that need tile/boss targeting, we'd enter a targeting mode
-        // For now, self/board skills execute immediately
+        if (this.isGameOver) return;
+
         const skill = this.skillSystem.getSkill(skillId);
         if (!skill) return;
 
-        if (skill.targetType === 'tile' || skill.targetType === 'column' || skill.targetType === 'boss') {
-            // Enter targeting mode
-            if (skill.targetType === 'boss') {
-                this.hud.setLog(`🎯 Select a target for ${skill.name}... (Click the Boss to attack!)`);
-            } else {
-                this.hud.setLog(`🎯 Select a target for ${skill.name}...`);
-            }
-            this.skillTargeting = skillId;
+        const skillStates = this.player.getSkillStates();
+        const state = skillStates.find(s => s.id === skillId);
+        const cooldown = state ? state.cooldown : 0;
+        const isReady = state ? state.ready : false;
+
+        const skillEffect = `⚡ Tác dụng: ${skill.description}`;
+
+        // Case 1: Not player's turn
+        if (this.currentTurn !== 'player') {
+            this.showSkillGuidancePopup(
+                `⚠️ LƯỢT CỦA BOSS!`,
+                `${skill.icon} **[${skill.name}]**\n${skillEffect}\n(Vui lòng đợi đến lượt của bạn để sử dụng)`,
+                0xff8a65, // warm orange-red
+                skill.icon
+            );
             return;
         }
 
-        // Execute immediately for self/board skills
-        this.usePlayerSkill(skillId);
+        // Case 2: Player is stunned
+        if (this.player.stunned) {
+            this.showSkillGuidancePopup(
+                `❌ BẠN ĐANG BỊ CHOÁNG!`,
+                `${skill.icon} **[${skill.name}]**\n${skillEffect}\n(Không thể dùng kỹ năng khi đang bị Choáng)`,
+                0xff1744, // bright crimson
+                skill.icon
+            );
+            return;
+        }
+
+        // Case 3: Board is busy (disabled)
+        if (this.disabled) {
+            this.showSkillGuidancePopup(
+                `⏳ ĐANG XỬ LÝ TRẬN ĐẤU!`,
+                `${skill.icon} **[${skill.name}]**\n${skillEffect}\n(Vui lòng đợi các hiệu ứng kết thúc)`,
+                0x00e5ff, // glowing cyan
+                skill.icon
+            );
+            return;
+        }
+
+        // Case 4: Skill is on cooldown
+        if (!isReady || cooldown > 0) {
+            this.showSkillGuidancePopup(
+                `❌ ĐANG HỒI CHIÊU: Còn ${cooldown} lượt!`,
+                `${skill.icon} **[${skill.name}]**\n${skillEffect}\n(Cần hồi thêm lượt để có thể kích hoạt)`,
+                0xffa726, // amber/orange
+                skill.icon
+            );
+            return;
+        }
+
+        // Case 5: Usable and ready! Show glowing green card
+        this.showSkillGuidancePopup(
+            `✨ KÍCH HOẠT: ${skill.name.toUpperCase()}!`,
+            `${skill.icon} **[${skill.name}]**\n${skillEffect}\n💥 Kỹ năng kích hoạt tức thì!`,
+            0x00e676, // vivid neon green
+            skill.icon
+        );
+
+        // Execute immediately
+        if (skill.targetType === 'boss') {
+            this.usePlayerSkill(skillId, { boss: true });
+        } else {
+            this.usePlayerSkill(skillId);
+        }
     }
 
     onBossClick() {
@@ -1084,6 +1240,15 @@ export class BattleScene {
             // Show visual match summary panel to display matched tile graphics & combo count
             await MatchSummaryPanel.show(this.container, colorCounts, this.comboCount);
 
+            // Store original board container y coordinate
+            const origBoardY = this.board.container.y;
+            
+            // Slide board and its background down smoothly off-screen
+            await Promise.all([
+                gsap.to(this.board.container, { y: origBoardY + 600, duration: 0.55, ease: 'power2.inOut' }),
+                gsap.to(this.boardBg, { y: 600, duration: 0.55, ease: 'power2.inOut' })
+            ]);
+
             // Accumulate status effects to apply at the very end
             const accumulatedEffects = [];
 
@@ -1114,16 +1279,8 @@ export class BattleScene {
                     // Attacker play attack lunge animation
                     await this.hud.playAttack(who);
 
-                    // Determine projectile start position (center of match tiles, or fallback to board center)
-                    const boardCenter = {
-                        x: this.board.container.x + (this.board.cols * Config.tileSize) / 2,
-                        y: this.board.container.y + (this.board.rows * Config.tileSize) / 2,
-                    };
-                    const firstTile = match.tiles[0];
-                    const startPos = (firstTile && firstTile.sprite) 
-                        ? { x: firstTile.sprite.x + this.board.container.x, y: firstTile.sprite.y + this.board.container.y } 
-                        : boardCenter;
-                    
+                    // Projectile launches directly from attacker's avatar coordinates since the board is hidden!
+                    const startPos = this.hud.getSpritePosition(who);
                     const defenderPos = this.hud.getSpritePosition(defenderSide);
 
                     const colorMap = {
@@ -1248,6 +1405,12 @@ export class BattleScene {
 
             // Update UI
             this.updateUI();
+
+            // Slide board back up smoothly to its original position
+            await Promise.all([
+                gsap.to(this.board.container, { y: origBoardY, duration: 0.55, ease: 'power2.inOut' }),
+                gsap.to(this.boardBg, { y: 0, duration: 0.55, ease: 'power2.inOut' })
+            ]);
         }
 
         // 3. END TURN CHECK
@@ -1575,6 +1738,16 @@ export class BattleScene {
         saveManager.addShards(shardColor, shardsGained);
         const lvlUpResult = saveManager.addExp(expGained);
 
+        // Store victory rewards data for the central Victory Modal rewards card!
+        this.victoryRewards = {
+            expGained,
+            goldGained,
+            shardColor,
+            shardsGained,
+            lvlUpResult,
+            skillReward
+        };
+
         await this.turnIndicator.show('🎉 VICTORY!', '#ffdd57');
         
         let rewardText = `Boss defeated! Nhận: EXP +${expGained}, Vàng +${goldGained}, Mảnh ${shardColor.toUpperCase()} +${shardsGained}!`;
@@ -1626,7 +1799,7 @@ export class BattleScene {
         });
         title.anchor.set(0.5);
         title.x = Config.canvas.width / 2;
-        title.y = Config.canvas.height / 2 - 90;
+        title.y = type === 'victory' ? 150 : Config.canvas.height / 2 - 90;
         screen.addChild(title);
 
         // Battle stats
@@ -1636,26 +1809,110 @@ export class BattleScene {
         });
         statsText.anchor.set(0.5);
         statsText.x = Config.canvas.width / 2;
-        statsText.y = Config.canvas.height / 2 - 35;
+        statsText.y = type === 'victory' ? 205 : Config.canvas.height / 2 - 35;
         screen.addChild(statsText);
 
-        // Skill reward for victory
-        if (type === 'victory' && this.levelConfig.skillReward) {
-            const skillText = new Text({
-                text: `✨ Skill Unlocked: ${this.levelConfig.skillReward}`,
-                style: { fontFamily: 'Arial', fontSize: 22, fontWeight: 'bold', fill: '#4fc3f7' },
+        let btnY = Config.canvas.height / 2 + 55;
+
+        // Custom premium Rewards Panel for victory!
+        if (type === 'victory') {
+            btnY = 460; // shift buttons down to fit the rewards box
+
+            const rewards = this.victoryRewards || {
+                expGained: this.levelNum * 40,
+                goldGained: this.levelNum * 50,
+                shardColor: 'nature',
+                shardsGained: 10,
+                lvlUpResult: { leveledUp: false },
+                skillReward: this.levelConfig.skillReward
+            };
+
+            const boxW = 500;
+            const boxH = 180;
+            const boxX = Config.canvas.width / 2 - boxW / 2;
+            const boxY = 245;
+
+            // Semi-transparent panel with golden border
+            const rBox = new Graphics();
+            rBox.roundRect(boxX, boxY, boxW, boxH, 14);
+            rBox.fill({ color: 0x11162d, alpha: 0.85 });
+            rBox.stroke({ color: 0xffd54f, width: 2, alpha: 0.85 });
+            screen.addChild(rBox);
+
+            // Headline
+            const rHead = new Text({
+                text: '🎁 CHIẾN LỢI PHẨM NHẬN ĐƯỢC 🎁',
+                style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ffd54f' }
             });
-            skillText.anchor.set(0.5);
-            skillText.x = Config.canvas.width / 2;
-            skillText.y = Config.canvas.height / 2 - 5;
-            screen.addChild(skillText);
+            rHead.anchor.set(0.5);
+            rHead.x = Config.canvas.width / 2;
+            rHead.y = boxY + 22;
+            screen.addChild(rHead);
 
-            // Pulsing glow
-            gsap.to(skillText, { alpha: 0.5, duration: 0.6, yoyo: true, repeat: -1 });
+            // Shard Color mapping names & colors
+            const elementNames = {
+                fire: { name: 'LỬA 🔥', color: '#ff7043' },
+                water: { name: 'NƯỚC 💧', color: '#29b6f6' },
+                nature: { name: 'MỘC 🌿', color: '#66bb6a' },
+                ice: { name: 'BĂNG ❄️', color: '#80d8ff' },
+                lightning: { name: 'LÔI ⚡', color: '#ffd54f' },
+                earth: { name: 'THỔ ⛰️', color: '#a1887f' },
+                'wind-air': { name: 'PHONG 💨', color: '#e0e0e0' },
+                'psychic-eye': { name: 'TÂM LINH 👁️', color: '#ea80fc' },
+                sun: { name: 'QUANG ☀️', color: '#ffb74d' },
+                'poison-death': { name: 'ĐỘC ☠️', color: '#b388ff' }
+            };
+            const shStyle = elementNames[rewards.shardColor] || { name: rewards.shardColor.toUpperCase(), color: '#e040fb' };
+
+            // Grid items mapping: { text, color, xOffset, yOffset }
+            const leftColX = Config.canvas.width / 2 - 210;
+            const rightColX = Config.canvas.width / 2 + 25;
+
+            const gridItems = [
+                // Row 1
+                { text: `💰 Vàng: +${rewards.goldGained}`, color: '#ffd54f', x: leftColX, y: boxY + 60, size: 16 },
+                { text: `🔮 Mảnh ${shStyle.name}: +${rewards.shardsGained}`, color: shStyle.color, x: rightColX, y: boxY + 60, size: 15 },
+                // Row 2
+                { text: `✨ EXP: +${rewards.expGained}`, color: '#00e5ff', x: leftColX, y: boxY + 98, size: 16 },
+                {
+                    text: rewards.skillReward 
+                        ? `🎁 Skill: ${rewards.skillReward.toUpperCase()}!` 
+                        : `⚔️ Boss Chinh Phục!`, 
+                    color: rewards.skillReward ? '#4fc3f7' : '#aaaaaa', 
+                    x: rightColX, 
+                    y: boxY + 98,
+                    size: 14,
+                    pulse: !!rewards.skillReward
+                },
+                // Row 3
+                {
+                    text: rewards.lvlUpResult?.leveledUp 
+                        ? `🌟 LÊN CẤP! Cấp ${rewards.lvlUpResult.level} 🌟` 
+                        : `🎒 EXP đã được tích lũy`, 
+                    color: rewards.lvlUpResult?.leveledUp ? '#69f0ae' : '#aaaaaa', 
+                    x: leftColX, 
+                    y: boxY + 138,
+                    size: 14,
+                    pulse: !!rewards.lvlUpResult?.leveledUp
+                },
+                { text: `🏆 Hoàn thành Ải xuất sắc!`, color: '#81c784', x: rightColX, y: boxY + 138, size: 14 }
+            ];
+
+            gridItems.forEach(item => {
+                const txt = new Text({
+                    text: item.text,
+                    style: { fontFamily: 'Arial', fontSize: item.size, fontWeight: 'bold', fill: item.color }
+                });
+                txt.x = item.x;
+                txt.y = item.y;
+                txt.anchor.set(0, 0.5);
+                screen.addChild(txt);
+
+                if (item.pulse) {
+                    gsap.to(txt, { alpha: 0.5, duration: 0.6, yoyo: true, repeat: -1 });
+                }
+            });
         }
-
-        // Buttons
-        const btnY = Config.canvas.height / 2 + 55;
 
         if (type === 'victory' && this.levelNum < 10) {
             this.createButton(screen, 'Next Level ▶', Config.canvas.width / 2 - 110, btnY, 0x4fc3f7, () => {
