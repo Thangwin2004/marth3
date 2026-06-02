@@ -45,13 +45,13 @@ export class SkillBar {
                 const bg = new Graphics();
                 bg.roundRect(0, 0, btnSize, btnSize, 8);
                 
-                bg.eventMode = 'static';
-                bg.cursor = 'pointer';
-                bg.on('pointerdown', () => {
+                btn.eventMode = 'static';
+                btn.cursor = 'pointer';
+                btn.on('pointerdown', () => {
                     if (this.onSkillSelect) this.onSkillSelect(state.id);
                 });
-                bg.on('pointerover', () => gsap.to(btn.scale, { x: 1.1, y: 1.1, duration: 0.15 }));
-                bg.on('pointerout', () => gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 }));
+                btn.on('pointerover', () => gsap.to(btn.scale, { x: 1.1, y: 1.1, duration: 0.15 }));
+                btn.on('pointerout', () => gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 }));
 
                 if (state.ready && this.enabled) {
                     bg.fill({ color: skill.color, alpha: 0.85 });

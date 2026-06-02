@@ -331,17 +331,17 @@ export class LevelSelectScene {
             }
 
             // Make clickable
-            cardBg.eventMode = 'static';
-            cardBg.cursor = 'pointer';
-            cardBg.on('pointerover', () => {
+            card.eventMode = 'static';
+            card.cursor = 'pointer';
+            card.on('pointerover', () => {
                 gsap.to(card.scale, { x: 1.05, y: 1.05, duration: 0.15 });
                 gsap.to(cardBg, { alpha: 1, duration: 0.15 });
             });
-            cardBg.on('pointerout', () => {
+            card.on('pointerout', () => {
                 gsap.to(card.scale, { x: 1, y: 1, duration: 0.15 });
                 gsap.to(cardBg, { alpha: 0.9, duration: 0.15 });
             });
-            cardBg.on('pointerdown', async () => {
+            card.on('pointerdown', async () => {
                 // Disable all interaction immediately to prevent hover/out events from starting new tweens during fadeout
                 this.container.eventMode = 'none';
                 this.container.interactiveChildren = false;

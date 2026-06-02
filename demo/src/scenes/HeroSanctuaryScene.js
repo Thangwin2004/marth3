@@ -230,8 +230,6 @@ export class HeroSanctuaryScene {
         upBg.roundRect(-100, -20, 200, 40, 10);
         upBg.fill({ color: canUpgrade ? 0xffb300 : 0x3d3521 });
         upBg.stroke({ color: 0xffffff, width: 1.5, alpha: canUpgrade ? 0.35 : 0.1 });
-        upBg.eventMode = canUpgrade ? 'static' : 'none';
-        upBg.cursor = canUpgrade ? 'pointer' : 'default';
         upBtn.addChild(upBg);
 
         const upText = new Text({
@@ -241,10 +239,12 @@ export class HeroSanctuaryScene {
         upText.anchor.set(0.5);
         upBtn.addChild(upText);
 
+        upBtn.eventMode = canUpgrade ? 'static' : 'none';
+        upBtn.cursor = canUpgrade ? 'pointer' : 'default';
         if (canUpgrade) {
-            upBg.on('pointerover', () => gsap.to(upBtn.scale, { x: 1.05, y: 1.05, duration: 0.12 }));
-            upBg.on('pointerout', () => gsap.to(upBtn.scale, { x: 1, y: 1, duration: 0.12 }));
-            upBg.on('pointerdown', () => {
+            upBtn.on('pointerover', () => gsap.to(upBtn.scale, { x: 1.05, y: 1.05, duration: 0.12 }));
+            upBtn.on('pointerout', () => gsap.to(upBtn.scale, { x: 1, y: 1, duration: 0.12 }));
+            upBtn.on('pointerdown', () => {
                 if (saveManager.upgradeHeroLevelWithGold()) {
                     this.playSparkleEffect(upBtn.x, upBtn.y);
                     this.renderAll();
@@ -277,8 +277,6 @@ export class HeroSanctuaryScene {
         tab1Bg.roundRect(0, 0, 180, 36, 8);
         tab1Bg.fill({ color: isMastery ? 0x2c385e : 0x141a29, alpha: 0.8 });
         tab1Bg.stroke({ color: isMastery ? 0xffb300 : 0xffffff, width: 1.5, alpha: isMastery ? 0.8 : 0.2 });
-        tab1Bg.eventMode = 'static';
-        tab1Bg.cursor = 'pointer';
         tab1.addChild(tab1Bg);
 
         const tab1Text = new Text({
@@ -290,9 +288,11 @@ export class HeroSanctuaryScene {
         tab1Text.y = 18;
         tab1.addChild(tab1Text);
 
-        tab1Bg.on('pointerover', () => gsap.to(tab1.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
-        tab1Bg.on('pointerout', () => gsap.to(tab1.scale, { x: 1, y: 1, duration: 0.1 }));
-        tab1Bg.on('pointerdown', () => {
+        tab1.eventMode = 'static';
+        tab1.cursor = 'pointer';
+        tab1.on('pointerover', () => gsap.to(tab1.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
+        tab1.on('pointerout', () => gsap.to(tab1.scale, { x: 1, y: 1, duration: 0.1 }));
+        tab1.on('pointerdown', () => {
             this.activeTab = 'mastery';
             this.renderAll();
         });
@@ -307,8 +307,6 @@ export class HeroSanctuaryScene {
         tab2Bg.roundRect(0, 0, 185, 36, 8);
         tab2Bg.fill({ color: isGear ? 0x2c385e : 0x141a29, alpha: 0.8 });
         tab2Bg.stroke({ color: isGear ? 0xffb300 : 0xffffff, width: 1.5, alpha: isGear ? 0.8 : 0.2 });
-        tab2Bg.eventMode = 'static';
-        tab2Bg.cursor = 'pointer';
         tab2.addChild(tab2Bg);
 
         const tab2Text = new Text({
@@ -320,9 +318,11 @@ export class HeroSanctuaryScene {
         tab2Text.y = 18;
         tab2.addChild(tab2Text);
 
-        tab2Bg.on('pointerover', () => gsap.to(tab2.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
-        tab2Bg.on('pointerout', () => gsap.to(tab2.scale, { x: 1, y: 1, duration: 0.1 }));
-        tab2Bg.on('pointerdown', () => {
+        tab2.eventMode = 'static';
+        tab2.cursor = 'pointer';
+        tab2.on('pointerover', () => gsap.to(tab2.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
+        tab2.on('pointerout', () => gsap.to(tab2.scale, { x: 1, y: 1, duration: 0.1 }));
+        tab2.on('pointerdown', () => {
             this.activeTab = 'gear';
             this.renderAll();
         });
@@ -337,8 +337,6 @@ export class HeroSanctuaryScene {
         tab3Bg.roundRect(0, 0, 195, 36, 8);
         tab3Bg.fill({ color: isTalent ? 0x2c385e : 0x141a29, alpha: 0.8 });
         tab3Bg.stroke({ color: isTalent ? 0xffb300 : 0xffffff, width: 1.5, alpha: isTalent ? 0.8 : 0.2 });
-        tab3Bg.eventMode = 'static';
-        tab3Bg.cursor = 'pointer';
         tab3.addChild(tab3Bg);
 
         const tab3Text = new Text({
@@ -350,9 +348,11 @@ export class HeroSanctuaryScene {
         tab3Text.y = 18;
         tab3.addChild(tab3Text);
 
-        tab3Bg.on('pointerover', () => gsap.to(tab3.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
-        tab3Bg.on('pointerout', () => gsap.to(tab3.scale, { x: 1, y: 1, duration: 0.1 }));
-        tab3Bg.on('pointerdown', () => {
+        tab3.eventMode = 'static';
+        tab3.cursor = 'pointer';
+        tab3.on('pointerover', () => gsap.to(tab3.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
+        tab3.on('pointerout', () => gsap.to(tab3.scale, { x: 1, y: 1, duration: 0.1 }));
+        tab3.on('pointerdown', () => {
             this.activeTab = 'talent';
             this.renderAll();
         });
@@ -508,11 +508,11 @@ export class HeroSanctuaryScene {
                 if (item) {
                     slotBg.fill({ color: 0x1f293d, alpha: 0.8 });
                     slotBg.stroke({ color: item.color || 0xffb300, width: 1.5, alpha: 0.75 });
-                    slotBg.eventMode = 'static';
-                    slotBg.cursor = 'pointer';
-                    slotBg.on('pointerover', () => gsap.to(slotContainer.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
-                    slotBg.on('pointerout', () => gsap.to(slotContainer.scale, { x: 1, y: 1, duration: 0.1 }));
-                    slotBg.on('pointerdown', () => {
+                    slotContainer.eventMode = 'static';
+                    slotContainer.cursor = 'pointer';
+                    slotContainer.on('pointerover', () => gsap.to(slotContainer.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
+                    slotContainer.on('pointerout', () => gsap.to(slotContainer.scale, { x: 1, y: 1, duration: 0.1 }));
+                    slotContainer.on('pointerdown', () => {
                         this.showItemDetailPopup(item);
                     });
                 } else {
@@ -555,8 +555,6 @@ export class HeroSanctuaryScene {
                     const unBg = new Graphics();
                     unBg.roundRect(-25, -10, 50, 20, 6);
                     unBg.fill({ color: 0xe53935 });
-                    unBg.eventMode = 'static';
-                    unBg.cursor = 'pointer';
                     unBtn.addChild(unBg);
 
                     const unTxt = new Text({
@@ -566,9 +564,11 @@ export class HeroSanctuaryScene {
                     unTxt.anchor.set(0.5);
                     unBtn.addChild(unTxt);
 
-                    unBg.on('pointerover', () => gsap.to(unBtn.scale, { x: 1.05, y: 1.05, duration: 0.1 }));
-                    unBg.on('pointerout', () => gsap.to(unBtn.scale, { x: 1, y: 1, duration: 0.1 }));
-                    unBg.on('pointerdown', (e) => {
+                    unBtn.eventMode = 'static';
+                    unBtn.cursor = 'pointer';
+                    unBtn.on('pointerover', () => gsap.to(unBtn.scale, { x: 1.05, y: 1.05, duration: 0.1 }));
+                    unBtn.on('pointerout', () => gsap.to(unBtn.scale, { x: 1, y: 1, duration: 0.1 }));
+                    unBtn.on('pointerdown', (e) => {
                         e.stopPropagation(); // prevent modal opening
                         if (saveManager.unequipGear(slot.key)) {
                             this.playSparkleEffect(sxGrid + slotW / 2, syGrid + slotH / 2);
@@ -628,13 +628,13 @@ export class HeroSanctuaryScene {
                 itemBg.roundRect(0, 0, itemW, itemH, 10);
                 itemBg.fill({ color: 0x1f293d, alpha: 0.6 });
                 itemBg.stroke({ color: item.color, width: 1.5, alpha: isEquipped ? 0.8 : 0.25 });
-                itemBg.eventMode = 'static';
-                itemBg.cursor = 'pointer';
+                itemContainer.eventMode = 'static';
+                itemContainer.cursor = 'pointer';
                 itemContainer.addChild(itemBg);
 
-                itemBg.on('pointerover', () => gsap.to(itemContainer.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
-                itemBg.on('pointerout', () => gsap.to(itemContainer.scale, { x: 1, y: 1, duration: 0.1 }));
-                itemBg.on('pointerdown', () => {
+                itemContainer.on('pointerover', () => gsap.to(itemContainer.scale, { x: 1.03, y: 1.03, duration: 0.1 }));
+                itemContainer.on('pointerout', () => gsap.to(itemContainer.scale, { x: 1, y: 1, duration: 0.1 }));
+                itemContainer.on('pointerdown', () => {
                     this.showItemDetailPopup(item);
                 });
 
@@ -697,8 +697,8 @@ export class HeroSanctuaryScene {
                 }
 
                 btnBg.fill({ color: btnColor });
-                btnBg.eventMode = active ? 'static' : 'none';
-                btnBg.cursor = active ? 'pointer' : 'default';
+                actionBtn.eventMode = active ? 'static' : 'none';
+                actionBtn.cursor = active ? 'pointer' : 'default';
                 actionBtn.addChild(btnBg);
 
                 const btnText = new Text({
@@ -709,9 +709,9 @@ export class HeroSanctuaryScene {
                 actionBtn.addChild(btnText);
 
                 if (active) {
-                    btnBg.on('pointerover', () => gsap.to(actionBtn.scale, { x: 1.05, y: 1.05, duration: 0.1 }));
-                    btnBg.on('pointerout', () => gsap.to(actionBtn.scale, { x: 1, y: 1, duration: 0.1 }));
-                    btnBg.on('pointerdown', (e) => {
+                    actionBtn.on('pointerover', () => gsap.to(actionBtn.scale, { x: 1.05, y: 1.05, duration: 0.1 }));
+                    actionBtn.on('pointerout', () => gsap.to(actionBtn.scale, { x: 1, y: 1, duration: 0.1 }));
+                    actionBtn.on('pointerdown', (e) => {
                         e.stopPropagation(); // prevent modal opening
                         if (isOwned) {
                             if (saveManager.equipGear(item.id, item.slot)) {
@@ -1104,8 +1104,6 @@ export class HeroSanctuaryScene {
         closeG.circle(0, 0, 12);
         closeG.fill({ color: 0x000000, alpha: 0.4 });
         closeG.stroke({ color: 0xffffff, width: 1.5, alpha: 0.5 });
-        closeG.eventMode = 'static';
-        closeG.cursor = 'pointer';
         closeBtn.addChild(closeG);
 
         const closeTxt = new Text({
@@ -1115,9 +1113,11 @@ export class HeroSanctuaryScene {
         closeTxt.anchor.set(0.5);
         closeBtn.addChild(closeTxt);
 
-        closeG.on('pointerover', () => gsap.to(closeBtn.scale, { x: 1.15, y: 1.15, duration: 0.1 }));
-        closeG.on('pointerout', () => gsap.to(closeBtn.scale, { x: 1, y: 1, duration: 0.1 }));
-        closeG.on('pointerdown', (e) => {
+        closeBtn.eventMode = 'static';
+        closeBtn.cursor = 'pointer';
+        closeBtn.on('pointerover', () => gsap.to(closeBtn.scale, { x: 1.15, y: 1.15, duration: 0.1 }));
+        closeBtn.on('pointerout', () => gsap.to(closeBtn.scale, { x: 1, y: 1, duration: 0.1 }));
+        closeBtn.on('pointerdown', (e) => {
             e.stopPropagation();
             this.closeModal(modal);
         });
