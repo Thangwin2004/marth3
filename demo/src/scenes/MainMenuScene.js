@@ -96,7 +96,7 @@ export class MainMenuScene {
             style: {
                 fontFamily: 'Arial', fontSize: 56, fontWeight: 'bold',
                 fill: '#ffffff',
-                stroke: '#000000', strokeThickness: 8,
+                stroke: { color: '#000000', width: 8 },
                 dropShadow: { color: '#000000', blur: 6, distance: 3, alpha: 0.8 },
             },
         });
@@ -108,7 +108,7 @@ export class MainMenuScene {
             style: {
                 fontFamily: 'Arial', fontSize: 28, fontWeight: 'bold',
                 fill: '#4fc3f7',
-                stroke: '#000000', strokeThickness: 5,
+                stroke: { color: '#000000', width: 5 },
                 letterSpacing: 8,
                 dropShadow: { color: '#000000', blur: 4, distance: 2, alpha: 0.8 },
             },
@@ -137,7 +137,7 @@ export class MainMenuScene {
             style: {
                 fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold',
                 fill: '#ffffff',
-                stroke: '#000000', strokeThickness: 4,
+                stroke: { color: '#000000', width: 4 },
                 dropShadow: { color: '#000000', blur: 4, distance: 2, alpha: 0.9 }
             },
         });
@@ -208,7 +208,7 @@ export class MainMenuScene {
             style: {
                 fontFamily: 'Arial', fontSize: 12, fontWeight: 'bold',
                 fill: '#ffffff',
-                stroke: '#000000', strokeThickness: 3
+                stroke: { color: '#000000', width: 3 }
             },
         });
         versionText.anchor.set(0.5);
@@ -222,7 +222,7 @@ export class MainMenuScene {
             text: bossEmojis,
             style: {
                 fontSize: 24, letterSpacing: 12,
-                stroke: '#000000', strokeThickness: 3
+                stroke: { color: '#000000', width: 3 }
             },
         });
         parade.anchor.set(0.5);

@@ -11,7 +11,7 @@
 export const Config = {
     /** Canvas dimensions */
     canvas: {
-        width: 1100,
+        width: 1200,
         height: 750,
     },
 

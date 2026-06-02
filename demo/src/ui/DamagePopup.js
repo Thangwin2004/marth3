@@ -20,7 +20,6 @@ export class DamagePopup {
             combo:     { text: `COMBO x${amount}!`, color: '#ff9800', size: 24, prefix: '🔥 ' },
             effective: { text: `💥 KHẮC HỆ -${amount}!`, color: '#aeea00', size: 26, prefix: '' },
             resisted:  { text: `🛡️ KHÁNG -${amount}`, color: '#cfd8dc', size: 18, prefix: '' },
-            sleep:     { text: `💤 GIẢ BỘ NGỦ...`, color: '#81d4fa', size: 22, prefix: '' },
         };
         
         const cfg = configs[type] || configs.damage;

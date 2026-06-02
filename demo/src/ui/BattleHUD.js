@@ -72,7 +72,7 @@ export class BattleHUD {
 
         const playerLabel = new Text({
             text: '❤️ Player',
-            style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#4fc3f7' },
+            style: { fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold', fill: '#4fc3f7' },
         });
         playerLabel.x = 25;
         playerLabel.y = 52;
@@ -81,7 +81,7 @@ export class BattleHUD {
         // Player shield text
         this.playerShieldText = new Text({
             text: '',
-            style: { fontFamily: 'Arial', fontSize: 12, fill: '#64b5f6' },
+            style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#64b5f6' },
         });
         this.playerShieldText.x = 110;
         this.playerShieldText.y = 52;
@@ -95,9 +95,10 @@ export class BattleHUD {
 
         const bossLabel = new Text({
             text: `🩸 ${levelConfig.bossEmoji} ${levelConfig.bossName}`,
-            style: { fontFamily: 'Arial', fontSize: 13, fontWeight: 'bold', fill: '#ff6b6b' },
+            style: { fontFamily: 'Arial', fontSize: 14, fontWeight: 'bold', fill: '#ff6b6b' },
         });
-        bossLabel.x = Config.canvas.width - 225;
+        bossLabel.anchor.set(1, 0); // Right-align to screen margin
+        bossLabel.x = Config.canvas.width - 25;
         bossLabel.y = 52;
         this.topBar.addChild(bossLabel);
 
@@ -106,10 +107,17 @@ export class BattleHUD {
         const resStr = boss.resistance ? `Resist: ${boss.resistance}` : '';
         this.bossInfoText = new Text({
             text: `${weakStr}  ${resStr}`.trim(),
-            style: { fontFamily: 'Arial', fontSize: 11, fill: '#aaaaaa' },
+            style: { 
+                fontFamily: 'Arial', 
+                fontSize: 13, 
+                fontWeight: 'bold', 
+                fill: '#e0e0e0', // High contrast off-white
+                dropShadow: { color: '#000000', blur: 3, distance: 1 }
+            },
         });
-        this.bossInfoText.x = Config.canvas.width - 225;
-        this.bossInfoText.y = 68;
+        this.bossInfoText.anchor.set(1, 0); // Right-align to screen margin
+        this.bossInfoText.x = Config.canvas.width - 25;
+        this.bossInfoText.y = 70; // Positioned slightly lower for perfect spacing
         this.topBar.addChild(this.bossInfoText);
 
         // Turn indicator (center)
@@ -133,7 +141,7 @@ export class BattleHUD {
 
         this.playerSprite = new CharacterSprite({
             side: 'left', name: 'Player', emoji: '🧙', color: 0x1565c0,
-            scale: 1.0, isPlayer: true,
+            scale: 1.4, isPlayer: true,
             imagePath: '/assets/card-NPC/a_brave_armored_knight_in_high_fantasy_rpg_style_standing_in_a_dramatic_pose/screen.png',
         });
         this.playerSprite.container.x = 120;
@@ -146,7 +154,7 @@ export class BattleHUD {
             name: levelConfig.bossName,
             emoji: levelConfig.bossEmoji,
             color: bossColorMap[levelConfig.level] || 0xf44336,
-            scale: 1.0 + (levelConfig.level * 0.05), // bigger bosses at higher levels
+            scale: 1.4 + (levelConfig.level * 0.05), // bigger bosses at higher levels
             isPlayer: false,
             imagePath: levelConfig.bossImage || null,
         });
@@ -288,10 +296,10 @@ export class BattleHUD {
         await sprite.playAttack();
     }
 
-    /** Play hurt animation on defender sprite */
-    async playHurt(who) {
+    /** Play hurt animation on defender sprite with elemental damage type */
+    async playHurt(who, type = 'damage') {
         const sprite = who === 'player' ? this.playerSprite : this.bossSprite;
-        await sprite.playHurt();
+        await sprite.playHurt(type);
     }
 
     /** Play heal animation */

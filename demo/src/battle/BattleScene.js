@@ -27,7 +27,7 @@ import { statusEffectManager } from './StatusEffects.js';
 import { Projectile } from './Projectile.js';
 import { App } from '../system/App.js';
 import { Config } from '../config.js';
-import { LEVELS } from '../data/LevelData.js';
+import { LEVELS, ELEMENT_CHART } from '../data/LevelData.js';
 import { saveManager } from '../system/SaveManager.js';
 import { sceneManager } from '../system/SceneManager.js';
 import { BattleHUD } from '../ui/BattleHUD.js';
@@ -145,19 +145,6 @@ export class BattleScene {
                 }
             }
 
-            const ELEMENT_CHART = {
-                fire: { weak: ['nature', 'ice'] },
-                water: { weak: ['fire', 'earth'] },
-                nature: { weak: ['water', 'earth', 'poison-death'] },
-                ice: { weak: ['nature', 'wind-air'] },
-                lightning: { weak: ['water', 'wind-air'] },
-                earth: { weak: ['fire', 'lightning', 'poison-death'] },
-                'wind-air': { weak: ['nature', 'lightning'] },
-                'psychic-eye': { weak: ['poison-death', 'sun'] },
-                sun: { weak: ['poison-death', 'ice'] },
-                'poison-death': { weak: ['psychic-eye', 'sun'] }
-            };
-
             const weakTypes = ELEMENT_CHART[bestElement]?.weak || ['nature'];
             const targetBossType = weakTypes[0];
 
@@ -165,6 +152,20 @@ export class BattleScene {
             this.chaosEyeTriggered = true;
             this.chaosEyeTargetType = targetBossType;
             this.chaosEyeBestElement = bestElement;
+
+            // Dynamically recalculate and update Boss weakness & resistance properties for correct HUD display!
+            const weakList = [];
+            const resistList = [];
+            for (const [el, chart] of Object.entries(ELEMENT_CHART)) {
+                if (chart.weak && chart.weak.includes(targetBossType)) {
+                    weakList.push(el);
+                }
+                if (chart.resist && chart.resist.includes(targetBossType)) {
+                    resistList.push(el);
+                }
+            }
+            this.boss.weakness = weakList.join('/') || null;
+            this.boss.resistance = resistList.join('/') || null;
         }
     }
 
@@ -230,8 +231,8 @@ export class BattleScene {
 
         // Add "📖 Element Guide" button in top bar empty space
         const guideBtnContainer = new Container();
-        guideBtnContainer.x = Config.canvas.width / 2 + 180;
-        guideBtnContainer.y = 38; // beautifully aligned vertically with HP bars
+        guideBtnContainer.x = Config.canvas.width / 2;
+        guideBtnContainer.y = 92; // beautifully centered between Turn texts and Board background
         this.container.addChild(guideBtnContainer);
 
         const btnW = 120;
@@ -279,7 +280,164 @@ export class BattleScene {
     //  BATTLE START (COIN FLIP)
     // ================================================================
 
+    showStartOfBattleBanner() {
+        return new Promise(resolve => {
+            const saveData = saveManager.load();
+            const equipped = saveData.equippedItems || {};
+            
+            // Check if there is any gear to announce
+            const announcements = [];
+            
+            if (equipped.relic === 'chaos_eye') {
+                const emojiMap = {
+                    fire: '🔥 Lửa', water: '💧 Nước', nature: '🌿 Mộc', ice: '❄️ Băng', lightning: '⚡ Lôi',
+                    earth: '⛰️ Thổ', 'wind-air': '💨 Phong', 'psychic-eye': '👁️ Tâm Linh', sun: '☀️ Quang', 'poison-death': '☠️ Độc'
+                };
+                const bossTypeStr = emojiMap[this.chaosEyeTargetType] || this.chaosEyeTargetType;
+                const playerTypeStr = emojiMap[this.chaosEyeBestElement] || this.chaosEyeBestElement;
+                announcements.push({
+                    title: '👁️🌪️ MẮT BÃO HỖN LOẠN (Cổ Vật) 👁️🌪️',
+                    desc: `Ép hệ của Boss đổi sang hệ ${bossTypeStr.toUpperCase()}!\n🔥 Hệ này cực sợ hệ ${playerTypeStr.toUpperCase()} của bạn! (Gây x2.0 Sát thương!)`
+                });
+            } else if (equipped.relic === 'vampiric_fang') {
+                announcements.push({
+                    title: '🧛☠️ NANH MA CÀ RỒNG (Cổ Vật) 🧛☠️',
+                    desc: 'Nội tại: Hồi máu bằng 15% sát thương gây ra khi nổ ngọc Độc ☠️ hoặc Hỏa 🔥!'
+                });
+            } else if (equipped.relic === 'time_hourglass') {
+                announcements.push({
+                    title: '⏳✨ ĐỒNG HỒ CÁT THỜI GIAN (Cổ Vật) ⏳✨',
+                    desc: 'Nội tại: Tự động thanh tẩy (Cleanse) mọi hiệu ứng bất lợi mỗi 5 lượt đi!'
+                });
+            }
+            
+            if (equipped.armor === 'stone_plate') {
+                announcements.push({
+                    title: '🛡️⛰️ GIÁP GAI THẠCH BẢN (Thiết Bị) 🛡️⛰️',
+                    desc: 'HP tối đa +50, nhận +20 Giáp ban đầu!\nPhản 20% sát thương vật lý thành sát thương hệ Thổ ⛰️!'
+                });
+            }
+            
+            if (equipped.weapon === 'magic_sword') {
+                announcements.push({
+                    title: '⚡⚔️ KIẾM MA THUẬT (Vũ Khí) ⚡⚔️',
+                    desc: 'Tăng +15 Sát thương Lôi ⚡!\nTạo Combo 4+ biến 1 viên ngọc thường thành ngọc Lôi!'
+                });
+            }
+            
+            if (announcements.length === 0) {
+                resolve();
+                return;
+            }
+            
+            // Create container for overlay
+            const bannerContainer = new Container();
+            bannerContainer.zIndex = 1000;
+            this.container.addChild(bannerContainer);
+            
+            // Background Dim
+            const dim = new Graphics();
+            dim.rect(0, 0, Config.canvas.width, Config.canvas.height);
+            dim.fill({ color: 0x000000, alpha: 0.65 });
+            bannerContainer.addChild(dim);
+            
+            // dialog Frame
+            const frameW = 680;
+            const frameH = 100 + announcements.length * 90;
+            const frame = new Graphics();
+            frame.roundRect(
+                Config.canvas.width / 2 - frameW / 2,
+                Config.canvas.height / 2 - frameH / 2,
+                frameW,
+                frameH,
+                16
+            );
+            frame.fill({ color: 0x0b0b18, alpha: 0.95 });
+            frame.stroke({ color: 0xffd54f, width: 3, alpha: 0.8 });
+            bannerContainer.addChild(frame);
+            
+            // Title
+            const titleText = new Text({
+                text: '🔮 HIỆU ỨNG TRANG BỊ ĐANG HOẠT HÓA 🔮',
+                style: {
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: 20,
+                    fontWeight: 'bold',
+                    fill: '#ffd54f',
+                    align: 'center',
+                    dropShadow: { color: '#000000', blur: 6, distance: 2 }
+                }
+            });
+            titleText.anchor.set(0.5);
+            titleText.x = Config.canvas.width / 2;
+            titleText.y = Config.canvas.height / 2 - frameH / 2 + 35;
+            bannerContainer.addChild(titleText);
+            
+            // Render elements
+            announcements.forEach((ann, idx) => {
+                const annY = Config.canvas.height / 2 - frameH / 2 + 90 + idx * 95;
+                
+                const annTitle = new Text({
+                    text: ann.title,
+                    style: {
+                        fontFamily: 'Arial, sans-serif',
+                        fontSize: 15,
+                        fontWeight: 'bold',
+                        fill: '#80d8ff',
+                        align: 'center'
+                    }
+                });
+                annTitle.anchor.set(0.5);
+                annTitle.x = Config.canvas.width / 2;
+                annTitle.y = annY;
+                bannerContainer.addChild(annTitle);
+                
+                const annDesc = new Text({
+                    text: ann.desc,
+                    style: {
+                        fontFamily: 'Arial, sans-serif',
+                        fontSize: 13,
+                        fontWeight: 'normal',
+                        fill: '#e0e0e0',
+                        align: 'center',
+                        lineHeight: 18
+                    }
+                });
+                annDesc.anchor.set(0.5);
+                annDesc.x = Config.canvas.width / 2;
+                annDesc.y = annY + 30;
+                bannerContainer.addChild(annDesc);
+            });
+            
+            // Animate fade-in and automatic fade-out
+            bannerContainer.alpha = 0;
+            gsap.to(bannerContainer, {
+                alpha: 1,
+                duration: 0.4,
+                ease: 'power2.out',
+                onComplete: () => {
+                    setTimeout(() => {
+                        gsap.to(bannerContainer, {
+                            alpha: 0,
+                            duration: 0.5,
+                            ease: 'power2.in',
+                            onComplete: () => {
+                                if (bannerContainer && !bannerContainer.destroyed) {
+                                    bannerContainer.destroy({ children: true });
+                                }
+                                resolve();
+                            }
+                        });
+                    }, 3500);
+                }
+            });
+        });
+    }
+
     async startBattle() {
+        // Show start-of-battle prominent gear/relic announcement banner
+        await this.showStartOfBattleBanner();
+
         // Chaos Eye log at battle start
         if (this.chaosEyeTriggered) {
             const emojiMap = {
@@ -667,7 +825,7 @@ export class BattleScene {
                     this.switchTurn();
                 } else {
                     if (this.bossMercyMiss) {
-                        this.hud.setLog('💤 Boss ngủ gật trượt lượt! Cơ hội lật kèo của bạn! 💤');
+                        this.hud.setLog('💀 Boss sơ hở ghép trượt! Cơ hội lật kèo của bạn!');
                         this.bossMercyMiss = false; // Reset flag
                     } else {
                         this.hud.setLog('💀 Boss missed the swap! Turn passes to you!');
@@ -697,6 +855,7 @@ export class BattleScene {
 
             // Add to matches list for damage/effects calculation at the end
             currentMatches.forEach(m => {
+                m.comboStep = this.comboCount; // Track combo step for correct cascade multipliers
                 allMatchesThisTurn.push(m);
                 m.tiles.forEach(tile => {
                     if (tile.field) affectedCols.add(tile.field.col);
@@ -944,6 +1103,14 @@ export class BattleScene {
                 }
 
                 if (totalDamage > 0) {
+                    // Determine damage type popup: damage, effective, or resisted
+                    let dmgType = 'damage';
+                    if (defender.getWeaknessMultiplier) {
+                        const mult = defender.getWeaknessMultiplier(tileType);
+                        if (mult > 1.0) dmgType = 'effective';
+                        else if (mult < 1.0) dmgType = 'resisted';
+                    }
+
                     // Attacker play attack lunge animation
                     await this.hud.playAttack(who);
 
@@ -970,18 +1137,30 @@ export class BattleScene {
                     // Fire projectile
                     await Projectile.fire(this.container, startPos, defenderPos, projColor, tileType);
 
-                    // Play defender hurt animation
-                    await this.hud.playHurt(defenderSide);
+                    // Play defender hurt animation with custom elemental effects!
+                    await this.hud.playHurt(defenderSide, dmgType);
 
                     // Apply defender damage
                     this.damageSystem.applyDamage(defender, totalDamage, matchEffects);
 
-                    // Determine damage type popup: damage, effective, or resisted
-                    let dmgType = 'damage';
+                    // Add dynamic counter combat logs
                     if (defender.getWeaknessMultiplier) {
+                        const elementNames = {
+                            fire: 'Lửa 🔥', water: 'Nước 💧', nature: 'Mộc 🌿',
+                            ice: 'Băng ❄️', lightning: 'Lôi ⚡', earth: 'Thổ ⛰️',
+                            'wind-air': 'Phong 💨', 'psychic-eye': 'Tâm Linh 👁️',
+                            sun: 'Quang ☀️', 'poison-death': 'Độc ☠️'
+                        };
+                        const elemName = elementNames[tileType] || tileType;
+                        const targetName = defender.name;
+                        const targetType = defender.bossType ? ` (Hệ ${elementNames[defender.bossType] || defender.bossType})` : '';
                         const mult = defender.getWeaknessMultiplier(tileType);
-                        if (mult > 1.0) dmgType = 'effective';
-                        else if (mult < 1.0) dmgType = 'resisted';
+
+                        if (mult > 1.0) {
+                            this.hud.setLog(`💥 [KHẮC CHẾ] Ngọc ${elemName} nổ siêu hiệu quả lên ${targetName}${targetType}! Gây 2.0x sát thương! (${totalDamage} dmg)`);
+                        } else if (mult < 1.0) {
+                            this.hud.setLog(`🛡️ [KHÁNG HỆ] Sát thương ngọc ${elemName} bị ${targetName}${targetType} kháng! Giảm còn 0.5x sát thương! (${totalDamage} dmg)`);
+                        }
                     }
 
                     // Show sequential damage popup on defender
@@ -1150,8 +1329,7 @@ export class BattleScene {
             if (missChoice) {
                 this.bossMissCount++;
                 this.bossMercyMiss = true;
-                this.hud.setLog('💤 Boss phân tâm ngủ gật... Cố tình ghép trượt! 💤');
-                this.hud.showDamage('boss', '', 'sleep');
+                this.hud.setLog('💀 Boss sơ hở ghép trượt! Cơ hội lật kèo của bạn!');
                 this.swap(missChoice.tile1, missChoice.tile2, false, 'boss');
                 return;
             }

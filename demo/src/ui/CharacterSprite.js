@@ -1,5 +1,6 @@
 import { Container, Graphics, Sprite, Text, Assets } from 'pixi.js';
 import gsap from 'gsap';
+import { App } from '../system/App.js';
 
 export class CharacterSprite {
     constructor(config = {}) {
@@ -13,13 +14,27 @@ export class CharacterSprite {
         this.isPlayer = config.isPlayer !== false;
         this.imagePath = config.imagePath || null;
         
-        this.body = new Graphics();
+        this.body = new Container();
+        this.bodyGraphics = new Graphics();
+        this.body.addChild(this.bodyGraphics);
         this.statusContainer = new Container();
         this.nameText = null;
         this.isEnraged = false;
         
         this.draw();
         this.playIdle();
+
+        // 2D Character Card Interactive Hover Scaling
+        this.container.eventMode = 'static';
+        this.container.cursor = 'pointer';
+        this.container.on('pointerover', () => {
+            if (this.isEnraged) return;
+            gsap.to(this.body.scale, { x: 1.05, y: 1.05, duration: 0.2, ease: 'power1.out' });
+        });
+        this.container.on('pointerout', () => {
+            if (this.isEnraged) return;
+            gsap.to(this.body.scale, { x: 1, y: 1, duration: 0.2, ease: 'power1.out' });
+        });
     }
 
     setEnraged(enraged) {
@@ -48,11 +63,12 @@ export class CharacterSprite {
 
     
     draw() {
-        const g = this.body;
-        g.clear();
-        
         // Remove any old children to avoid duplicate sprites/graphics on re-draw
-        g.removeChildren();
+        this.body.removeChildren();
+        
+        const g = this.bodyGraphics;
+        g.clear();
+        this.body.addChild(g);
         
         const s = this.scale;
         
@@ -65,28 +81,28 @@ export class CharacterSprite {
             const shadow = new Graphics();
             shadow.roundRect(-cardW/2 + 4, -cardH/2 + 4, cardW, cardH, 12 * s);
             shadow.fill({ color: 0x000000, alpha: 0.55 });
-            g.addChild(shadow);
+            this.body.addChild(shadow);
 
             // 2. Glow Border
             const glow = new Graphics();
             glow.roundRect(-cardW/2 - 2, -cardH/2 - 2, cardW + 4, cardH + 4, 14 * s);
             glow.fill({ color: this.color, alpha: 0.35 });
-            g.addChild(glow);
+            this.body.addChild(glow);
 
             // 3. Image Sprite
             const img = new Sprite();
             img.anchor.set(0.5);
-            g.addChild(img);
+            this.body.addChild(img);
 
             // Mask
             const mask = new Graphics();
             mask.roundRect(-cardW/2 + 3, -cardH/2 + 3, cardW - 6, cardH - 6, 10 * s);
             mask.fill({ color: 0xffffff });
-            g.addChild(mask);
+            this.body.addChild(mask);
             img.mask = mask;
 
             Assets.load(this.imagePath).then((texture) => {
-                if (this.container.destroyed || g.destroyed || img.destroyed) return;
+                if (this.container.destroyed || img.destroyed) return;
                 img.texture = texture;
                 img.width = cardW - 6;
                 img.height = cardH - 6;
@@ -98,7 +114,7 @@ export class CharacterSprite {
             const border = new Graphics();
             border.roundRect(-cardW/2, -cardH/2, cardW, cardH, 12 * s);
             border.stroke({ color: this.color, width: 2.5 });
-            g.addChild(border);
+            this.body.addChild(border);
         } else if (this.isPlayer) {
             // PLAYER: Warrior
             // Body (rectangle with rounded top)
@@ -233,7 +249,7 @@ export class CharacterSprite {
         });
     }
     
-    playHurt() {
+    playHurt(type = 'damage') {
         return new Promise(resolve => {
             if (this.container.destroyed) { resolve(); return; }
             gsap.killTweensOf(this.body);
@@ -244,10 +260,20 @@ export class CharacterSprite {
               .to(this.body, { x: -6, duration: 0.05 })
               .to(this.body, { x: 6, duration: 0.05 })
               .to(this.body, { x: 0, duration: 0.1 });
-            // Flash red
+            
+            // Map damage/match type to visual colors
+            const flashColors = {
+                damage: 0xff0000,      // Standard Red
+                effective: 0xffea00,   // Bright Gold/Yellow
+                resisted: 0x90a4ae,    // Grayish Blue
+                poison: 0xb388ff       // Toxic Purple
+            };
+            const flashColor = flashColors[type] || 0xff0000;
+
+            // Flash overlay animation
             const flash = new Graphics();
             flash.roundRect(-35 * this.scale, -50 * this.scale, 70 * this.scale, 120 * this.scale, 10);
-            flash.fill({ color: 0xff0000, alpha: 0.5 });
+            flash.fill({ color: flashColor, alpha: type === 'effective' ? 0.65 : 0.5 });
             this.container.addChild(flash);
             gsap.to(flash, {
                 alpha: 0,
@@ -258,7 +284,130 @@ export class CharacterSprite {
                     }
                 }
             });
+
+            // Burst matching premium sparkles
+            this.playSparkles(type);
         });
+    }
+
+    playSparkles(type = 'damage') {
+        if (this.container.destroyed) return;
+        
+        // Custom configs for each damage type
+        const config = {
+            damage: {
+                color: 0xff1744, // Crimson Red
+                count: 14,
+                speed: 1.0,
+                scale: 3.5,
+                shape: 'circle'
+            },
+            effective: {
+                color: 0xffea00, // Vibrant Gold
+                count: 24, // Extra sparks
+                speed: 1.4, // Faster eruption
+                scale: 4.5,
+                shape: 'star'
+            },
+            resisted: {
+                color: 0x78909c, // Dull Gray-Blue
+                count: 8, // Fewer fragments
+                speed: 0.7,
+                scale: 3.0,
+                shape: 'square'
+            },
+            poison: {
+                color: 0xb388ff, // Deep Purple
+                count: 16,
+                speed: 1.1,
+                scale: 3.8,
+                shape: 'circle'
+            }
+        };
+        
+        const typeCfg = config[type] || config.damage;
+        
+        // Generate a high performance particle texture using Pixi
+        const g = new Graphics();
+        if (typeCfg.shape === 'star') {
+            // Draw a beautiful 4-pointed star-like energy burst
+            g.moveTo(0, -typeCfg.scale);
+            g.lineTo(typeCfg.scale * 0.3, -typeCfg.scale * 0.3);
+            g.lineTo(typeCfg.scale, 0);
+            g.lineTo(typeCfg.scale * 0.3, typeCfg.scale * 0.3);
+            g.lineTo(0, typeCfg.scale);
+            g.lineTo(-typeCfg.scale * 0.3, typeCfg.scale * 0.3);
+            g.lineTo(-typeCfg.scale, 0);
+            g.lineTo(-typeCfg.scale * 0.3, -typeCfg.scale * 0.3);
+            g.closePath();
+        } else if (typeCfg.shape === 'square') {
+            g.rect(-typeCfg.scale/2, -typeCfg.scale/2, typeCfg.scale, typeCfg.scale);
+        } else {
+            // Circle
+            g.circle(0, 0, typeCfg.scale);
+        }
+        g.fill({ color: typeCfg.color });
+        
+        if (type === 'effective') {
+            g.stroke({ color: 0xffffff, width: 1.5, alpha: 0.8 });
+        }
+        
+        const texture = App.app.renderer.generateTexture({ target: g });
+        g.destroy();
+
+        // Spawn particles
+        for (let i = 0; i < typeCfg.count; i++) {
+            const sp = new Sprite(texture);
+            sp.anchor.set(0.5);
+            
+            // Random start position around the card center
+            sp.x = (Math.random() - 0.5) * 50 * this.scale;
+            sp.y = (Math.random() - 0.5) * 70 * this.scale;
+            this.container.addChild(sp);
+
+            const angle = Math.random() * Math.PI * 2;
+            const dist = (35 + Math.random() * 65) * typeCfg.speed;
+
+            // Animate sparkle outward
+            gsap.to(sp, {
+                x: sp.x + Math.cos(angle) * dist * this.scale,
+                y: sp.y + Math.sin(angle) * dist * this.scale,
+                alpha: 0,
+                rotation: Math.random() * Math.PI * 4,
+                duration: 0.5 + Math.random() * 0.5,
+                ease: 'power2.out',
+                onComplete: () => {
+                    if (sp && !sp.destroyed) {
+                        try { sp.destroy(); } catch (e) {}
+                    }
+                }
+            });
+        }
+
+        // Add an expanding shockwave circle for super effective hits
+        if (type === 'effective') {
+            const ring = new Graphics();
+            ring.circle(0, 0, 10);
+            ring.stroke({ color: 0xffea00, width: 3, alpha: 0.8 });
+            this.container.addChild(ring);
+            
+            gsap.to(ring.scale, {
+                x: 8 * this.scale,
+                y: 8 * this.scale,
+                duration: 0.4,
+                ease: 'power1.out'
+            });
+            gsap.to(ring, {
+                alpha: 0,
+                duration: 0.4,
+                ease: 'power1.out',
+                onComplete: () => {
+                    if (ring && !ring.destroyed) {
+                        try { ring.destroy(); } catch (e) {}
+                    }
+                }
+            });
+        }
     }
     
     playHeal() {
@@ -330,6 +479,7 @@ export class CharacterSprite {
     playDefeated() {
         return new Promise(resolve => {
             if (this.container.destroyed) { resolve(); return; }
+            this.container.eventMode = 'none'; // Disable pointer events on defeat
             gsap.killTweensOf(this.body);
             gsap.to(this.container, {
                 rotation: this.side === 'left' ? -1.5 : 1.5,
