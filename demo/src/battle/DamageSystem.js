@@ -130,7 +130,10 @@ export class DamageSystem {
 
             // Match length multiplier (3=×1.0, 4=×1.3, 5=×1.6, 6+=×2.0)
             const lengthKey = Math.min(match.length, 6);
-            let lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[6];
+            let lengthMult = 1.0;
+            if (lengthKey >= 3) {
+                lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[6];
+            }
             
             // Explosions should NOT receive length multipliers (keep at 1.0)
             if (match.isExplosion) {
