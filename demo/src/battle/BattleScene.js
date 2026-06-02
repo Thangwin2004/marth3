@@ -609,14 +609,24 @@ export class BattleScene {
             // Check for Rune and Rainbow Gem creation in this match iteration
             currentMatches.forEach(match => {
                 if (match.length === 4) {
-                    // Match-4: Morph 1 tile into a Rune Tile!
-                    const morphTile = match.tiles.find(t => this.lastSwappedTiles && this.lastSwappedTiles.includes(t)) || match.tiles[Math.floor(match.length / 2)];
-                    if (morphTile && !morphTile.isStone && !morphTile.isRainbow) {
-                        morphTile.isRune = true;
-                        morphedTiles.add(morphTile);
-                        morphTile.updateStateOverlay();
-                        this.hud.setLog(`✨ Ghép 4! Tạo ra Ngọc Cổ Tự ${morphTile.color.toUpperCase()}!`);
-                        DamagePopup.show(this.container, morphTile.sprite.x, morphTile.sprite.y - 20, 'RUNE!', 'heal');
+                    // Match-4: Instant Cross Explosion!
+                    const triggerTile = match.tiles.find(t => this.lastSwappedTiles && this.lastSwappedTiles.includes(t)) || match.tiles[Math.floor(match.length / 2)];
+                    if (triggerTile && triggerTile.field && !triggerTile.isStone) {
+                        const row = triggerTile.field.row;
+                        const col = triggerTile.field.col;
+                        const posX = triggerTile.sprite ? triggerTile.sprite.x : 0;
+                        const posY = triggerTile.sprite ? triggerTile.sprite.y : 0;
+
+                        this.hud.setLog(`💥 Ghép 4! Kích hoạt nổ chữ thập (+) tức thời!`);
+                        
+                        // Execute the cross explosion immediately on the board
+                        const explodedTiles = this.board.destroyCross(row, col);
+                        if (explodedTiles.length > 0) {
+                            // Package as a fake match so they deal damage & cascade
+                            const runeMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                            allMatchesThisTurn.push(runeMatch);
+                            DamagePopup.show(this.container, posX, posY - 20, 'EXPLOSION!', 'damage');
+                        }
                     }
                 } else if (match.length >= 5) {
                     // Match-5: Morph 1 tile into a Rainbow Gem!
