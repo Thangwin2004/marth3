@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Assets } from 'pixi.js';
 import gsap from 'gsap';
 
 export class CharacterSprite {
@@ -74,10 +74,9 @@ export class CharacterSprite {
             g.addChild(glow);
 
             // 3. Image Sprite
-            const img = Sprite.from(this.imagePath);
+            const img = new Sprite();
             img.anchor.set(0.5);
-            img.width = cardW - 6;
-            img.height = cardH - 6;
+            g.addChild(img);
 
             // Mask
             const mask = new Graphics();
@@ -85,7 +84,15 @@ export class CharacterSprite {
             mask.fill({ color: 0xffffff });
             g.addChild(mask);
             img.mask = mask;
-            g.addChild(img);
+
+            Assets.load(this.imagePath).then((texture) => {
+                if (this.container.destroyed || g.destroyed || img.destroyed) return;
+                img.texture = texture;
+                img.width = cardW - 6;
+                img.height = cardH - 6;
+            }).catch(err => {
+                console.error("Failed to load combat card image:", this.imagePath, err);
+            });
 
             // 4. Solid Border
             const border = new Graphics();

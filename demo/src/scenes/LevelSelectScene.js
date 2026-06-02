@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Assets } from 'pixi.js';
 import gsap from 'gsap';
 import { Config } from '../config.js';
 import { App } from '../system/App.js';
@@ -148,12 +148,10 @@ export class LevelSelectScene {
 
         // Boss image / emoji (large)
         if (isUnlocked && levelConfig.bossImage) {
-            const bossSprite = Sprite.from(levelConfig.bossImage);
+            const bossSprite = new Sprite();
             bossSprite.anchor.set(0.5);
             bossSprite.x = w / 2;
             bossSprite.y = 65;
-            bossSprite.width = 72;
-            bossSprite.height = 72;
 
             const bMask = new Graphics();
             bMask.circle(w / 2, 65, 36);
@@ -166,6 +164,15 @@ export class LevelSelectScene {
             border.circle(w / 2, 65, 37);
             border.stroke({ color: 0xffb300, width: 2, alpha: 0.8 });
             card.addChild(border);
+
+            Assets.load(levelConfig.bossImage).then((texture) => {
+                if (card.destroyed || bossSprite.destroyed) return;
+                bossSprite.texture = texture;
+                bossSprite.width = 72;
+                bossSprite.height = 72;
+            }).catch(err => {
+                console.error("Failed to load boss image in level select:", levelConfig.bossImage, err);
+            });
         } else {
             const bossEmoji = new Text({
                 text: isUnlocked ? levelConfig.bossEmoji : '🔒',
