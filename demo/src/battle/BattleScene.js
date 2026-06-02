@@ -13,7 +13,7 @@
  * 6. Win: boss HP = 0 | Lose: player HP = 0
  */
 
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Text, Sprite, Assets } from 'pixi.js';
 import { Board } from '../game/Board.js';
 import { CombinationManager } from '../game/CombinationManager.js';
 import { Player } from './Player.js';
@@ -89,6 +89,22 @@ export class BattleScene {
     initBackground() {
         const bgColor = this.levelConfig.terrain.background;
         App.setBackgroundColor(bgColor);
+
+        // If a level background image is configured, load it
+        if (this.levelConfig.bgImage) {
+            const bgSprite = new Sprite();
+            bgSprite.zIndex = -10; // Renders behind everything
+            this.container.addChild(bgSprite);
+
+            Assets.load(this.levelConfig.bgImage).then(texture => {
+                if (bgSprite.destroyed) return;
+                bgSprite.texture = texture;
+                bgSprite.width = Config.canvas.width;
+                bgSprite.height = Config.canvas.height;
+            }).catch(err => {
+                console.error('[BattleScene] Failed to load background image:', err);
+            });
+        }
 
         // Board background panel (drawn after board is created)
         this.boardBg = new Graphics();

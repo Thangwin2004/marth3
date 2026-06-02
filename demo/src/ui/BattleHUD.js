@@ -134,7 +134,7 @@ export class BattleHUD {
         this.playerSprite = new CharacterSprite({
             side: 'left', name: 'Player', emoji: '🧙', color: 0x1565c0,
             scale: 1.0, isPlayer: true,
-            imagePath: '/assets/stitch_epic_boss_gauntlet/a_brave_armored_knight_in_high_fantasy_rpg_style_standing_in_a_dramatic_pose/screen.png',
+            imagePath: '/assets/card-NPC/a_brave_armored_knight_in_high_fantasy_rpg_style_standing_in_a_dramatic_pose/screen.png',
         });
         this.playerSprite.container.x = 120;
         this.playerSprite.container.y = Config.canvas.height / 2 - 10;

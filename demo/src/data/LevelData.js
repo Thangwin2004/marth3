@@ -507,11 +507,28 @@ const bossFolders = [
   'the_ultimate_demon_lord_sitting_on_a_grand_golden_throne_surrounded_by_chaotic'
 ];
 
+// Map background image folders dynamically
+const bgFolders = [
+  'high_fantasy_rpg_battle_background_level_1_lush_grassland_environment_with',
+  'high_fantasy_rpg_battle_background_level_2_deep_dark_cave_with_glowing_red_lava',
+  'high_fantasy_rpg_battle_background_level_3_snowy_mountain_peaks_during_a',
+  'high_fantasy_rpg_battle_background_level_4_stormy_hills_at_night_with_blue',
+  'high_fantasy_rpg_battle_background_level_5_vast_ocean_with_massive_crashing',
+  'high_fantasy_rpg_battle_background_level_6_eerie_graveyard_at_night_with_thick',
+  'high_fantasy_rpg_battle_background_level_7_inside_a_massive_volcano_with_rivers',
+  'high_fantasy_rpg_battle_background_level_8_top_of_a_dark_sinister_tower_with',
+  'high_fantasy_rpg_battle_background_level_9_high_altitude_snowy_summit_with',
+  'high_fantasy_rpg_battle_background_level_10_grand_demonic_throne_room_with'
+];
+
 LEVELS.forEach((lvl) => {
   if (lvl && lvl.level) {
     const idx = lvl.level - 1;
     if (bossFolders[idx]) {
-      lvl.bossImage = `/assets/stitch_epic_boss_gauntlet/${bossFolders[idx]}/screen.png`;
+      lvl.bossImage = `/assets/card-NPC/${bossFolders[idx]}/screen.png`;
+    }
+    if (bgFolders[idx]) {
+      lvl.bgImage = `/assets/backgroud-level/${bgFolders[idx]}/screen.png`;
     }
   }
 });
