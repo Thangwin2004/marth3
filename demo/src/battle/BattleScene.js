@@ -393,6 +393,7 @@ export class BattleScene {
                 await this.processFallDown();
                 await this.addTiles();
                 this.updateUI();
+                await this.handleBoardSettleAfterAction();
                 if (this.checkGameEnd()) return;
             }
         }
@@ -430,6 +431,7 @@ export class BattleScene {
                     await this.processFallDown();
                     await this.addTiles();
                     this.updateUI();
+                    await this.handleBoardSettleAfterAction();
                     if (this.checkGameEnd()) return;
                 }
             }
@@ -1218,6 +1220,7 @@ export class BattleScene {
         await this.processFallDown();
         await this.addTiles();
         this.updateUI();
+        await this.handleBoardSettleAfterAction();
 
         if (this.checkGameEnd()) return;
 
@@ -1225,6 +1228,13 @@ export class BattleScene {
             this.switchTurn();
         } else {
             this.disabled = false;
+        }
+    }
+
+    async handleBoardSettleAfterAction() {
+        const matches = this.combinationManager.getMatches();
+        if (matches.length > 0) {
+            await this.processMatches(matches, this.currentTurn);
         }
     }
 
