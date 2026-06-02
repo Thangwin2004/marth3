@@ -120,12 +120,23 @@ export class DamageSystem {
                     }
                 }
 
+                // If it is a collateral explosion match, reduce the tile damage significantly (to 30% of base damage)
+                if (match.isExplosion) {
+                    tileDmg *= 0.30;
+                }
+
                 matchBaseDamage += tileDmg;
             });
 
             // Match length multiplier (3=×1.0, 4=×1.3, 5=×1.6, 6+=×2.0)
             const lengthKey = Math.min(match.length, 6);
-            const lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[6];
+            let lengthMult = Config.matchMultipliers[lengthKey] || Config.matchMultipliers[6];
+            
+            // Explosions should NOT receive length multipliers (keep at 1.0)
+            if (match.isExplosion) {
+                lengthMult = 1.0;
+            }
+            
             let matchDamage = matchBaseDamage * lengthMult;
 
             totalDamage += matchDamage;

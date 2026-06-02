@@ -1052,7 +1052,7 @@ export class BattleScene {
                         this.hud.setLog(`💥 Ghép chữ L/T! Kích hoạt nổ 3x3 quanh giao điểm!`);
                         const explodedTiles = this.board.destroyArea3x3(row, col);
                         if (explodedTiles.length > 0) {
-                            const lMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                            const lMatch = { tiles: explodedTiles, length: explodedTiles.length, isExplosion: true };
                             allMatchesThisTurn.push(lMatch);
                             // Track columns of exploded tiles
                             explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
@@ -1082,7 +1082,7 @@ export class BattleScene {
                         this.hud.setLog(`💥 Ghép 5 thẳng hàng! Kích hoạt nổ chữ thập (+) tức thời!`);
                         const explodedTiles = this.board.destroyCross(row, col);
                         if (explodedTiles.length > 0) {
-                            const crossMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                            const crossMatch = { tiles: explodedTiles, length: explodedTiles.length, isExplosion: true };
                             allMatchesThisTurn.push(crossMatch);
                             // Track columns of exploded tiles
                             explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
@@ -1105,7 +1105,7 @@ export class BattleScene {
                             this.hud.setLog(`💥 Ghép 4 ngang! Phá hủy toàn bộ hàng ${row + 1}!`);
                             const explodedTiles = this.board.destroyRow(row);
                             if (explodedTiles.length > 0) {
-                                const rowMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                                const rowMatch = { tiles: explodedTiles, length: explodedTiles.length, isExplosion: true };
                                 allMatchesThisTurn.push(rowMatch);
                                 // Track columns of exploded tiles
                                 explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
@@ -1115,7 +1115,7 @@ export class BattleScene {
                             this.hud.setLog(`💥 Ghép 4 dọc! Phá hủy toàn bộ cột ${col + 1}!`);
                             const explodedTiles = this.board.destroyColumn(col);
                             if (explodedTiles.length > 0) {
-                                const colMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                                const colMatch = { tiles: explodedTiles, length: explodedTiles.length, isExplosion: true };
                                 allMatchesThisTurn.push(colMatch);
                                 // Track columns of exploded tiles
                                 explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
@@ -1159,7 +1159,7 @@ export class BattleScene {
                 if (explodedTiles.length > 0) {
                     this.hud.setLog(`💥 Rune Tile exploded! Hủy diệt chữ thập!`);
                     // Package as a fake match so they deal damage & cascade
-                    const runeMatch = { tiles: explodedTiles, length: explodedTiles.length };
+                    const runeMatch = { tiles: explodedTiles, length: explodedTiles.length, isExplosion: true };
                     allMatchesThisTurn.push(runeMatch);
                     // Track columns of exploded tiles
                     explodedTiles.forEach(t => { if (t.field) affectedCols.add(t.field.col); });
