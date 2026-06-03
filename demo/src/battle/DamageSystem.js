@@ -65,13 +65,14 @@ export class DamageSystem {
                     const heroLvl = saveData.heroLevel || 1;
                     const masteryLvl = saveData.masteryLevels ? (saveData.masteryLevels[color] || 0) : 0;
                     
-                    // Add weapon slot flat damage (+15 for Lightning)
+                    let dmgMultiplier = (1 + (heroLvl - 1) * 0.10) * (1 + masteryLvl * 0.05);
+                    
+                    // Kiếm Ma Thuật increases all damage by 10%
                     const equipped = saveData.equippedItems || {};
-                    if (equipped.weapon === 'magic_sword' && color === 'lightning') {
-                        tileDmg += 15;
+                    if (equipped.weapon === 'magic_sword') {
+                        dmgMultiplier *= 1.10;
                     }
                     
-                    const dmgMultiplier = (1 + (heroLvl - 1) * 0.10) * (1 + masteryLvl * 0.05);
                     tileDmg *= dmgMultiplier;
                 } else {
                     // Scale Boss damage based on level

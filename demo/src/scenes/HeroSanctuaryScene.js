@@ -187,7 +187,7 @@ export class HeroSanctuaryScene {
             { text: `✨ EXP: ${heroExp} / ${expNeeded}`, color: '#e0e0e0', y: 115 },
             { text: `💚 Max HP: ${finalMaxHP}` + (finalMaxHP > maxHP ? ` (+50)` : ''), color: '#81c784', y: 155 },
             { text: `🛡️ Giáp Khởi Đầu: ${finalShield}`, color: '#80d8ff', y: 195 },
-            { text: `⚔️ Base ATK: +${dmgBonusPercent}%` + (equipped.weapon === 'magic_sword' ? ` (+15 Lôi)` : ''), color: '#ffb300', y: 235 },
+            { text: `⚔️ Base ATK: +${dmgBonusPercent}%` + (equipped.weapon === 'magic_sword' ? ` (+10% Sát Thương)` : ''), color: '#ffb300', y: 235 },
             { text: `🔮 Kỹ Năng Đã Mở: ${unlockedSkills.length} / 11`, color: '#00e5ff', y: 275 },
             { text: `📜 Passives: ${passiveCount} / 2`, color: '#69f0ae', y: 310 },
             { text: `💰 Gold: ${gold}`, color: '#ffd54f', y: 350 }

@@ -6,6 +6,7 @@
  */
 
 import { SKILLS } from '../data/SkillData.js';
+import { saveManager } from '../system/SaveManager.js';
 
 export class SkillSystem {
     /**
@@ -61,12 +62,18 @@ export class SkillSystem {
 
         const result = {};
 
+        const saveData = saveManager.load();
+        const equipped = saveData.equippedItems || {};
+        const isMagicSword = equipped.weapon === 'magic_sword';
+
         switch (skillId) {
             case 'fireball': {
                 // Deal 15 direct damage to the boss
                 if (target && target.boss) {
-                    result.damage = 15;
-                    defender.takeDamage(15);
+                    let dmg = 15;
+                    if (isMagicSword) dmg = Math.round(dmg * 1.10);
+                    result.damage = dmg;
+                    defender.takeDamage(dmg);
                     result.type = 'damage';
                 } else {
                     return { success: false, endsTurn: false, result: null };
@@ -97,8 +104,10 @@ export class SkillSystem {
             case 'lightning': {
                 // Deal 45 direct damage to the boss
                 if (target && target.boss) {
-                    result.damage = 45;
-                    defender.takeDamage(45);
+                    let dmg = 45;
+                    if (isMagicSword) dmg = Math.round(dmg * 1.10);
+                    result.damage = dmg;
+                    defender.takeDamage(dmg);
                     result.type = 'damage';
                 } else {
                     return { success: false, endsTurn: false, result: null };
@@ -116,8 +125,10 @@ export class SkillSystem {
             case 'bomb': {
                 // Deal 72 direct damage to the boss
                 if (target && target.boss) {
-                    result.damage = 72;
-                    defender.takeDamage(72);
+                    let dmg = 72;
+                    if (isMagicSword) dmg = Math.round(dmg * 1.10);
+                    result.damage = dmg;
+                    defender.takeDamage(dmg);
                     result.type = 'damage';
                 } else {
                     return { success: false, endsTurn: false, result: null };
@@ -145,7 +156,8 @@ export class SkillSystem {
                         const destroyed = board.destroyAllOfColor('fire');
                         fireTilesDestroyed = destroyed.length;
                     }
-                    const totalDamage = fireTilesDestroyed * 12; // 12 damage per fire tile
+                    const baseDamage = fireTilesDestroyed * 12; // 12 damage per fire tile
+                    const totalDamage = isMagicSword ? Math.round(baseDamage * 1.10) : baseDamage;
                     result.damage = totalDamage;
                     defender.takeDamage(totalDamage);
                     result.type = 'damage';

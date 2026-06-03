@@ -320,8 +320,8 @@ export class BattleScene {
             
             if (equipped.weapon === 'magic_sword') {
                 announcements.push({
-                    title: '⚡⚔️ KIẾM MA THUẬT (Vũ Khí) ⚡⚔️',
-                    desc: 'Tăng +15 Sát thương Lôi ⚡!\nTạo Combo 4+ biến 1 viên ngọc thường thành ngọc Lôi!'
+                    title: '⚔️⚡ KIẾM MA THUẬT (Vũ Khí) ⚔️⚡',
+                    desc: 'Nội tại: Tăng 10% toàn bộ sát thương gây ra!'
                 });
             }
             
@@ -1400,32 +1400,7 @@ export class BattleScene {
             // Apply status effects accumulated throughout all matches
             this.damageSystem.applyEffects(accumulatedEffects, attacker, defender, this.board);
 
-            // Magic Sword Combo 4+ effect
-            if (who === 'player' && this.comboCount >= 4) {
-                const saveData = saveManager.load();
-                const equipped = saveData.equippedItems || {};
-                if (equipped.weapon === 'magic_sword') {
-                    // Find a regular tile on the board to transform
-                    const regularFields = [];
-                    for (let r = 0; r < this.board.rows; r++) {
-                        for (let c = 0; c < this.board.cols; c++) {
-                            const field = this.board.getField(r, c);
-                            if (field && field.tile && !field.tile.isRune && !field.tile.isRainbow && !field.tile.frozen && !field.tile.isStone && !field.tile.isVoid && field.tile.color !== 'lightning') {
-                                regularFields.push(field);
-                            }
-                        }
-                    }
 
-                    if (regularFields.length > 0) {
-                        const targetField = regularFields[Math.floor(Math.random() * regularFields.length)];
-                        const tile = targetField.tile;
-                        tile.changeColor('lightning');
-
-                        this.hud.setLog(`⚡⚔️ [Kiếm Ma Thuật] kích hoạt! Combo x${this.comboCount} đã biến 1 ô ngọc thường thành Lôi Ngọc!`);
-                        DamagePopup.show(this.container, tile.sprite.x, tile.sprite.y - 20, '⚡ LÔI KIẾM!', 'combo');
-                    }
-                }
-            }
 
             // Update UI
             this.updateUI();

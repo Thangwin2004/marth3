@@ -9,12 +9,12 @@ export const GEAR_DATABASE = {
             id: 'magic_sword',
             name: 'Kiếm Ma Thuật',
             slot: 'weapon',
-            description: '+15 Sát thương Lôi ⚡. Nội tại: Tạo Combo 4+ biến 1 viên ngọc thường thành ngọc Lôi.',
+            description: 'Nội tại: Tăng 10% toàn bộ sát thương gây ra khi trang bị.',
             price: 150,
-            emoji: '⚡⚔️',
+            emoji: '⚔️',
             color: '#ffd740',
             stats: {
-                lightningDmg: 15
+                damageMultiplier: 1.10
             }
         }
     ],
