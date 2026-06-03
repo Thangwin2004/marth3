@@ -1981,14 +1981,14 @@ export class BattleScene {
         const btnContainer = new Container();
         btnContainer.x = x;
         btnContainer.y = y;
+        btnContainer.eventMode = 'static';
+        btnContainer.cursor = 'pointer';
         parent.addChild(btnContainer);
 
         const bg = new Graphics();
         bg.roundRect(-w / 2, -h / 2, w, h, 8);
         bg.fill({ color });
         bg.stroke({ color: 0xffffff, width: 1, alpha: 0.3 });
-        bg.eventMode = 'static';
-        bg.cursor = 'pointer';
         btnContainer.addChild(bg);
 
         const text = new Text({
@@ -1998,10 +1998,13 @@ export class BattleScene {
         text.anchor.set(0.5);
         btnContainer.addChild(text);
 
-        // Hover effect
-        bg.on('pointerover', () => gsap.to(btnContainer.scale, { x: 1.05, y: 1.05, duration: 0.15 }));
-        bg.on('pointerout', () => gsap.to(btnContainer.scale, { x: 1, y: 1, duration: 0.15 }));
-        bg.on('pointerdown', onClick);
+        // Hover effect on the entire container
+        btnContainer.on('pointerover', () => gsap.to(btnContainer.scale, { x: 1.05, y: 1.05, duration: 0.15 }));
+        btnContainer.on('pointerout', () => gsap.to(btnContainer.scale, { x: 1, y: 1, duration: 0.15 }));
+        btnContainer.on('pointerdown', () => {
+            btnContainer.eventMode = 'none'; // Prevent double clicks
+            onClick();
+        });
     }
 
     // ================================================================
