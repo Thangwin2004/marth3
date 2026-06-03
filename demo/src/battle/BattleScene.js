@@ -1419,8 +1419,7 @@ export class BattleScene {
                     if (regularFields.length > 0) {
                         const targetField = regularFields[Math.floor(Math.random() * regularFields.length)];
                         const tile = targetField.tile;
-                        tile.color = 'lightning';
-                        tile.draw(); // redraw the tile with the new lightning color
+                        tile.changeColor('lightning');
 
                         this.hud.setLog(`⚡⚔️ [Kiếm Ma Thuật] kích hoạt! Combo x${this.comboCount} đã biến 1 ô ngọc thường thành Lôi Ngọc!`);
                         DamagePopup.show(this.container, tile.sprite.x, tile.sprite.y - 20, '⚡ LÔI KIẾM!', 'combo');
