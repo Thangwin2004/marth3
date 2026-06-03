@@ -1571,7 +1571,12 @@ export class BattleScene {
             await Projectile.fire(this.container, playerPos, defenderPos, 0xff6240, skillElement);
             await this.hud.playHurt('boss');
             this.hud.showDamage('boss', result.result.damage, 'damage');
-            this.hud.setLog(`💥 ${result.result.damage} damage to boss!`);
+            if (skillId === 'meteor_shower') {
+                const count = result.result.fireTilesDestroyed || 0;
+                this.hud.setLog(`☄️ Mưa Thiên Thạch: Phá hủy ${count} ô ngọc Lửa, gây ${result.result.damage} sát thương!`);
+            } else {
+                this.hud.setLog(`💥 Gây ${result.result.damage} sát thương lên Boss!`);
+            }
         } else if (result.result?.type === 'heal') {
             const playerPos = this.hud.getSpritePosition('player');
             await Projectile.heal(this.container, playerPos.x, playerPos.y);

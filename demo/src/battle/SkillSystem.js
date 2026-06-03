@@ -140,13 +140,16 @@ export class SkillSystem {
 
             case 'meteor_shower': {
                 if (target && target.boss) {
-                    result.damage = 40;
-                    defender.takeDamage(40);
-                    result.type = 'damage';
-                    // Clear 5 red (fire) tiles
-                    if (board && board.destroyRandomOfType) {
-                        board.destroyRandomOfType('fire', 5);
+                    let fireTilesDestroyed = 0;
+                    if (board && board.destroyAllOfColor) {
+                        const destroyed = board.destroyAllOfColor('fire');
+                        fireTilesDestroyed = destroyed.length;
                     }
+                    const totalDamage = fireTilesDestroyed * 12; // 12 damage per fire tile
+                    result.damage = totalDamage;
+                    defender.takeDamage(totalDamage);
+                    result.type = 'damage';
+                    result.fireTilesDestroyed = fireTilesDestroyed;
                 } else {
                     return { success: false, endsTurn: false, result: null };
                 }

@@ -55,7 +55,7 @@ export const SKILLS = {
     name: 'Mưa Thiên Thạch',
     icon: '☄️',
     color: 0xff3d00,
-    description: 'Gây 40 sát thương lên Boss và phá hủy 5 viên ngọc Đỏ 🔥 trên bàn cờ',
+    description: 'Phá hủy toàn bộ ngọc Lửa 🔥 trên bàn cờ. Mỗi viên phá hủy gây 12 sát thương lên Boss.',
     cooldown: 6,
     unlockedAtLevel: 4,
     targetType: 'boss',
