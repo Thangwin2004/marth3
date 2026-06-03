@@ -70,7 +70,7 @@ export class MainMenuScene {
         // Game title with glow effect
         const titleContainer = new Container();
         titleContainer.x = Config.canvas.width / 2;
-        titleContainer.y = 160;
+        titleContainer.y = 200; // Shifted down to accommodate logo above
         this.container.addChild(titleContainer);
 
         // Generate circular texture for glow once to use a Sprite
@@ -83,6 +83,7 @@ export class MainMenuScene {
         // Glow behind title (Sprite-based)
         const glow = new Sprite(glowTexture);
         glow.anchor.set(0.5);
+        glow.y = -100; // Positioned behind the logo
         glow.tint = 0x4fc3f7;
         glow.alpha = 0.08;
         titleContainer.addChild(glow);
@@ -90,23 +91,47 @@ export class MainMenuScene {
         gsap.to(glow, { alpha: 0.15, duration: 2, yoyo: true, repeat: -1, ease: 'sine.inOut' });
         gsap.to(glow.scale, { x: 1.2, y: 1.2, duration: 3, yoyo: true, repeat: -1, ease: 'sine.inOut' });
 
+        // Load and add the new logo
+        Assets.load('/logo.png').then(texture => {
+            if (titleContainer.destroyed) return;
+            const logo = new Sprite(texture);
+            logo.anchor.set(0.5);
+            logo.y = -100; // Position above title text
+            logo.width = 120;
+            logo.height = 120;
+            titleContainer.addChild(logo);
+
+            // Subtle pulsing animation for the logo
+            gsap.to(logo.scale, {
+                x: logo.scale.x * 1.06,
+                y: logo.scale.y * 1.06,
+                duration: 2.5,
+                yoyo: true,
+                repeat: -1,
+                ease: 'sine.inOut'
+            });
+        }).catch(err => {
+            console.error("Failed to load logo.png on main menu:", err);
+        });
+
         // Main title
         const title = new Text({
             text: '⚔️ MATCH-3',
             style: {
-                fontFamily: 'Arial', fontSize: 56, fontWeight: 'bold',
+                fontFamily: 'Arial', fontSize: 48, fontWeight: 'bold', // slightly reduced size to fit beautifully
                 fill: '#ffffff',
                 stroke: { color: '#000000', width: 8 },
                 dropShadow: { color: '#000000', blur: 6, distance: 3, alpha: 0.8 },
             },
         });
         title.anchor.set(0.5);
+        title.y = 0;
         titleContainer.addChild(title);
 
         const subtitle = new Text({
             text: 'BOSS BATTLE RPG',
             style: {
-                fontFamily: 'Arial', fontSize: 28, fontWeight: 'bold',
+                fontFamily: 'Arial', fontSize: 24, fontWeight: 'bold',
                 fill: '#4fc3f7',
                 stroke: { color: '#000000', width: 5 },
                 letterSpacing: 8,
@@ -114,7 +139,7 @@ export class MainMenuScene {
             },
         });
         subtitle.anchor.set(0.5);
-        subtitle.y = 45;
+        subtitle.y = 40;
         titleContainer.addChild(subtitle);
 
         // Decorative line (Sprite-based using Texture.WHITE)
@@ -124,7 +149,7 @@ export class MainMenuScene {
         line.height = 3;
         line.tint = 0x4fc3f7;
         line.alpha = 0.8;
-        line.y = 75;
+        line.y = 70;
         titleContainer.addChild(line);
 
         // === SAVE INFO ===
@@ -143,11 +168,11 @@ export class MainMenuScene {
         });
         infoText.anchor.set(0.5);
         infoText.x = Config.canvas.width / 2;
-        infoText.y = 280;
+        infoText.y = 315; // Shifted down from 280
         this.container.addChild(infoText);
 
         // === BUTTONS ===
-        const btnStartY = 340;
+        const btnStartY = 370; // Shifted down to prevent overlaps
 
         // Continue button (if save exists)
         if (currentLevel > 1) {
@@ -236,8 +261,8 @@ export class MainMenuScene {
 
         // === ENTRANCE ANIMATION ===
         titleContainer.alpha = 0;
-        titleContainer.y = 130;
-        gsap.to(titleContainer, { alpha: 1, y: 160, duration: 0.8, ease: 'power2.out', delay: 0.2 });
+        titleContainer.y = 170;
+        gsap.to(titleContainer, { alpha: 1, y: 200, duration: 0.8, ease: 'power2.out', delay: 0.2 });
     }
 
     createMenuButton(label, x, y, color, width = 220, onClick) {
