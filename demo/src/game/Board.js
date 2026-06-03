@@ -271,13 +271,21 @@ export class Board {
      * offset to leave space for top UI elements (HP bars, turn indicator, etc.).
      */
     adjustPosition() {
-        const canvasWidth = App.app.screen.width;   // 1100
+        const canvasWidth = App.app.screen.width;
         const boardWidth = this.cols * App.config.tileSize;
         const boardHeight = this.rows * App.config.tileSize;
 
-        // Board center at approximately x=450 (center-left area)
+        // Board center horizontally
         this.container.x = (canvasWidth / 2) - (boardWidth / 2);
-        this.container.y = (App.app.screen.height - boardHeight) / 2 + 20; // slight offset down for top UI
+        
+        // Explicitly set y based on board size to prevent overlapping top and bottom UI elements
+        if (this.rows >= 12) {
+            this.container.y = 104; // fits 12x12 perfectly
+        } else if (this.rows >= 10) {
+            this.container.y = 108; // fits 10x10 perfectly
+        } else {
+            this.container.y = 118; // fits 8x8 perfectly
+        }
     }
 
     // =========================================================================

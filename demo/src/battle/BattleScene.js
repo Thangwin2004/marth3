@@ -176,9 +176,9 @@ export class BattleScene {
 
         let targetTileSize = 65; // default for 8x8 or smaller
         if (Math.max(boardRows, boardCols) >= 12) {
-            targetTileSize = 46;
+            targetTileSize = 50;
         } else if (Math.max(boardRows, boardCols) >= 10) {
-            targetTileSize = 54;
+            targetTileSize = 58;
         }
 
         // Update both Config and App.config to ensure consistent scaling everywhere
@@ -232,7 +232,7 @@ export class BattleScene {
         // Add "📖 Element Guide" button in top bar empty space
         const guideBtnContainer = new Container();
         guideBtnContainer.x = Config.canvas.width / 2;
-        guideBtnContainer.y = 92; // beautifully centered between Turn texts and Board background
+        guideBtnContainer.y = 77; // beautifully centered between Turn texts and Board background
         this.container.addChild(guideBtnContainer);
 
         const btnW = 120;
@@ -557,7 +557,25 @@ export class BattleScene {
                 this.hud.setLog(`⚠️ ${envResult.warning}`);
             }
             if (envResult.triggered) {
+                const envNameMap = {
+                    'Wind Shift': 'CƠN GIÓ DỊCH CHUYỂN 💨',
+                    'Lava Drip': 'DÒNG LAVA PHUN TRÀO 🌋',
+                    'Blizzard': 'BÃO TUYẾT PHỦ VÂY ❄️',
+                    'Lightning Strike': 'SÉT ĐÁNH NGUYÊN TỐ ⚡',
+                    'Tidal Wave': 'SÓNG THẦN CAN THIỆP 🌊',
+                    'Ghost Haunt': 'BÓNG MA ÁM ẢNH 👻',
+                    'Eruption': 'NÚI LỬA PHUN TRÀO 🌋',
+                    'Darkness': 'BÓNG TỐI BAO PHỦ 🌑',
+                    'Tornado': 'CƠN LỐC XOÁY TORNADO 🌪️',
+                    'Chaos': 'HỖN LOẠN THIÊN TAI 🌀'
+                };
+                const envName = envNameMap[envResult.triggered] || envResult.triggered.toUpperCase();
+                
+                // Show gorgeous full screen banner for Environmental Hazards
+                await this.turnIndicator.show(`🌍 THIÊN TAI: ${envName}`, '#00e5ff');
                 this.hud.setLog(`🌍 ${envResult.result.description}`);
+                await this.delay(800); // let the player process the warning
+
                 if (envResult.result.damage && envResult.result.damageTarget === 'both') {
                     this.player.takeDamage(envResult.result.damage);
                     this.boss.takeDamage(envResult.result.damage);
@@ -567,7 +585,7 @@ export class BattleScene {
                 await this.processFallDown();
                 await this.addTiles();
                 this.updateUI();
-                await this.handleBoardSettleAfterAction();
+                await this.handleBoardSettleAfterAction(false); // pass false so turn doesn't switch
                 if (this.checkGameEnd()) return;
             }
         }
@@ -624,6 +642,13 @@ export class BattleScene {
     }
 
     switchTurn() {
+        if (this.currentTurn === 'player' && this.grantExtraTurn) {
+            this.grantExtraTurn = false;
+            this.disabled = false;
+            this.hud.setLog('⏳ Extra turn!');
+            this.startTurn('player');
+            return;
+        }
         const next = this.currentTurn === 'player' ? 'boss' : 'player';
         this.startTurn(next);
     }
@@ -992,7 +1017,7 @@ export class BattleScene {
         });
     }
 
-    async processMatches(matches, who = 'player') {
+    async processMatches(matches, who = 'player', switchTurnAfter = true) {
         const attacker = who === 'player' ? this.player : this.boss;
         const defender = who === 'player' ? this.boss : this.player;
         const defenderSide = who === 'player' ? 'boss' : 'player';
@@ -1416,15 +1441,7 @@ export class BattleScene {
         // 3. END TURN CHECK
         if (this.checkGameEnd()) return;
 
-        if (who === 'player') {
-            if (this.grantExtraTurn) {
-                this.grantExtraTurn = false;
-                this.disabled = false;
-                this.hud.setLog('⏳ Extra turn!');
-            } else {
-                this.switchTurn();
-            }
-        } else {
+        if (switchTurnAfter) {
             this.switchTurn();
         }
     }
@@ -1588,10 +1605,10 @@ export class BattleScene {
         }
     }
 
-    async handleBoardSettleAfterAction() {
+    async handleBoardSettleAfterAction(switchTurnAfter = false) {
         const matches = this.combinationManager.getMatches();
         if (matches.length > 0) {
-            await this.processMatches(matches, this.currentTurn);
+            await this.processMatches(matches, this.currentTurn, switchTurnAfter);
         }
     }
 

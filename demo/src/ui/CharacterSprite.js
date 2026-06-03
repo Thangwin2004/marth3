@@ -6,6 +6,7 @@ export class CharacterSprite {
     constructor(config = {}) {
         // config: { side: 'left'|'right', name: string, emoji: string, color: hex, scale: number, isPlayer: boolean, imagePath: string }
         this.container = new Container();
+        this.container.sortableChildren = true;
         this.side = config.side || 'left';
         this.name = config.name || 'Character';
         this.emoji = config.emoji || '⚔️';
@@ -15,11 +16,23 @@ export class CharacterSprite {
         this.imagePath = config.imagePath || null;
         
         this.body = new Container();
+        this.body.zIndex = 1;
         this.bodyGraphics = new Graphics();
         this.body.addChild(this.bodyGraphics);
+        
         this.statusContainer = new Container();
+        this.statusContainer.zIndex = 5;
+        
         this.nameText = null;
         this.isEnraged = false;
+        
+        // Floating Tooltip for Status Effects
+        this.tooltipContainer = new Container();
+        this.tooltipContainer.zIndex = 100;
+        this.tooltipContainer.visible = false;
+        this.tooltipContainer.alpha = 0;
+        this.container.addChild(this.tooltipContainer);
+        this.tooltipTimeout = null;
         
         this.draw();
         this.playIdle();
@@ -199,6 +212,7 @@ export class CharacterSprite {
             g.fill({ color: c });
         }
         
+        this.body.zIndex = 1;
         this.container.addChild(this.body);
         
         // Name text below
@@ -208,10 +222,12 @@ export class CharacterSprite {
         });
         this.nameText.anchor.set(0.5, 0);
         this.nameText.y = 80 * this.scale;
+        this.nameText.zIndex = 2;
         this.container.addChild(this.nameText);
         
         // Status icons container
         this.statusContainer.y = -75 * this.scale;
+        this.statusContainer.zIndex = 5;
         this.container.addChild(this.statusContainer);
     }
     
@@ -492,25 +508,230 @@ export class CharacterSprite {
         });
     }
     
+    showTooltip(effect) {
+        if (this.container.destroyed || !this.tooltipContainer) return;
+        this.tooltipContainer.removeChildren();
+        
+        const width = 200;
+        const height = 65;
+        
+        // Draw background
+        const bg = new Graphics();
+        bg.roundRect(-width / 2, -height, width, height, 8);
+        bg.fill({ color: 0x070c1a, alpha: 0.98 });
+        
+        // Stroke color based on type
+        const colors = {
+            burn: 0xff5722,
+            poison: 0xb388ff,
+            freeze: 0x00e5ff,
+            stun: 0xffd54f,
+            curse: 0xe91e63,
+            shield: 0x2196f3
+        };
+        const strokeColor = colors[effect.type] || 0xffffff;
+        bg.stroke({ color: strokeColor, width: 1.5 });
+        this.tooltipContainer.addChild(bg);
+        
+        // Little triangle pointer at the bottom of the tooltip
+        const tri = new Graphics();
+        tri.moveTo(-6, 0);
+        tri.lineTo(6, 0);
+        tri.lineTo(0, 6);
+        tri.closePath();
+        tri.fill({ color: strokeColor });
+        tri.y = 0;
+        this.tooltipContainer.addChild(tri);
+        
+        // Title (Emoji + Name)
+        const titles = {
+            burn: '🔥 THIÊU RỤI',
+            poison: '☠️ NHIỄM ĐỘC',
+            freeze: '❄️ ĐÓNG BĂNG',
+            stun: '💫 CHOÁNG VÁNG',
+            curse: '👁️ NGUYỀN RỦA',
+            shield: '🛡️ LÁ CHẮN'
+        };
+        
+        const titleText = new Text({
+            text: titles[effect.type] || '⚡ HIỆU ỨNG',
+            style: {
+                fontFamily: 'Arial',
+                fontSize: 12,
+                fontWeight: 'bold',
+                fill: strokeColor
+            }
+        });
+        titleText.anchor.set(0.5, 0);
+        titleText.x = 0;
+        titleText.y = -height + 8;
+        this.tooltipContainer.addChild(titleText);
+        
+        // Duration text
+        let durStr = '';
+        if (effect.type === 'shield') {
+            durStr = 'Bền vững';
+        } else {
+            durStr = `${effect.duration} lượt`;
+        }
+        
+        const durText = new Text({
+            text: `Thời gian: ${durStr}`,
+            style: {
+                fontFamily: 'Arial',
+                fontSize: 9.5,
+                fill: '#b0bec5'
+            }
+        });
+        durText.anchor.set(0.5, 0);
+        durText.x = 0;
+        durText.y = -height + 23;
+        this.tooltipContainer.addChild(durText);
+        
+        // Description text
+        const descs = {
+            burn: `Mất ${effect.damage || 0} HP mỗi đầu lượt.`,
+            poison: `Mất ${effect.damage || 0} HP mỗi đầu lượt. Có cộng dồn.`,
+            freeze: `Khóa các ô ngọc đóng băng trên bảng đấu.`,
+            stun: `Không thể dùng chiêu hoặc di chuyển lượt này.`,
+            curse: `Giảm 30% sát thương tấn công gây ra.`,
+            shield: `Lá chắn hấp thụ sát thương: ${effect.damage || 0} HP.`
+        };
+        
+        const descText = new Text({
+            text: descs[effect.type] || 'Hiệu ứng tác động.',
+            style: {
+                fontFamily: 'Arial',
+                fontSize: 9,
+                fill: '#ffffff',
+                wordWrap: true,
+                wordWrapWidth: width - 16,
+                align: 'center'
+            }
+        });
+        descText.anchor.set(0.5, 0);
+        descText.x = 0;
+        descText.y = -height + 36;
+        this.tooltipContainer.addChild(descText);
+        
+        // Position relative to scale
+        this.tooltipContainer.y = -85 * this.scale - 12;
+        
+        // Animate show
+        this.tooltipContainer.visible = true;
+        gsap.killTweensOf(this.tooltipContainer);
+        gsap.to(this.tooltipContainer, { alpha: 1, duration: 0.18, ease: 'power1.out' });
+    }
+    
+    hideTooltip() {
+        if (!this.tooltipContainer) return;
+        gsap.killTweensOf(this.tooltipContainer);
+        gsap.to(this.tooltipContainer, {
+            alpha: 0,
+            duration: 0.12,
+            ease: 'power1.in',
+            onComplete: () => {
+                if (this.tooltipContainer) this.tooltipContainer.visible = false;
+            }
+        });
+        if (this.tooltipTimeout) {
+            clearTimeout(this.tooltipTimeout);
+            this.tooltipTimeout = null;
+        }
+    }
+    
     // Show status effect icons above character
     showStatusIcons(effects) {
         if (this.container.destroyed) return;
         this.statusContainer.removeChildren();
+        
         const icons = {
             burn: '🔥', poison: '☠️', freeze: '❄️', stun: '💫', curse: '👁', shield: '🛡'
         };
+        const colors = {
+            burn: 0xff5722, poison: 0xb388ff, freeze: 0x00e5ff, stun: 0xffd54f, curse: 0xe91e63, shield: 0x2196f3
+        };
+        
+        const size = 26;
+        const spacing = 32;
+        const offset = (effects.length - 1) * (spacing / 2);
+        
         effects.forEach((effect, i) => {
-            const icon = new Text({
+            const iconContainer = new Container();
+            iconContainer.x = i * spacing - offset;
+            
+            const strokeColor = colors[effect.type] || 0xffffff;
+            
+            // Draw background
+            const iconBg = new Graphics();
+            iconBg.roundRect(-size/2, -size/2, size, size, 5);
+            iconBg.fill({ color: 0x0b1326, alpha: 0.9 });
+            iconBg.stroke({ color: strokeColor, width: 2, alpha: 0.95 });
+            iconContainer.addChild(iconBg);
+            
+            // Emoji
+            const emojiText = new Text({
                 text: icons[effect.type] || '⚡',
-                style: { fontSize: 16 },
+                style: { fontSize: 13 }
             });
-            icon.x = i * 22 - (effects.length * 11);
-            icon.anchor.set(0.5);
-            this.statusContainer.addChild(icon);
+            emojiText.anchor.set(0.5);
+            emojiText.y = -0.5; // slight visual centering
+            iconContainer.addChild(emojiText);
+            
+            // Duration overlay (bottom right)
+            if (effect.duration !== null && effect.duration !== undefined) {
+                const durVal = new Text({
+                    text: `${effect.duration}`,
+                    style: {
+                        fontFamily: 'Arial',
+                        fontSize: 8.5,
+                        fontWeight: 'bold',
+                        fill: '#ffffff',
+                        dropShadow: { color: '#000000', blur: 2, distance: 1 }
+                    }
+                });
+                durVal.anchor.set(1, 1);
+                durVal.x = size/2 - 1.5;
+                durVal.y = size/2 - 0.5;
+                iconContainer.addChild(durVal);
+            }
+            
+            // Interactivity
+            iconContainer.eventMode = 'static';
+            iconContainer.cursor = 'pointer';
+            
+            iconContainer.on('pointerover', () => {
+                this.showTooltip(effect);
+                gsap.to(iconContainer.scale, { x: 1.15, y: 1.15, duration: 0.15 });
+            });
+            
+            iconContainer.on('pointerout', () => {
+                this.hideTooltip();
+                gsap.to(iconContainer.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+            });
+            
+            iconContainer.on('pointertap', (e) => {
+                e.stopPropagation();
+                this.showTooltip(effect);
+                
+                if (this.tooltipTimeout) clearTimeout(this.tooltipTimeout);
+                this.tooltipTimeout = setTimeout(() => {
+                    this.hideTooltip();
+                }, 3000);
+            });
+            
+            this.statusContainer.addChild(iconContainer);
         });
     }
     
     destroy() {
+        if (this.tooltipTimeout) {
+            clearTimeout(this.tooltipTimeout);
+            this.tooltipTimeout = null;
+        }
+        if (this.tooltipContainer) {
+            gsap.killTweensOf(this.tooltipContainer);
+        }
         if (this.container) {
             gsap.killTweensOf(this.body);
             gsap.killTweensOf(this.container);

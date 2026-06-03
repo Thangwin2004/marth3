@@ -179,7 +179,7 @@ export class BattleHUD {
         });
         this.logText.anchor.set(0.5, 0.5);
         this.logText.x = Config.canvas.width / 2;
-        this.logText.y = Config.canvas.height - 25;
+        this.logText.y = Config.canvas.height - 10;
         this.bottomBar.addChild(this.logText);
 
         // Terrain info bar
@@ -189,7 +189,7 @@ export class BattleHUD {
         });
         this.terrainText.anchor.set(0.5, 0.5);
         this.terrainText.x = Config.canvas.width / 2;
-        this.terrainText.y = Config.canvas.height - 50;
+        this.terrainText.y = Config.canvas.height - 26;
         this.bottomBar.addChild(this.terrainText);
 
         // Environment event warning (right side)
@@ -258,9 +258,18 @@ export class BattleHUD {
             this.skillBar.render(skillStates);
         }
 
-        // Status icons
-        this.playerSprite.showStatusIcons(this.player.statusEffects);
-        this.bossSprite.showStatusIcons(this.boss.statusEffects);
+        // Status icons (including shield)
+        const playerEffects = [...this.player.statusEffects];
+        if (this.player.shield > 0) {
+            playerEffects.push({ type: 'shield', duration: null, damage: this.player.shield });
+        }
+        this.playerSprite.showStatusIcons(playerEffects);
+
+        const bossEffects = [...this.boss.statusEffects];
+        if (this.boss.shield > 0) {
+            bossEffects.push({ type: 'shield', duration: null, damage: this.boss.shield });
+        }
+        this.bossSprite.showStatusIcons(bossEffects);
 
         // Environment warning
         if (envTurnsUntil !== undefined && envTurnsUntil <= 2) {
