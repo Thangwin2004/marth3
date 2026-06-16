@@ -4,6 +4,7 @@ import { CombinationManager } from '../game/CombinationManager.js';
 import { App } from '../system/App.js';
 import { saveManager } from '../system/SaveManager.js';
 import { sceneManager } from '../system/SceneManager.js';
+import { soundManager } from '../system/SoundManager.js';
 import gsap from 'gsap';
 
 const ALL_AVATAR_FILES = [
@@ -358,6 +359,8 @@ export class GameScene {
     onTileClick(tile) {
         if (this.disabled || this.isGameOver) return;
 
+        soundManager.playClick();
+
         if (this.selectedTile) {
             if (this.selectedTile === tile) {
                 this.clearSelection();
@@ -489,6 +492,13 @@ export class GameScene {
     }
 
     calculateScore(matches) {
+        if (matches.length > 0) {
+            if (this.comboCount >= 2) {
+                soundManager.playCombo(this.comboCount);
+            } else {
+                soundManager.playMatch();
+            }
+        }
         let totalAdded = 0;
         const multiplier = Math.max(1, this.comboCount);
 
@@ -689,8 +699,14 @@ export class GameScene {
         this.isGameOver = true;
         this.disabled = true;
 
-        // Try adding score to leaderboard
+        // Dừng nhạc nền và phát nhạc kết quả tương ứng
+        soundManager.stopBGM();
         const rank = saveManager.addScore(this.score);
+        if (rank) {
+            soundManager.playVictory();
+        } else {
+            soundManager.playGameOver();
+        }
 
         const screen = new Container();
         screen.zIndex = 100;

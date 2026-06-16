@@ -5,6 +5,8 @@ import { App } from '../system/App.js';
 import { sceneManager } from '../system/SceneManager.js';
 import { saveManager } from '../system/SaveManager.js';
 import { GameScene } from './GameScene.js';
+import { soundManager } from '../system/SoundManager.js';
+
 
 const ALL_AVATAR_FILES = [
     '001_avatar_laclac.png', '002_avatar_cat_lick1.png', '003_avatar_duck.png', '004_avatar_turtle.png',
@@ -26,6 +28,15 @@ export class MainMenuScene {
         this.container.sortableChildren = true;
 
         App.setBackgroundColor(0x0a0a1a);
+
+        // Phát nhạc nền khi người chơi tương tác lần đầu
+        const startBGM = () => {
+            soundManager.playBGM();
+            document.removeEventListener('click', startBGM);
+            document.removeEventListener('pointerdown', startBGM);
+        };
+        document.addEventListener('click', startBGM);
+        document.addEventListener('pointerdown', startBGM);
 
         // === BACKGROUND ===
         const bg = new Sprite(Texture.WHITE);
@@ -346,12 +357,14 @@ export class MainMenuScene {
         bg.on('pointerover', () => {
             gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
             gsap.to(bg, { alpha: 1, duration: 0.15 });
+            soundManager.playClick();
         });
         bg.on('pointerout', () => {
             gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 });
             gsap.to(bg, { alpha: 0.85, duration: 0.15 });
         });
         bg.on('pointerdown', () => {
+            soundManager.playClick();
             onClick();
         });
 
@@ -502,12 +515,14 @@ export class MainMenuScene {
         btnBg.on('pointerover', () => {
             gsap.to(closeBtn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
             btnBg.alpha = 1.0;
+            soundManager.playClick();
         });
         btnBg.on('pointerout', () => {
             gsap.to(closeBtn.scale, { x: 1, y: 1, duration: 0.15 });
             btnBg.alpha = 0.9;
         });
         btnBg.on('pointerdown', () => {
+            soundManager.playClick();
             closePopup();
         });
 
