@@ -1,39 +1,32 @@
-# ⚔️ Match-3 Boss Battle RPG (Vinh Quang Anh Hùng)
+# 🐾 Animal Crush - Pure Match-3
 
-Một tựa game Web-based nhập vai chiến đấu với Boss bằng cơ chế Match-3 cao cấp, được phát triển trên nền tảng **PixiJS v8**, **GSAP** và **Vite**. Trò chơi kết hợp giữa chiều sâu chiến thuật của dòng game nhập vai RPG (hệ thống khắc chế thuộc tính, trạng thái bất lợi, kỹ năng kích hoạt, nâng cấp nhân vật) với trải nghiệm giải đố Match-3 mượt mà và trực quan.
+Một tựa game Match-3 tính điểm thuần túy và dễ thương lấy chủ đề động vật, được xây dựng trên nền tảng **PixiJS v8**, **GSAP** và **Vite**. Trò chơi tập trung vào trải nghiệm ghép ngọc mượt mà, trực quan, giao diện Glassmorphism hiện đại cùng các hiệu ứng hoạt ảnh cao cấp.
 
-**Technologies: PixiJS, JavaScript, GSAP, HTML5, CSS3, Vite, Node.js.**
+**Công nghệ sử dụng: PixiJS v8, JavaScript, GSAP, HTML5, CSS3, Vite.**
 
 ---
 
 ## 🎮 Các Tính Năng Nổi Bật
 
-### 1. Cơ Chế Match-3 Cao Cấp & Mượt Mà
-* **Khớp Ngọc Đặc Biệt**: 
-  * Ghép 4 ngọc tạo thành **Rune Gem (Ngọc Cổ Tự)** kích nổ chữ thập tiêu hủy toàn hàng và cột.
-  * Ghép 5 ngọc tạo thành **Rainbow Gem (Ngọc Cầu Vồng)** quét sạch toàn bộ ngọc có cùng màu sắc được ghép.
-* **Tự Động Trộn (Auto-Shuffle)**: Khi bảng không còn nước đi hợp lệ, hệ thống tự động trộn ngọc kèm hiệu ứng rung lắc màn hình và thông báo.
-* **Đa Dạng Kích Thước Bảng**: Hỗ trợ linh hoạt kích thước bảng **8x8, 10x10, 12x12** tương ứng độ khó các màn chơi, tự động co giãn tỷ lệ ngọc sắc nét.
+### 1. Cơ Chế Match-3 Thuần Điểm & Mượt Mà
+* **Lưới Ngọc 8x8**: Kích thước tiêu chuẩn tối ưu hóa trải nghiệm chơi, cân bằng hoàn hảo giữa thử thách và tính giải trí.
+* **Ngẫu Nhiên Ván Đấu**: 
+  * Mỗi lượt chơi sẽ tự động lựa chọn **6 con vật ngẫu nhiên** trong số 44 nhân vật động vật siêu dễ thương để làm ngọc trên bảng.
+  * Tự động chọn ngẫu nhiên 1 trong 3 hình nền phong cảnh Việt Nam mỗi khi khởi chạy.
+* **Tự Động Tráo Bài Khi Bế Tắc (Optimized Deadlock Shuffle)**: 
+  * Hệ thống tự động kiểm tra nước đi ghép 3 khả thi.
+  * Nếu không còn nước đi, game sẽ tự động thực hiện tráo đổi tham chiếu tối ưu trong bộ nhớ (không hủy/tạo lại Sprite gây lag giật) và trượt các viên ngọc về vị trí mới bằng hoạt ảnh mượt mà của GSAP.
 
-### 2. Hệ Thống Chiến Đấu RPG Chiến Thuật
-* **Đấu Lượt Kịch Tính**: Lượt đi được quyết định ngẫu nhiên bằng tung đồng xu 3D ở đầu trận.
-* **Tương Khắc Thuộc Tính**: Ma trận khắc chế thuộc tính giữa 10 hệ ngọc (`Lửa`, `Nước`, `Thiên Nhiên`, `Băng`, `Lôi`, `Đất`, `Gió`, `Tâm Linh`, `Ánh Sáng`, `Độc`). Đánh vào hệ yếu của Boss gây x1.5 sát thương, đánh vào hệ kháng giảm còn x0.5.
-* **Hiệu Ứng Trạng Thái (Debuffs)**: 
-  * `Thiêu Đốt` (mất máu theo lượt).
-  * `Trúng Độc` (mất máu mỗi khi thực hiện nước đi).
-  * `Đóng Băng` (khóa ngọc không cho di chuyển).
-  * `Tê Liệt` (mất lượt).
-  * `Nguyền Rủa` (nhận thêm sát thương).
-* **Bảng Chú Giải & Chỉ Báo (Tooltip)**: Di chuột trực quan để kiểm tra thông tin chi tiết các thuộc tính khắc chế và trạng thái bất lợi trên cả Hero và Boss.
+### 2. Giao Diện Glassmorphic & Hiệu Ứng VFX Premium
+* **Bảng Thành Tích (Leaderboard)**: Lưu trữ và hiển thị Top 5 điểm số cao nhất kèm ngày giờ chơi trong `localStorage`. Hiển thị bảng chúc mừng kỷ lục khi kết thúc ván đấu.
+* **Hoạt ảnh HUD phản hồi (Pulsing HUD)**: Điểm số (`SCORE`) và số lượt đi (`MOVES`) co giãn đàn hồi mỗi khi thay đổi chỉ số.
+* **Điểm số bay lên (Floating Scores)**: Hiển thị lượng điểm cộng tại tâm vụ nổ ngọc (`+10`, `+25`, hoặc kèm nhân số combo `+50 (x2)`).
+* **Viền chọn Cyan Neon**: Hiệu ứng nhấp nháy nhịp nhàng bằng GSAP trên viên ngọc đang chọn.
+* **Hạt nổ đồng điệu màu**: Ngọc của con vật nào nổ sẽ tạo ra vụ nổ hạt sáng rực rỡ có màu sắc tương ứng.
+* **Bụi sáng lơ lửng (Ambient Particles)**: Các hạt bụi sáng trôi nổi chậm rãi phía sau bảng ngọc làm nền game thêm phần huyền ảo.
 
-### 3. Kỹ Năng Kích Hoạt & Trang Bị
-* **9 Kỹ Năng Hero**: Quả cầu lửa, Hồi máu, Tráo bảng, Khiên hộ thể, Sét đánh, Thanh tẩy trạng thái bất lợi, Bom ngọc, Ngọc cầu vồng, và Thêm lượt đi.
-* **Điện Anh Hùng (Hero Sanctuary)**: Khu vực nâng cấp chỉ số vĩnh viễn (Máu tối đa, Sát thương cơ bản), quản lý kỹ năng đã mở khóa, sắm sửa trang bị (Kiếm Ma Thuật, Giáp Vàng) bằng tiền vàng kiếm được từ các trận đấu.
-
-### 4. Hiệu Ứng Đồ Họa & Âm Thanh Visuals Premium
-* Phong cách thiết kế tối màu kết hợp **Glassmorphic** (thủy tinh mờ) bóng bẩy.
-* Hiệu ứng hạt nổ (particle explosion) rực rỡ riêng biệt theo từng thuộc tính màu sắc ngọc.
-* Cảnh báo thời tiết/môi trường (Environmental Events) dạng banner chuyển động điện ảnh chạy ngang màn hình.
+### 3. Tích Hợp Cầu Nối Âm Thanh & Tương Tác
+* Tích hợp **Wink Bridge SDK (v8.0)** ngay đầu trang để quản lý bật/tắt tiếng từ xa và gửi dữ liệu tương tác người chơi lên trang mẹ của iframe.
 
 ---
 
@@ -43,14 +36,14 @@ Một tựa game Web-based nhập vai chiến đấu với Boss bằng cơ chế
 * Máy tính đã cài đặt **Node.js** (Khuyến nghị phiên bản v18 trở lên).
 
 ### 2. Các Bước Cài Đặt
-Dự án được cấu trúc dạng monorepo, phần mã nguồn chính nằm trong thư mục `demo/`.
+Mã nguồn chính nằm trong thư mục `demo/`.
 
-1. Mở terminal và di chuyển vào thư mục `demo`:
+1. Di chuyển vào thư mục `demo`:
    ```bash
    cd demo
    ```
 
-2. Cài đặt các gói thư viện phụ thuộc:
+2. Cài đặt các thư viện phụ thuộc:
    ```bash
    npm install
    ```
@@ -59,13 +52,13 @@ Dự án được cấu trúc dạng monorepo, phần mã nguồn chính nằm t
    ```bash
    npm run dev
    ```
-   *Trình duyệt sẽ tự động mở trang game tại địa chỉ: `http://localhost:8080`*
+   *Mặc định dự án sẽ chạy tại địa chỉ: `http://localhost:8081` (hoặc `http://localhost:8080`)*
 
 4. Đóng gói sản phẩm (Production Build):
    ```bash
    npm run build
    ```
-   *Sản phẩm đầu ra sẽ nằm trong thư mục `demo/dist/` sẵn sàng triển khai.*
+   *Sản phẩm đầu ra sẽ nằm trong thư mục `demo/dist/` sẵn sàng để triển khai lên Vercel, Netlify...*
 
 ---
 
@@ -75,25 +68,22 @@ Dự án được cấu trúc dạng monorepo, phần mã nguồn chính nằm t
 demogame/
 ├── demo/
 │   ├── public/
-│   │   ├── assets/       # Tài nguyên hình ảnh, thẻ bài NPC, nền màn chơi
-│   │   ├── logo.png      # Logo chính thức của game
-│   │   └── style.css     # CSS reset và responsive canvas layout
+│   │   ├── assets/       # Tài nguyên hình ảnh, background, ngọc con vật
+│   │   └── logo.png      # Logo chính thức của game (Mèo đá quý 3D)
 │   ├── src/
-│   │   ├── battle/       # Hệ thống chiến đấu (BattleScene, Damage, Skills, Status)
-│   │   ├── data/         # Dữ liệu cấp độ (LevelData), dữ liệu kỹ năng (SkillData)
 │   │   ├── game/         # Lõi Match-3 (Board, Tile, Field, CombinationManager)
-│   │   ├── scenes/       # Quản lý cảnh (MainMenu, LevelSelect, HeroSanctuary)
-│   │   ├── system/       # Hỗ trợ hệ thống (App wrapper, SaveManager, SceneManager)
-│   │   ├── ui/           # Thành phần UI (BattleHUD, SkillBar, Tooltips, Popups)
-│   │   └── main.js       # Khởi tạo luồng game
+│   │   ├── scenes/       # Quản lý cảnh (MainMenuScene, GameScene)
+│   │   ├── system/       # Hỗ trợ hệ thống (App, SaveManager, SceneManager)
+│   │   ├── wink-bridge.js# SDK giao tiếp âm thanh & tương tác
+│   │   └── main.js       # Điểm khởi động game chính
 │   ├── index.html        # Entry point HTML
-│   ├── vite.config.js    # Cấu hình đóng gói Vite
-│   └── vercel.json       # Cấu hình deploy SPA
+│   ├── style.css         # CSS reset và layout canvas
+│   └── vite.config.js    # Cấu hình đóng gói Vite
 └── README.md
 ```
 
 ---
 
 ## 🔗 Liên Kết Liên Quan
-* **Mã nguồn trên Github**: [demopixijsmatch3](https://github.com/Thangwin2004/demopixijsmatch3)
+* **Mã nguồn trên Github**: [marth3](https://github.com/Thangwin2004/marth3)
 * **Triển khai live demo**: Tự động đồng bộ qua Vercel.
