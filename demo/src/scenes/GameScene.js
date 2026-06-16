@@ -85,11 +85,11 @@ export class GameScene {
         }
 
         // === CREATE BACKGROUND ===
-        const bg = new Sprite(this.bgTexture);
-        bg.width = App.app.screen.width;
-        bg.height = App.app.screen.height;
-        bg.tint = 0x333333; // dim background for higher contrast
-        this.container.addChild(bg);
+        this.bg = new Sprite(this.bgTexture);
+        this.bg.width = App.app.screen.width;
+        this.bg.height = App.app.screen.height;
+        this.bg.tint = 0x333333; // dim background for higher contrast
+        this.container.addChild(this.bg);
 
         // === CREATE AMBIENT PARTICLES ===
         this.createAmbientParticles();
@@ -127,6 +127,9 @@ export class GameScene {
 
         // === LISTEN FOR GRID EVENTS ===
         this.board.container.on('tile-touch-start', this.onTileClick.bind(this));
+
+        // Adjust all components positions and scaling
+        this.resize();
 
         // Entrance animation
         this.container.alpha = 0;
@@ -236,13 +239,8 @@ export class GameScene {
         this.container.addChild(this.uiContainer);
 
         // === SCORE PANEL BACKGROUND ===
-        const scorePanel = new Graphics();
-        scorePanel.roundRect(0, 0, 240, 60, 12);
-        scorePanel.fill({ color: 0x1a233a, alpha: 0.85 });
-        scorePanel.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.5 });
-        scorePanel.x = 40;
-        scorePanel.y = 25;
-        this.uiContainer.addChild(scorePanel);
+        this.scorePanel = new Graphics();
+        this.uiContainer.addChild(this.scorePanel);
 
         // === SCORE LABEL ===
         this.scoreText = new Text({
@@ -256,18 +254,11 @@ export class GameScene {
             },
         });
         this.scoreText.anchor.set(0.5);
-        this.scoreText.x = 160;
-        this.scoreText.y = 55;
         this.uiContainer.addChild(this.scoreText);
 
         // === MOVES PANEL BACKGROUND ===
-        const movesPanel = new Graphics();
-        movesPanel.roundRect(0, 0, 240, 60, 12);
-        movesPanel.fill({ color: 0x1a233a, alpha: 0.85 });
-        movesPanel.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.5 });
-        movesPanel.x = App.app.screen.width - 280;
-        movesPanel.y = 25;
-        this.uiContainer.addChild(movesPanel);
+        this.movesPanel = new Graphics();
+        this.uiContainer.addChild(this.movesPanel);
 
         // === MOVES LABEL ===
         this.movesText = new Text({
@@ -281,8 +272,6 @@ export class GameScene {
             },
         });
         this.movesText.anchor.set(0.5);
-        this.movesText.x = App.app.screen.width - 160;
-        this.movesText.y = 55;
         this.uiContainer.addChild(this.movesText);
 
         // === COMBO TEXT (Hidden by default) ===
@@ -298,8 +287,6 @@ export class GameScene {
             },
         });
         this.comboText.anchor.set(0.5);
-        this.comboText.x = App.app.screen.width / 2;
-        this.comboText.y = App.app.screen.height / 2;
         this.comboText.visible = false;
         this.uiContainer.addChild(this.comboText);
     }
@@ -708,21 +695,21 @@ export class GameScene {
             soundManager.playGameOver();
         }
 
-        const screen = new Container();
-        screen.zIndex = 100;
-        this.container.addChild(screen);
+        this.gameOverScreen = new Container();
+        this.gameOverScreen.zIndex = 100;
+        this.container.addChild(this.gameOverScreen);
 
         // Overlay transparent background
-        const overlay = new Graphics();
-        overlay.rect(0, 0, App.app.screen.width, App.app.screen.height);
-        overlay.fill({ color: 0x000000, alpha: 0.8 });
-        screen.addChild(overlay);
+        this.gameOverOverlay = new Graphics();
+        this.gameOverOverlay.rect(0, 0, App.app.screen.width, App.app.screen.height);
+        this.gameOverOverlay.fill({ color: 0x000000, alpha: 0.8 });
+        this.gameOverScreen.addChild(this.gameOverOverlay);
 
         // Premium modal container
-        const modal = new Container();
-        modal.x = App.app.screen.width / 2;
-        modal.y = App.app.screen.height / 2;
-        screen.addChild(modal);
+        this.gameOverModal = new Container();
+        this.gameOverModal.x = App.app.screen.width / 2;
+        this.gameOverModal.y = App.app.screen.height / 2;
+        this.gameOverScreen.addChild(this.gameOverModal);
 
         // Hào quang vàng xoay nhẹ đằng sau modal Game Over
         const starburst = new Graphics();
@@ -734,14 +721,14 @@ export class GameScene {
             starburst.arc(0, 0, 420, angle1, angle2);
             starburst.fill({ color: 0xffdd57, alpha: 0.05 });
         }
-        modal.addChild(starburst);
+        this.gameOverModal.addChild(starburst);
         gsap.to(starburst, { rotation: Math.PI * 2, duration: 25, repeat: -1, ease: 'none' });
 
         const modalBg = new Graphics();
         modalBg.roundRect(-240, -180, 480, 360, 24);
         modalBg.fill({ color: 0x121a2e, alpha: 0.95 });
         modalBg.stroke({ color: rank ? 0xffdd57 : 0x4fc3f7, width: 4 });
-        modal.addChild(modalBg);
+        this.gameOverModal.addChild(modalBg);
 
         // Game Over Text
         const titleText = new Text({
@@ -756,7 +743,7 @@ export class GameScene {
         });
         titleText.anchor.set(0.5);
         titleText.y = -110;
-        modal.addChild(titleText);
+        this.gameOverModal.addChild(titleText);
 
         // Score Label
         const scoreLabel = new Text({
@@ -770,7 +757,7 @@ export class GameScene {
         });
         scoreLabel.anchor.set(0.5);
         scoreLabel.y = -40;
-        modal.addChild(scoreLabel);
+        this.gameOverModal.addChild(scoreLabel);
 
         // Rank Display
         if (rank) {
@@ -786,7 +773,7 @@ export class GameScene {
             });
             rankLabel.anchor.set(0.5);
             rankLabel.y = 10;
-            modal.addChild(rankLabel);
+            this.gameOverModal.addChild(rankLabel);
 
             // Subtle scale pulsing on rank text
             rankLabel.scale.set(1.0);
@@ -802,46 +789,50 @@ export class GameScene {
             });
             normalLabel.anchor.set(0.5);
             normalLabel.y = 10;
-            modal.addChild(normalLabel);
+            this.gameOverModal.addChild(normalLabel);
         }
 
         // PLAY AGAIN Button
-        this.createModalButton(modal, '🔄 CHƠI LẠI', -115, 80, 0x4caf50, async () => {
+        this.createModalButton(this.gameOverModal, '🔄 CHƠI LẠI', -115, 80, 0x4caf50, async () => {
             await sceneManager.switchTo(GameScene);
         });
 
         // MAIN MENU Button
-        this.createModalButton(modal, '🏠 TRANG CHỦ', 115, 80, 0xe0e0e0, async () => {
+        this.createModalButton(this.gameOverModal, '🏠 TRANG CHỦ', 115, 80, 0xe0e0e0, async () => {
             const { MainMenuScene } = await import('./MainMenuScene.js');
             await sceneManager.switchTo(MainMenuScene);
         }, 0x333333);
 
+        // Apply responsive layout immediately to compute target scale
+        this.resize();
+
+        const targetScale = this.gameOverModal.scale.x;
+        this.gameOverModal.scale.set(targetScale * 0.7);
+
         // Entrance animation
-        screen.alpha = 0;
-        gsap.to(screen, { alpha: 1, duration: 0.4 });
-        
-        modal.scale.set(0.7);
-        gsap.to(modal.scale, { x: 1, y: 1, duration: 0.5, ease: 'back.out(1.8)' });
+        this.gameOverScreen.alpha = 0;
+        gsap.to(this.gameOverScreen, { alpha: 1, duration: 0.4 });
+        gsap.to(this.gameOverModal.scale, { x: targetScale, y: targetScale, duration: 0.5, ease: 'back.out(1.8)' });
     }
 
     async handleDeadlock() {
         this.disabled = true;
 
-        const deadlockOverlay = new Container();
-        deadlockOverlay.zIndex = 90;
-        this.container.addChild(deadlockOverlay);
+        this.deadlockOverlayContainer = new Container();
+        this.deadlockOverlayContainer.zIndex = 90;
+        this.container.addChild(this.deadlockOverlayContainer);
 
         // Dark glassmorphic background overlay
-        const bg = new Graphics();
-        bg.rect(0, 0, App.app.screen.width, App.app.screen.height);
-        bg.fill({ color: 0x000000, alpha: 0.75 });
-        deadlockOverlay.addChild(bg);
+        this.deadlockOverlayBg = new Graphics();
+        this.deadlockOverlayBg.rect(0, 0, App.app.screen.width, App.app.screen.height);
+        this.deadlockOverlayBg.fill({ color: 0x000000, alpha: 0.75 });
+        this.deadlockOverlayContainer.addChild(this.deadlockOverlayBg);
 
         // Center notification container
-        const modal = new Container();
-        modal.x = App.app.screen.width / 2;
-        modal.y = App.app.screen.height / 2;
-        deadlockOverlay.addChild(modal);
+        this.deadlockModal = new Container();
+        this.deadlockModal.x = App.app.screen.width / 2;
+        this.deadlockModal.y = App.app.screen.height / 2;
+        this.deadlockOverlayContainer.addChild(this.deadlockModal);
 
         // Hào quang cam xoay đằng sau modal thông báo bế tắc
         const starburst = new Graphics();
@@ -853,14 +844,14 @@ export class GameScene {
             starburst.arc(0, 0, 320, angle1, angle2);
             starburst.fill({ color: 0xffaa00, alpha: 0.05 });
         }
-        modal.addChild(starburst);
+        this.deadlockModal.addChild(starburst);
         gsap.to(starburst, { rotation: Math.PI * 2, duration: 18, repeat: -1, ease: 'none' });
 
         const modalBg = new Graphics();
         modalBg.roundRect(-220, -70, 440, 140, 16);
         modalBg.fill({ color: 0x121925, alpha: 0.95 });
         modalBg.stroke({ color: 0xffaa00, width: 3, alpha: 0.85 });
-        modal.addChild(modalBg);
+        this.deadlockModal.addChild(modalBg);
 
         const text = new Text({
             text: 'HẾT NƯỚC ĐI!\nĐANG TRÁO BÀN NGỌC...',
@@ -874,13 +865,18 @@ export class GameScene {
             }
         });
         text.anchor.set(0.5);
-        modal.addChild(text);
+        this.deadlockModal.addChild(text);
+
+        // Apply responsive layout immediately
+        this.resize();
+
+        const targetScale = this.deadlockModal.scale.x;
+        this.deadlockModal.scale.set(targetScale * 0.7);
 
         // Show overlay with animation
-        deadlockOverlay.alpha = 0;
-        modal.scale.set(0.7);
-        gsap.to(deadlockOverlay, { alpha: 1, duration: 0.3 });
-        gsap.to(modal.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(1.5)' });
+        this.deadlockOverlayContainer.alpha = 0;
+        gsap.to(this.deadlockOverlayContainer, { alpha: 1, duration: 0.3 });
+        gsap.to(this.deadlockModal.scale, { x: targetScale, y: targetScale, duration: 0.4, ease: 'back.out(1.5)' });
 
         // Wait for player to notice
         await this.delay(1200);
@@ -893,11 +889,14 @@ export class GameScene {
 
         // Fade out overlay
         await new Promise(resolve => {
-            gsap.to(deadlockOverlay, {
+            gsap.to(this.deadlockOverlayContainer, {
                 alpha: 0,
                 duration: 0.3,
                 onComplete: () => {
-                    deadlockOverlay.destroy({ children: true });
+                    this.deadlockOverlayContainer.destroy({ children: true });
+                    this.deadlockOverlayContainer = null;
+                    this.deadlockOverlayBg = null;
+                    this.deadlockModal = null;
                     resolve();
                 }
             });
@@ -946,6 +945,112 @@ export class GameScene {
         bg.on('pointerdown', () => {
             onClick();
         });
+    }
+
+    resize() {
+        const width = App.app.screen.width;
+        const height = App.app.screen.height;
+
+        // 1. Resize Background
+        if (this.bg) {
+            this.bg.width = width;
+            this.bg.height = height;
+        }
+
+        // 2. Adjust Board Position and Scale
+        if (this.board) {
+            this.board.adjustPosition();
+        }
+
+        // 3. Adjust Board Outline Background
+        if (this.boardBg && this.board) {
+            const scale = this.board.container.scale.x;
+            this.boardBg.scale.set(scale);
+            const padding = 16;
+            this.boardBg.x = this.board.container.x - padding * scale;
+            this.boardBg.y = this.board.container.y - padding * scale;
+        }
+
+        // 4. Position and scale HUD panels
+        if (this.scorePanel && this.movesPanel && this.scoreText && this.movesText) {
+            const isMobile = width < 600 || height > width;
+
+            let panelWidth = 240;
+            let panelHeight = 60;
+            let margin = 40;
+            let topY = 25;
+            let fontSize = 24;
+
+            if (isMobile) {
+                panelWidth = Math.min(200, (width - 40) / 2);
+                panelHeight = 50;
+                margin = 15;
+                topY = 15;
+                fontSize = 18;
+            }
+
+            // Reposition and redraw score panel
+            this.scorePanel.clear();
+            this.scorePanel.roundRect(0, 0, panelWidth, panelHeight, 12);
+            this.scorePanel.fill({ color: 0x1a233a, alpha: 0.85 });
+            this.scorePanel.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.5 });
+            this.scorePanel.x = margin;
+            this.scorePanel.y = topY;
+
+            // Reposition score text
+            this.scoreText.style.fontSize = fontSize;
+            this.scoreText.x = this.scorePanel.x + panelWidth / 2;
+            this.scoreText.y = this.scorePanel.y + panelHeight / 2;
+
+            // Reposition and redraw moves panel
+            this.movesPanel.clear();
+            this.movesPanel.roundRect(0, 0, panelWidth, panelHeight, 12);
+            this.movesPanel.fill({ color: 0x1a233a, alpha: 0.85 });
+            this.movesPanel.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.5 });
+            this.movesPanel.x = width - margin - panelWidth;
+            this.movesPanel.y = topY;
+
+            // Reposition moves text
+            this.movesText.style.fontSize = fontSize;
+            this.movesText.x = this.movesPanel.x + panelWidth / 2;
+            this.movesText.y = this.movesPanel.y + panelHeight / 2;
+        }
+
+        // 5. Position Combo Text
+        if (this.comboText) {
+            this.comboText.x = width / 2;
+            this.comboText.y = height / 2 - 100;
+        }
+
+        // 6. Handle Game Over Screen
+        if (this.gameOverScreen && !this.gameOverScreen.destroyed) {
+            if (this.gameOverOverlay) {
+                this.gameOverOverlay.clear();
+                this.gameOverOverlay.rect(0, 0, width, height);
+                this.gameOverOverlay.fill({ color: 0x000000, alpha: 0.8 });
+            }
+            if (this.gameOverModal) {
+                this.gameOverModal.x = width / 2;
+                this.gameOverModal.y = height / 2;
+                const modalScale = width < 600 || height > width ? Math.min(1.0, (width - 40) / 480) : 1.0;
+                this.gameOverModal.scale.set(modalScale);
+            }
+        }
+
+        // 7. Handle Deadlock Overlay
+        if (this.deadlockOverlayContainer && !this.deadlockOverlayContainer.destroyed) {
+            if (this.deadlockOverlayBg) {
+                this.deadlockOverlayBg.clear();
+                this.deadlockOverlayBg.rect(0, 0, width, height);
+                this.deadlockOverlayBg.fill({ color: 0x000000, alpha: 0.75 });
+            }
+            if (this.deadlockModal) {
+                this.deadlockModal.x = width / 2;
+                this.deadlockModal.y = height / 2;
+                const modalScale = width < 600 || height > width ? Math.min(1.0, (width - 40) / 440) : 1.0;
+                this.deadlockModal.scale.set(modalScale);
+            }
+        }
     }
 
     // ============================================================

@@ -39,19 +39,19 @@ export class MainMenuScene {
         document.addEventListener('pointerdown', startBGM);
 
         // === BACKGROUND ===
-        const bg = new Sprite(Texture.WHITE);
-        bg.width = Config.canvas.width;
-        bg.height = Config.canvas.height;
-        bg.tint = 0x0a0a1a; // dark fallback tint
-        this.container.addChild(bg);
+        this.bg = new Sprite(Texture.WHITE);
+        this.bg.width = App.app.screen.width;
+        this.bg.height = App.app.screen.height;
+        this.bg.tint = 0x0a0a1a; // dark fallback tint
+        this.container.addChild(this.bg);
 
         // Load random background from the 3 new options
         const bgIndex = Math.floor(Math.random() * 3) + 1;
         const bgPath = `/assets/backgroud/vietnamese_cultural_landscape_background_${bgIndex}/screen.png`;
         Assets.load(bgPath).then(texture => {
-            if (bg.destroyed) return;
-            bg.texture = texture;
-            bg.tint = 0x444444; // dim background for higher contrast
+            if (this.bg.destroyed) return;
+            this.bg.texture = texture;
+            this.bg.tint = 0x444444; // dim background for higher contrast
         }).catch(err => {
             console.error("Failed to load Main Menu background:", err);
         });
@@ -72,8 +72,8 @@ export class MainMenuScene {
             p.width = size * 2;
             p.height = size * 2;
             p.alpha = 0.1 + Math.random() * 0.2;
-            p.x = Math.random() * Config.canvas.width;
-            p.y = Math.random() * Config.canvas.height;
+            p.x = Math.random() * App.app.screen.width;
+            p.y = Math.random() * App.app.screen.height;
             this.container.addChild(p);
             this.particles.push(p);
 
@@ -86,18 +86,16 @@ export class MainMenuScene {
                 repeat: -1,
                 delay: Math.random() * 5,
                 onRepeat: () => {
-                    p.y = Config.canvas.height + 20;
-                    p.x = Math.random() * Config.canvas.width;
+                    p.y = App.app.screen.height + 20;
+                    p.x = Math.random() * App.app.screen.width;
                     p.alpha = 0.1 + Math.random() * 0.2;
                 },
             });
         }
 
         // === TITLE ===
-        const titleContainer = new Container();
-        titleContainer.x = Config.canvas.width / 2;
-        titleContainer.y = 200;
-        this.container.addChild(titleContainer);
+        this.titleContainer = new Container();
+        this.container.addChild(this.titleContainer);
 
         // Glow behind title (Sprite-based)
         const tempGlow = new Graphics();
@@ -110,20 +108,20 @@ export class MainMenuScene {
         glow.y = -100; // Positioned behind the logo
         glow.tint = 0xffe082; // Warm golden glow to match the new logo
         glow.alpha = 0.15;
-        titleContainer.addChild(glow);
+        this.titleContainer.addChild(glow);
 
         gsap.to(glow, { alpha: 0.25, duration: 2, yoyo: true, repeat: -1, ease: 'sine.inOut' });
         gsap.to(glow.scale, { x: 1.3, y: 1.3, duration: 3, yoyo: true, repeat: -1, ease: 'sine.inOut' });
 
         // Load and add the new logo
         Assets.load('/logo.png').then(texture => {
-            if (titleContainer.destroyed) return;
+            if (this.titleContainer.destroyed) return;
             const logo = new Sprite(texture);
             logo.anchor.set(0.5);
             logo.y = -100; // Position above title text
             logo.width = 140; // Increased size from 120 to 140 for better visibility
             logo.height = 140;
-            titleContainer.addChild(logo);
+            this.titleContainer.addChild(logo);
 
             // Subtle pulsing animation for the logo
             gsap.to(logo.scale, {
@@ -149,7 +147,7 @@ export class MainMenuScene {
             },
         });
         title.anchor.set(0.5);
-        titleContainer.addChild(title);
+        this.titleContainer.addChild(title);
 
         const subtitle = new Text({
             text: 'DỄ THƯƠNG MATCH-3',
@@ -163,7 +161,7 @@ export class MainMenuScene {
         });
         subtitle.anchor.set(0.5);
         subtitle.y = 44;
-        titleContainer.addChild(subtitle);
+        this.titleContainer.addChild(subtitle);
 
         // Decorative line
         const line = new Sprite(Texture.WHITE);
@@ -173,13 +171,13 @@ export class MainMenuScene {
         line.tint = 0xffb300;
         line.alpha = 0.8;
         line.y = 74;
-        titleContainer.addChild(line);
+        this.titleContainer.addChild(line);
 
         // === HIGHEST SCORE DISPLAY ===
         const leaderboard = saveManager.getLeaderboard();
         const topScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
 
-        const infoText = new Text({
+        this.infoText = new Text({
             text: topScore > 0 ? `🏆 KỶ LỤC ĐIỂM: ${topScore}` : `🎯 Hãy thiết lập kỷ lục điểm số ngay hôm nay!`,
             style: {
                 fontFamily: 'Arial', fontSize: 18, fontWeight: 'bold',
@@ -188,48 +186,53 @@ export class MainMenuScene {
                 dropShadow: { color: '#000000', blur: 4, distance: 2, alpha: 0.9 }
             },
         });
-        infoText.anchor.set(0.5);
-        infoText.x = Config.canvas.width / 2;
-        infoText.y = 315;
-        this.container.addChild(infoText);
+        this.infoText.anchor.set(0.5);
+        this.container.addChild(this.infoText);
 
         // === MENU BUTTONS ===
+        this.menuButtons = [];
         const btnStartY = 370;
 
         // Button 1: Start Game
-        this.createMenuButton(
-            '🎮 CHƠI NGAY',
-            Config.canvas.width / 2, btnStartY,
-            0x4fc3f7, 260,
-            async () => {
-                await sceneManager.switchTo(GameScene);
-            }
+        this.menuButtons.push(
+            this.createMenuButton(
+                '🎮 CHƠI NGAY',
+                0, btnStartY,
+                0x4fc3f7, 260,
+                async () => {
+                    await sceneManager.switchTo(GameScene);
+                }
+            )
         );
 
         // Button 2: Leaderboard
-        this.createMenuButton(
-            '🏆 BẢNG THÀNH TÍCH',
-            Config.canvas.width / 2, btnStartY + 70,
-            0xffb300, 260,
-            () => {
-                this.showLeaderboard();
-            }
+        this.menuButtons.push(
+            this.createMenuButton(
+                '🏆 BẢNG THÀNH TÍCH',
+                0, btnStartY + 70,
+                0xffb300, 260,
+                () => {
+                    this.showLeaderboard();
+                }
+            )
         );
 
         // Button 3: Reset Data
-        this.createMenuButton(
-            '🗑️ XÓA DỮ LIỆU',
-            Config.canvas.width / 2, btnStartY + 140,
-            0x8b0000, 260,
-            async () => {
-                saveManager.reset();
-                // Reload main menu
-                await sceneManager.switchTo(MainMenuScene);
-            }
+        this.menuButtons.push(
+            this.createMenuButton(
+                '🗑️ XÓA DỮ LIỆU',
+                0, btnStartY + 140,
+                0x8b0000, 260,
+                async () => {
+                    saveManager.reset();
+                    // Reload main menu
+                    await sceneManager.switchTo(MainMenuScene);
+                }
+            )
         );
 
         // === BOTTOM INFO ===
-        const versionText = new Text({
+        this.versionText = new Text({
             text: '💎 Pure Match-3 v1.0 | PixiJS v8 | 6 Tile Colors | 8x8 Board',
             style: {
                 fontFamily: 'Arial', fontSize: 12, fontWeight: 'bold',
@@ -237,15 +240,12 @@ export class MainMenuScene {
                 stroke: { color: '#000000', width: 3 }
             },
         });
-        versionText.anchor.set(0.5);
-        versionText.x = Config.canvas.width / 2;
-        versionText.y = Config.canvas.height - 30;
-        this.container.addChild(versionText);
+        this.versionText.anchor.set(0.5);
+        this.container.addChild(this.versionText);
 
         // === ANIMAL SCROLLING BANNER (PARADE) ===
-        const paradeContainer = new Container();
-        paradeContainer.y = Config.canvas.height - 75;
-        this.container.addChild(paradeContainer);
+        this.paradeContainer = new Container();
+        this.container.addChild(this.paradeContainer);
 
         // Pick 16 random animal avatars for the scrolling bottom banner
         const paradeFiles = [...ALL_AVATAR_FILES].sort(() => 0.5 - Math.random()).slice(0, 16);
@@ -259,7 +259,7 @@ export class MainMenuScene {
         });
 
         Promise.all(paradePromises).then(() => {
-            if (paradeContainer.destroyed) return;
+            if (this.paradeContainer.destroyed) return;
 
             paradeFiles.forEach((file, idx) => {
                 const alias = `menu_parade_${idx}`;
@@ -269,7 +269,7 @@ export class MainMenuScene {
                 sprite.height = 44;
                 // Place them spaced out horizontally
                 sprite.x = idx * spacing;
-                paradeContainer.addChild(sprite);
+                this.paradeContainer.addChild(sprite);
                 paradeSprites.push(sprite);
             });
 
@@ -291,19 +291,23 @@ export class MainMenuScene {
             App.app.ticker.add(this.tickerFn);
         });
 
+        // Tự động căn chỉnh toàn bộ vị trí các nút và tiêu đề
+        this.resize();
+
         // Entrance animation
-        titleContainer.alpha = 0;
-        titleContainer.y = 170;
-        gsap.to(titleContainer, {
+        const finalTitleY = this.titleContainer.y;
+        this.titleContainer.alpha = 0;
+        this.titleContainer.y = finalTitleY - 30;
+        gsap.to(this.titleContainer, {
             alpha: 1,
-            y: 200,
+            y: finalTitleY,
             duration: 0.8,
             ease: 'power2.out',
             delay: 0.2,
             onComplete: () => {
                 // Hoạt ảnh bay bồng bềnh nhẹ nhàng
-                gsap.to(titleContainer, {
-                    y: 208,
+                gsap.to(this.titleContainer, {
+                    y: finalTitleY + 8,
                     duration: 2.2,
                     repeat: -1,
                     yoyo: true,
@@ -311,6 +315,50 @@ export class MainMenuScene {
                 });
             }
         });
+    }
+
+    resize() {
+        const width = App.app.screen.width;
+        const height = App.app.screen.height;
+
+        // 1. Background
+        if (this.bg) {
+            this.bg.width = width;
+            this.bg.height = height;
+        }
+
+        // 2. Title Container
+        if (this.titleContainer) {
+            this.titleContainer.x = width / 2;
+            this.titleContainer.y = height > width ? height * 0.22 : height * 0.27;
+        }
+
+        // 3. Leaderboard Top Score Info
+        if (this.infoText && this.titleContainer) {
+            this.infoText.x = width / 2;
+            this.infoText.y = this.titleContainer.y + 115;
+        }
+
+        // 4. Menu Buttons
+        const buttonStartPercent = height > width ? 0.52 : 0.56;
+        const buttonSpacing = 68;
+        if (this.menuButtons) {
+            this.menuButtons.forEach((btn, idx) => {
+                btn.x = width / 2;
+                btn.y = height * buttonStartPercent + idx * buttonSpacing;
+            });
+        }
+
+        // 5. Version text
+        if (this.versionText) {
+            this.versionText.x = width / 2;
+            this.versionText.y = height - 25;
+        }
+
+        // 6. Parade bottom banner
+        if (this.paradeContainer) {
+            this.paradeContainer.y = height - 70;
+        }
     }
 
     createMenuButton(label, x, y, color, width = 220, onClick) {
@@ -372,6 +420,7 @@ export class MainMenuScene {
         btn.alpha = 0;
         btn.y = y + 20;
         gsap.to(btn, { alpha: 1, y, duration: 0.5, delay: 0.4 + (y - 300) * 0.002, ease: 'power2.out' });
+        return btn;
     }
 
     /**
@@ -386,23 +435,23 @@ export class MainMenuScene {
         this.leaderboardPopup = popup;
 
         // Dark modal overlay to capture clicks
-        const overlay = new Graphics();
-        overlay.rect(0, 0, Config.canvas.width, Config.canvas.height);
-        overlay.fill({ color: 0x000000, alpha: 0.75 });
-        overlay.eventMode = 'static';
-        popup.addChild(overlay);
+        this.leaderboardOverlay = new Graphics();
+        this.leaderboardOverlay.rect(0, 0, App.app.screen.width, App.app.screen.height);
+        this.leaderboardOverlay.fill({ color: 0x000000, alpha: 0.75 });
+        this.leaderboardOverlay.eventMode = 'static';
+        popup.addChild(this.leaderboardOverlay);
 
-        const modal = new Container();
-        modal.x = Config.canvas.width / 2;
-        modal.y = Config.canvas.height / 2;
-        popup.addChild(modal);
+        this.leaderboardModal = new Container();
+        this.leaderboardModal.x = App.app.screen.width / 2;
+        this.leaderboardModal.y = App.app.screen.height / 2;
+        popup.addChild(this.leaderboardModal);
 
         // Modal bg
         const modalBg = new Graphics();
         modalBg.roundRect(-240, -200, 480, 400, 24);
         modalBg.fill({ color: 0x121a2e, alpha: 0.96 });
         modalBg.stroke({ color: 0xffb300, width: 3, alpha: 0.95 });
-        modal.addChild(modalBg);
+        this.leaderboardModal.addChild(modalBg);
 
         // Header Title
         const titleText = new Text({
@@ -415,7 +464,7 @@ export class MainMenuScene {
         });
         titleText.anchor.set(0.5);
         titleText.y = -140;
-        modal.addChild(titleText);
+        this.leaderboardModal.addChild(titleText);
 
         // Fetch top scores
         const list = saveManager.getLeaderboard();
@@ -429,7 +478,7 @@ export class MainMenuScene {
             });
             emptyText.anchor.set(0.5);
             emptyText.y = -10;
-            modal.addChild(emptyText);
+            this.leaderboardModal.addChild(emptyText);
         } else {
             // Draw list items
             const startY = -80;
@@ -451,7 +500,7 @@ export class MainMenuScene {
                 scoreText.anchor.set(0, 0.5);
                 scoreText.x = -190;
                 scoreText.y = rowY;
-                modal.addChild(scoreText);
+                this.leaderboardModal.addChild(scoreText);
 
                 // Date stamp
                 const dateText = new Text({
@@ -463,7 +512,7 @@ export class MainMenuScene {
                 dateText.anchor.set(1, 0.5);
                 dateText.x = 190;
                 dateText.y = rowY;
-                modal.addChild(dateText);
+                this.leaderboardModal.addChild(dateText);
 
                 // Divider line (except for last row)
                 if (idx < list.length - 1) {
@@ -471,7 +520,7 @@ export class MainMenuScene {
                     divider.moveTo(-190, rowY + rowHeight / 2);
                     divider.lineTo(190, rowY + rowHeight / 2);
                     divider.stroke({ color: 0x324b8b, width: 1, alpha: 0.3 });
-                    modal.addChild(divider);
+                    this.leaderboardModal.addChild(divider);
                 }
             });
         }
@@ -480,7 +529,7 @@ export class MainMenuScene {
         const closeBtn = new Container();
         closeBtn.x = 0;
         closeBtn.y = 145;
-        modal.addChild(closeBtn);
+        this.leaderboardModal.addChild(closeBtn);
 
         const btnWidth = 160;
         const btnHeight = 44;
@@ -501,13 +550,15 @@ export class MainMenuScene {
         closeBtn.addChild(btnText);
 
         const closePopup = () => {
-            gsap.to(modal.scale, { x: 0.7, y: 0.7, duration: 0.25 });
+            gsap.to(this.leaderboardModal.scale, { x: 0.7, y: 0.7, duration: 0.25 });
             gsap.to(popup, {
                 alpha: 0,
                 duration: 0.25,
                 onComplete: () => {
                     popup.destroy({ children: true });
                     this.leaderboardPopup = null;
+                    this.leaderboardOverlay = null;
+                    this.leaderboardModal = null;
                 }
             });
         };
@@ -526,11 +577,16 @@ export class MainMenuScene {
             closePopup();
         });
 
+        // Apply responsive layout immediately to compute target scale
+        this.resize();
+
+        const targetScale = this.leaderboardModal.scale.x;
+        this.leaderboardModal.scale.set(targetScale * 0.7);
+
         // Entrance animation
         popup.alpha = 0;
         gsap.to(popup, { alpha: 1, duration: 0.3 });
-        modal.scale.set(0.7);
-        gsap.to(modal.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(1.8)' });
+        gsap.to(this.leaderboardModal.scale, { x: targetScale, y: targetScale, duration: 0.35, ease: 'back.out(1.8)' });
     }
 
     destroy() {

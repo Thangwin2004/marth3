@@ -34,6 +34,11 @@ class SceneManager {
    */
   init(pixiApp) {
     this.app = pixiApp;
+    window.addEventListener('resize', () => {
+      if (this.currentScene && typeof this.currentScene.resize === 'function') {
+        this.currentScene.resize();
+      }
+    });
   }
 
   /**

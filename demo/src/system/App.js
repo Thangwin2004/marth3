@@ -25,8 +25,7 @@ class GameApp {
         this.app = new Application();
 
         await this.app.init({
-            width: config.canvas.width,
-            height: config.canvas.height,
+            resizeTo: window,
             backgroundColor: 0x0a0a1a,
             resolution: window.devicePixelRatio || 1,
             autoDensity: true,

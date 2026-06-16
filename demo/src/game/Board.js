@@ -288,29 +288,35 @@ export class Board {
      */
     adjustPosition() {
         const canvasWidth = App.app.screen.width;
-        const baseTileSize = Config.tileSize || 65;
+        const canvasHeight = App.app.screen.height;
+        const baseTileSize = Config.tileSize || 70;
         const boardWidth = this.cols * baseTileSize;
         const boardHeight = this.rows * baseTileSize;
 
-        // Determine available height for the board (e.g. 580px max height to fit UI cleanly)
-        const maxBoardHeight = 580;
-        let scale = 1.0;
-        if (boardHeight > maxBoardHeight) {
-            scale = maxBoardHeight / boardHeight;
-        }
+        // Không gian khả dụng cho bảng:
+        // Chiều ngang: chiều rộng màn hình - 24px lề
+        // Chiều dọc: chiều cao màn hình - 110px HUD - 40px lề dưới
+        const maxBoardWidth = canvasWidth - 24;
+        const maxBoardHeight = canvasHeight - 150;
 
-        // Apply scale to container
+        const scaleX = maxBoardWidth / boardWidth;
+        const scaleY = maxBoardHeight / boardHeight;
+        
+        // Chọn tỷ lệ nhỏ nhất để bảng ngọc nằm trọn trong cả 2 chiều
+        const scale = Math.min(1.0, scaleX, scaleY);
+
+        // Áp dụng scale
         this.container.scale.set(scale);
 
-        // Re-calculate scaled dimensions
+        // Tính toán lại kích thước sau scale
         const scaledWidth = boardWidth * scale;
         const scaledHeight = boardHeight * scale;
 
-        // Center horizontally
+        // Căn giữa bảng theo chiều ngang
         this.container.x = (canvasWidth / 2) - (scaledWidth / 2);
         
-        // Position vertically under top UI (offset y dynamically based on scaled height)
-        this.container.y = 110 + (maxBoardHeight - scaledHeight) / 2;
+        // Căn giữa bảng theo chiều dọc trong vùng khả dụng dưới HUD
+        this.container.y = 95 + (maxBoardHeight - scaledHeight) / 2;
     }
 
     // =========================================================================
