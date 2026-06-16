@@ -33,7 +33,7 @@ class SoundManager {
         if (this.bgm) return;
 
         // Tải nhạc nền chiptune từ CDN Phaser chính thức
-        this.bgm = new Audio("https://labs.phaser.io/assets/audio/protracker/space_travel.mp3");
+        this.bgm = new Audio("https://labs.phaser.io/assets/audio/CatAstroPhi_shmup_normal.mp3");
         this.bgm.loop = true;
         this.bgm.volume = 0.15; // Giữ nhạc nền nhỏ nhẹ dễ chịu
 
