@@ -293,11 +293,23 @@ export class Board {
         const boardWidth = this.cols * baseTileSize;
         const boardHeight = this.rows * baseTileSize;
 
-        // Không gian khả dụng cho bảng:
-        // Chiều ngang: chiều rộng màn hình - 24px lề
-        // Chiều dọc: chiều cao màn hình - 110px HUD - 40px lề dưới
-        const maxBoardWidth = canvasWidth - 24;
-        const maxBoardHeight = canvasHeight - 150;
+        // Kiểm tra xem có phải màn hình điện thoại xoay ngang (chiều rộng > chiều cao và chiều cao < 500)
+        const isMobileLandscape = canvasWidth > canvasHeight && canvasHeight < 500;
+
+        let maxBoardWidth, maxBoardHeight, topOffset;
+
+        if (isMobileLandscape) {
+            // Khi xoay ngang điện thoại: đặt HUD hai bên trái/phải bảng ngọc
+            // Nên bảng ngọc có tối đa chiều ngang nhỏ hơn và chiều dọc rộng hơn (không bị HUD đè ở trên)
+            maxBoardWidth = canvasWidth - 360; // Dành 180px mỗi bên cho HUD
+            maxBoardHeight = canvasHeight - 40; // Chỉ chừa 40px lề dọc
+            topOffset = 20;
+        } else {
+            // Màn hình bình thường hoặc màn hình dọc: HUD nằm ở trên cùng
+            maxBoardWidth = canvasWidth - 24;
+            maxBoardHeight = canvasHeight - 150;
+            topOffset = 95;
+        }
 
         const scaleX = maxBoardWidth / boardWidth;
         const scaleY = maxBoardHeight / boardHeight;
@@ -315,8 +327,8 @@ export class Board {
         // Căn giữa bảng theo chiều ngang
         this.container.x = (canvasWidth / 2) - (scaledWidth / 2);
         
-        // Căn giữa bảng theo chiều dọc trong vùng khả dụng dưới HUD
-        this.container.y = 95 + (maxBoardHeight - scaledHeight) / 2;
+        // Căn giữa bảng theo chiều dọc trong vùng khả dụng
+        this.container.y = topOffset + (maxBoardHeight - scaledHeight) / 2;
     }
 
     // =========================================================================

@@ -973,44 +973,76 @@ export class GameScene {
 
         // 4. Position and scale HUD panels
         if (this.scorePanel && this.movesPanel && this.scoreText && this.movesText) {
-            const isMobile = width < 600 || height > width;
+            const isMobileLandscape = width > height && height < 500;
+            const isMobilePortrait = width < 600 || height > width;
 
             let panelWidth = 240;
             let panelHeight = 60;
-            let margin = 40;
-            let topY = 25;
             let fontSize = 24;
 
-            if (isMobile) {
+            if (isMobileLandscape) {
+                // Xoay ngang điện thoại: xếp 2 bảng 2 bên trái/phải bảng ngọc
+                panelWidth = 160;
+                panelHeight = 50;
+                fontSize = 16;
+
+                // Căn giữa bảng Score ở khoảng trống bên trái bảng ngọc
+                const leftSpace = this.board.container.x;
+                this.scorePanel.x = (leftSpace - panelWidth) / 2;
+                this.scorePanel.y = (height - panelHeight) / 2;
+
+                // Căn giữa bảng Moves ở khoảng trống bên phải bảng ngọc
+                const boardRight = this.board.container.x + (this.board.cols * 70 * this.board.container.scale.x);
+                const rightSpace = width - boardRight;
+                this.movesPanel.x = boardRight + (rightSpace - panelWidth) / 2;
+                this.movesPanel.y = (height - panelHeight) / 2;
+
+            } else if (isMobilePortrait) {
+                // Màn hình dọc điện thoại: xếp ở trên cùng
                 panelWidth = Math.min(200, (width - 40) / 2);
                 panelHeight = 50;
-                margin = 15;
-                topY = 15;
                 fontSize = 18;
+
+                const margin = 15;
+                const topY = 15;
+
+                this.scorePanel.x = margin;
+                this.scorePanel.y = topY;
+
+                this.movesPanel.x = width - margin - panelWidth;
+                this.movesPanel.y = topY;
+            } else {
+                // Màn hình PC/Laptop: xếp ở góc trên trái và góc trên phải
+                panelWidth = 240;
+                panelHeight = 60;
+                fontSize = 24;
+
+                const margin = 40;
+                const topY = 25;
+
+                this.scorePanel.x = margin;
+                this.scorePanel.y = topY;
+
+                this.movesPanel.x = width - margin - panelWidth;
+                this.movesPanel.y = topY;
             }
 
-            // Reposition and redraw score panel
+            // Vẽ lại khung cho 2 bảng
             this.scorePanel.clear();
             this.scorePanel.roundRect(0, 0, panelWidth, panelHeight, 12);
             this.scorePanel.fill({ color: 0x1a233a, alpha: 0.85 });
             this.scorePanel.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.5 });
-            this.scorePanel.x = margin;
-            this.scorePanel.y = topY;
 
-            // Reposition score text
-            this.scoreText.style.fontSize = fontSize;
-            this.scoreText.x = this.scorePanel.x + panelWidth / 2;
-            this.scoreText.y = this.scorePanel.y + panelHeight / 2;
-
-            // Reposition and redraw moves panel
             this.movesPanel.clear();
             this.movesPanel.roundRect(0, 0, panelWidth, panelHeight, 12);
             this.movesPanel.fill({ color: 0x1a233a, alpha: 0.85 });
             this.movesPanel.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.5 });
-            this.movesPanel.x = width - margin - panelWidth;
-            this.movesPanel.y = topY;
 
-            // Reposition moves text
+            // Định vị lại chữ vào giữa bảng tương ứng
+            this.scoreText.style.fontSize = fontSize;
+            this.scoreText.x = this.scorePanel.x + panelWidth / 2;
+            this.scoreText.y = this.scorePanel.y + panelHeight / 2;
+
             this.movesText.style.fontSize = fontSize;
             this.movesText.x = this.movesPanel.x + panelWidth / 2;
             this.movesText.y = this.movesPanel.y + panelHeight / 2;
