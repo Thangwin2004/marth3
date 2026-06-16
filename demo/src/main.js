@@ -12,7 +12,7 @@ import { saveManager } from './system/SaveManager.js';
 
 async function startGame() {
     try {
-        console.log('🚀 Starting Match-3 Boss Battle RPG...');
+        console.log('🚀 Starting Pure Match-3 Game...');
 
         // Step 1: Initialize PixiJS + Load assets
         await App.init(Config);
@@ -22,7 +22,7 @@ async function startGame() {
 
         // Step 3: Load save data
         const save = saveManager.load();
-        console.log(`📂 Save loaded: Level ${save.currentLevel}, Skills: [${save.unlockedSkills.join(', ')}]`);
+        console.log(`📂 Leaderboard entries loaded: ${save.leaderboard?.length || 0}`);
 
         // Step 4: Start with Main Menu
         const { MainMenuScene } = await import('./scenes/MainMenuScene.js');
@@ -33,12 +33,10 @@ async function startGame() {
     } catch (error) {
         console.error('❌ Failed to start game:', error);
 
-        // Fallback: start battle directly if menu fails
+        // Fallback: start game directly if menu fails
         try {
-            const { BattleScene } = await import('./battle/BattleScene.js');
-            const save = saveManager.load();
-            const scene = new BattleScene({ level: save.currentLevel || 1 });
-            App.stage.addChild(scene.container);
+            const { GameScene } = await import('./scenes/GameScene.js');
+            await sceneManager.switchTo(GameScene);
         } catch (fallbackError) {
             console.error('❌ Fallback also failed:', fallbackError);
         }

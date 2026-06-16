@@ -38,7 +38,6 @@
 
 import { App } from '../system/App.js';
 import { Graphics } from 'pixi.js';
-import { TILE_DAMAGE } from '../data/LevelData.js';
 import gsap from 'gsap';
 
 export class Tile {
@@ -90,7 +89,7 @@ export class Tile {
         const textureWidth = texture.orig.width;
         const textureHeight = texture.orig.height;
         const baseSize = Math.max(textureWidth, textureHeight);
-        const scale = (targetSize / baseSize) * 0.92;
+        const scale = (targetSize / baseSize) * 0.95;
         this.sprite.scale.set(scale);
     }
 
@@ -340,17 +339,7 @@ export class Tile {
         }
     }
 
-    /**
-     * Get damage value for this tile type.
-     * Corrupt tiles always deal 0 damage.
-     * 
-     * @returns {number} Base damage value
-     */
-    getDamage() {
-        if (this.corrupt) return 0;
-        const info = TILE_DAMAGE[this.color];
-        return info ? info.baseDmg : 0;
-    }
+
 
     /**
      * Xóa tile khỏi game

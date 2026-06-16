@@ -36,6 +36,7 @@
 
 import { App } from '../system/App.js';
 import { Graphics } from 'pixi.js';
+import gsap from 'gsap';
 
 export class Field {
     /**
@@ -79,8 +80,8 @@ export class Field {
         // === HIỂN THỊ Ô ĐƯỢC CHỌN (PixiJS v8 Graphics API) ===
         this.selected = new Graphics();
         this.selected.roundRect(0, 0, tileSize, tileSize, 14);
-        this.selected.fill({ color: 0xffffff, alpha: 0.16 });
-        this.selected.stroke({ color: 0xffffff, width: 3, alpha: 0.95 });
+        this.selected.fill({ color: 0x00e5ff, alpha: 0.16 });
+        this.selected.stroke({ color: 0x00e5ff, width: 3.5, alpha: 0.95 });
         this.selected.x = this.position.x;
         this.selected.y = this.position.y;
         this.selected.visible = false;  // Ẩn mặc định, chỉ hiện khi được chọn
@@ -115,13 +116,23 @@ export class Field {
      */
     select() {
         this.selected.visible = true;
+        this.selected.alpha = 0.5;
+        gsap.killTweensOf(this.selected);
+        gsap.to(this.selected, {
+            alpha: 1.0,
+            duration: 0.5,
+            repeat: -1,
+            yoyo: true,
+            ease: 'sine.inOut'
+        });
     }
 
     /**
-     * Ẩn viền vàng khi bỏ chọn
+     * Ẩn viền khi bỏ chọn
      * Gọi khi player chọn ô khác hoặc sau khi swap
      */
     unselect() {
+        gsap.killTweensOf(this.selected);
         this.selected.visible = false;
     }
 

@@ -57,9 +57,9 @@ import { Config } from '../config.js';
 export class Board {
     /**
      * @param {object} [levelConfig] - Optional level configuration
-     * @param {number} [levelConfig.tileCount] - Number of tile types to use (defaults to all)
+     * @param {Array<string>} [customColors] - Custom session colors
      */
-    constructor(levelConfig) {
+    constructor(levelConfig, customColors) {
         /**
          * Container: "hộp chứa" tất cả sprites của board
          * 
@@ -82,10 +82,26 @@ export class Board {
          * Allowed tile types for this level.
          * Levels can restrict the number of tile types for difficulty tuning.
          */
-        this.allowedTiles = Config.tileColors.slice(
+        let allowed = Config.tileColors.slice(
             0,
             levelConfig?.tileCount || Config.tileColors.length
         );
+
+        // Ensure the boss's weakness tile type is included in allowed tiles
+        const weakness = levelConfig?.boss?.weakness;
+        if (weakness && Config.tileColors.includes(weakness)) {
+            if (!allowed.includes(weakness)) {
+                // Replace the last tile type in the allowed list with the weakness tile type
+                // But avoid replacing the level's own element if possible
+                let replaceIndex = allowed.length - 1;
+                if (allowed[replaceIndex] === levelConfig?.element && replaceIndex > 0) {
+                    replaceIndex--;
+                }
+                allowed[replaceIndex] = weakness;
+            }
+        }
+
+        this.allowedTiles = customColors || allowed;
 
         /** Whether player input (tile clicks) is currently enabled */
         this.inputEnabled = true;
@@ -272,20 +288,29 @@ export class Board {
      */
     adjustPosition() {
         const canvasWidth = App.app.screen.width;
-        const boardWidth = this.cols * App.config.tileSize;
-        const boardHeight = this.rows * App.config.tileSize;
+        const baseTileSize = Config.tileSize || 65;
+        const boardWidth = this.cols * baseTileSize;
+        const boardHeight = this.rows * baseTileSize;
 
-        // Board center horizontally
-        this.container.x = (canvasWidth / 2) - (boardWidth / 2);
-        
-        // Explicitly set y based on board size to prevent overlapping top and bottom UI elements
-        if (this.rows >= 12) {
-            this.container.y = 104; // fits 12x12 perfectly
-        } else if (this.rows >= 10) {
-            this.container.y = 108; // fits 10x10 perfectly
-        } else {
-            this.container.y = 118; // fits 8x8 perfectly
+        // Determine available height for the board (e.g. 580px max height to fit UI cleanly)
+        const maxBoardHeight = 580;
+        let scale = 1.0;
+        if (boardHeight > maxBoardHeight) {
+            scale = maxBoardHeight / boardHeight;
         }
+
+        // Apply scale to container
+        this.container.scale.set(scale);
+
+        // Re-calculate scaled dimensions
+        const scaledWidth = boardWidth * scale;
+        const scaledHeight = boardHeight * scale;
+
+        // Center horizontally
+        this.container.x = (canvasWidth / 2) - (scaledWidth / 2);
+        
+        // Position vertically under top UI (offset y dynamically based on scaled height)
+        this.container.y = 110 + (maxBoardHeight - scaledHeight) / 2;
     }
 
     // =========================================================================
@@ -799,13 +824,60 @@ export class Board {
      * Keeps tiles in their fields, but reassigns random colors and recreates sprites.
      * Uses the level's allowed tile types.
      */
-    shuffleAll() {
-        for (const field of this.fields) {
-            if (!field.tile || field.isVoid || field.tile.isStone) continue;
-            const newColor = this.allowedTiles[
-                Math.floor(Math.random() * this.allowedTiles.length)
-            ];
-            this._recolorTile(field.tile, newColor);
+    /**
+     * Tráo đổi tất cả các viên ngọc hiện tại trên bảng bằng cách thay đổi tham chiếu,
+     * đảm bảo không tạo ra cụm match-3 tự nhiên và có ít nhất một nước đi hợp lệ.
+     *
+     * @param {CombinationManager} combinationManager
+     * @param {boolean} [animate=true] - Có chạy hoạt ảnh trượt hay không
+     * @returns {Promise} Giải phóng khi hoàn thành hoạt ảnh
+     */
+    async shuffleAll(combinationManager, animate = true) {
+        const fields = this.fields.filter(f => !f.isVoid);
+        const eligibleFields = fields.filter(f => f.tile !== null && !f.tile.isStone);
+        const tiles = eligibleFields.map(f => f.tile);
+
+        let safetyCounter = 0;
+        while (safetyCounter < 100) {
+            // Tráo đổi mảng tiles bằng Fisher-Yates
+            for (let i = tiles.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+            }
+
+            // Gán lại tham chiếu tile <-> field trong bộ nhớ
+            for (let i = 0; i < eligibleFields.length; i++) {
+                const field = eligibleFields[i];
+                const tile = tiles[i];
+                field.tile = tile;
+                tile.field = field;
+            }
+
+            // Kiểm tra xem bảng sau khi tráo có hợp lệ (không match-3 và có nước đi)
+            const matches = combinationManager.getMatches();
+            if (matches.length === 0 && combinationManager.hasPossibleMoves()) {
+                break;
+            }
+
+            safetyCounter++;
+        }
+
+        // Cập nhật vị trí hiển thị của Sprite
+        if (animate) {
+            const animPromises = [];
+            for (let i = 0; i < eligibleFields.length; i++) {
+                const field = eligibleFields[i];
+                const tile = field.tile;
+                // Chạy hoạt ảnh trượt mượt mà bằng GSAP
+                animPromises.push(tile.moveTo(field.position, 0.6));
+            }
+            await Promise.all(animPromises);
+        } else {
+            for (let i = 0; i < eligibleFields.length; i++) {
+                const field = eligibleFields[i];
+                const tile = field.tile;
+                tile.setPosition(field.position);
+            }
         }
     }
 

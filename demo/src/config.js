@@ -22,15 +22,14 @@ export const Config = {
     },
 
     /** Tile size in pixels */
-    tileSize: 65,
+    tileSize: 70,
 
     /**
      * All tile types available in the game.
-     * Each level uses a subset (first N types) based on difficulty.
+     * We limit it to 6 colors for a standard playable 8x8 board.
      */
     tileColors: [
-        'fire', 'water', 'nature', 'ice', 'lightning',
-        'earth', 'wind-air', 'psychic-eye', 'sun', 'poison-death',
+        'duck', 'turtle', 'husky', 'daulan', 'heothy', 'penguine'
     ],
 
     /**
@@ -38,38 +37,26 @@ export const Config = {
      * PixiJS Assets.load() uses these to cache textures.
      */
     assets: {
-        fire: '/assets/tile/fire.svg',
-        water: '/assets/tile/Water.svg',
-        nature: '/assets/tile/Nature.svg',
-        ice: '/assets/tile/Ice.svg',
-        lightning: '/assets/tile/Lightning.svg',
-        earth: '/assets/tile/Earth.svg',
-        'wind-air': '/assets/tile/Windy.svg',
-        'psychic-eye': '/assets/tile/Psychic.svg',
-        sun: '/assets/tile/Sun.svg',
-        'poison-death': '/assets/tile/Poison.svg',
+        duck: '/assets/imagebldp/003_avatar_duck.png',
+        turtle: '/assets/imagebldp/004_avatar_turtle.png',
+        husky: '/assets/imagebldp/008_avatar_husky.png',
+        daulan: '/assets/imagebldp/015_avatar_dauLan.png',
+        heothy: '/assets/imagebldp/024_avatar_heothy.png',
+        penguine: '/assets/imagebldp/027_avatar_penguine.png',
     },
 
     /**
-     * Match length multipliers for damage calculation.
-     * 3 tiles = ×1.0 (base), 4 tiles = ×1.3, 5 tiles = ×1.6, 6+ tiles = ×2.0
+     * Match length multipliers for score calculation.
      */
     matchMultipliers: {
         3: 1.0,
-        4: 1.3,
-        5: 1.6,
-        6: 2.0,
+        4: 1.5,
+        5: 2.0,
     },
 
     /**
      * Combo chain multipliers.
-     * chain 1 = ×1.0, chain 2 = ×1.5, chain 3 = ×2.0, chain 4+ = ×2.5
      */
-    comboMultipliers: [0, 1.0, 1.5, 2.0, 2.5],
-
-    /** Turn timer (seconds per turn) */
-    turnTimer: 20,
-
-    /** Default player HP per level */
-    playerHP: 100,
+    comboMultipliers: [0, 1.0, 1.5, 2.0, 2.5, 3.0],
 };
+

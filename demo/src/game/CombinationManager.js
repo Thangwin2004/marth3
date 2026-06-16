@@ -307,6 +307,66 @@ export class CombinationManager {
     }
 
     /**
+     * Kiểm tra xem trên bảng còn nước đi hợp lệ nào không.
+     * Thử giả lập tráo đổi từng cặp ô kề cạnh (ngang và dọc)
+     * xem có tạo được combo match-3 hay không.
+     * 
+     * @returns {boolean} True nếu còn ít nhất 1 nước đi, ngược lại False.
+     */
+    hasPossibleMoves() {
+        for (let row = 0; row < this.board.rows; row++) {
+            for (let col = 0; col < this.board.cols; col++) {
+                const field = this.board.getField(row, col);
+                if (!field || !field.tile || field.isVoid) continue;
+                const tile = field.tile;
+
+                // Thử đổi chỗ với ô bên phải
+                if (col < this.board.cols - 1) {
+                    const rightField = this.board.getField(row, col + 1);
+                    if (rightField && rightField.tile && !rightField.isVoid) {
+                        const rightTile = rightField.tile;
+
+                        // Swap giả lập
+                        this.board.swap(tile, rightTile);
+
+                        const { dirtyRows, dirtyCols } = this.getDirtyRegionAfterSwap(tile, rightTile);
+                        const matches = this.getMatchesInRegion(dirtyRows, dirtyCols);
+
+                        // Swap trả lại vị trí cũ
+                        this.board.swap(rightTile, tile);
+
+                        if (matches.length > 0) {
+                            return true;
+                        }
+                    }
+                }
+
+                // Thử đổi chỗ với ô bên dưới
+                if (row < this.board.rows - 1) {
+                    const bottomField = this.board.getField(row + 1, col);
+                    if (bottomField && bottomField.tile && !bottomField.isVoid) {
+                        const bottomTile = bottomField.tile;
+
+                        // Swap giả lập
+                        this.board.swap(tile, bottomTile);
+
+                        const { dirtyRows, dirtyCols } = this.getDirtyRegionAfterSwap(tile, bottomTile);
+                        const matches = this.getMatchesInRegion(dirtyRows, dirtyCols);
+
+                        // Swap trả lại vị trí cũ
+                        this.board.swap(bottomTile, tile);
+
+                        if (matches.length > 0) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Helper: Lấy tile tại vị trí (row, col)
      * Trả về null nếu ngoài board, ô trống, void field, hoặc stone tile
      * 
