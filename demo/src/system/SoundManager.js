@@ -241,24 +241,42 @@ class SoundManager {
         if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
 
         const now = Date.now();
-        if (now - this.lastLandTime < 70) return; // lower throttle to allow a rolling cascade tap sound
+        if (now - this.lastLandTime < 65) return; // slightly lower throttle for snappy rolling cascades
         this.lastLandTime = now;
 
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const ctxTime = this.ctx.currentTime;
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        // 1. High-frequency sharp impact click (Transient attack)
+        const clickOsc = this.ctx.createOscillator();
+        const clickGain = this.ctx.createGain();
+        clickOsc.connect(clickGain);
+        clickGain.connect(this.ctx.destination);
+        
+        clickOsc.type = 'sine';
+        clickOsc.frequency.setValueAtTime(1800, ctxTime);
+        clickOsc.frequency.exponentialRampToValueAtTime(800, ctxTime + 0.02);
+        
+        clickGain.gain.setValueAtTime(0.28, ctxTime);
+        clickGain.gain.exponentialRampToValueAtTime(0.01, ctxTime + 0.02);
+        
+        clickOsc.start();
+        clickOsc.stop(ctxTime + 0.02);
 
-        osc.type = 'triangle'; // triangle wave has warmer overtones for a woody block click
-        osc.frequency.setValueAtTime(320, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.08);
-
-        gain.gain.setValueAtTime(0.28, this.ctx.currentTime); // increased gain for audibility
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.08);
+        // 2. Resonant woody/stone body thump (Decay)
+        const bodyOsc = this.ctx.createOscillator();
+        const bodyGain = this.ctx.createGain();
+        bodyOsc.connect(bodyGain);
+        bodyGain.connect(this.ctx.destination);
+        
+        bodyOsc.type = 'triangle';
+        bodyOsc.frequency.setValueAtTime(360, ctxTime);
+        bodyOsc.frequency.exponentialRampToValueAtTime(110, ctxTime + 0.1);
+        
+        bodyGain.gain.setValueAtTime(0.45, ctxTime); // Louder resonant body thump
+        bodyGain.gain.exponentialRampToValueAtTime(0.01, ctxTime + 0.1);
+        
+        bodyOsc.start();
+        bodyOsc.stop(ctxTime + 0.1);
     }
 
     /**
