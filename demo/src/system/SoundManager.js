@@ -76,6 +76,7 @@ class SoundManager {
                 this.bgmGain = this.ctx.createGain();
                 this.bgmSource.connect(this.bgmGain);
                 this.bgmGain.connect(this.ctx.destination);
+                this.bgmGain.gain.value = this.bgmVolume;
                 this.bgmGain.gain.setValueAtTime(this.bgmVolume, this.ctx.currentTime);
             } catch (e) {
                 console.warn("Failed to route BGM through Web Audio API:", e);
@@ -121,8 +122,16 @@ class SoundManager {
      */
     setBGMVolume(vol) {
         this.bgmVolume = vol;
-        if (this.bgmGain && this.ctx) {
-            this.bgmGain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+        }
+        if (this.bgmGain) {
+            this.bgmGain.gain.value = vol;
+            if (this.ctx) {
+                try {
+                    this.bgmGain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                } catch (_) {}
+            }
         }
         if (this.bgm) {
             this.bgm.volume = vol;
