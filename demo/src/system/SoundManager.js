@@ -19,7 +19,7 @@ class SoundManager {
             (navigator.maxTouchPoints > 0) ||
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         this.isMobile = isMobile;
-        this.sfxMultiplier = isMobile ? 1.45 : 1.0;
+        this.sfxMultiplier = isMobile ? 2.3 : 1.0;
     }
 
     /**
