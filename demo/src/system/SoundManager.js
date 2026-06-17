@@ -234,7 +234,7 @@ class SoundManager {
         if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
 
         const now = Date.now();
-        if (now - this.lastLandTime < 100) return;
+        if (now - this.lastLandTime < 70) return; // lower throttle to allow a rolling cascade tap sound
         this.lastLandTime = now;
 
         const osc = this.ctx.createOscillator();
@@ -243,11 +243,11 @@ class SoundManager {
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-        osc.frequency.setValueAtTime(100, this.ctx.currentTime + 0.05);
+        osc.type = 'triangle'; // triangle wave has warmer overtones for a woody block click
+        osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.08);
 
-        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.28, this.ctx.currentTime); // increased gain for audibility
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
 
         osc.start();
