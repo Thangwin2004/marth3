@@ -11,6 +11,7 @@ class SoundManager {
         this.ctx = null;
         this.bgm = null;
         this.enabled = true;
+        this.musicEnabled = true; // music toggle state (BGM on/off)
         this.lastLandTime = 0;
     }
 
@@ -37,9 +38,14 @@ class SoundManager {
      * Phát nhạc nền chiptune lặp lại vô tận
      */
     playBGM() {
-        if (!this.enabled) return;
+        if (!this.musicEnabled) return;
         this.init();
-        if (this.bgm) return;
+        if (this.bgm) {
+            if (this.bgm.paused) {
+                this.bgm.play().catch(() => {});
+            }
+            return;
+        }
 
         // Tải nhạc nền chiptune từ CDN Phaser chính thức
         this.bgm = new Audio("https://labs.phaser.io/assets/audio/CatAstroPhi_shmup_normal.mp3");
@@ -74,6 +80,11 @@ class SoundManager {
     playClick() {
         this.init();
         if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
+
+        // Auto-start BGM on first user interaction if enabled
+        if (this.musicEnabled && (!this.bgm || this.bgm.paused)) {
+            this.playBGM();
+        }
 
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -564,6 +575,26 @@ class SoundManager {
         gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
         osc2.start();
         osc2.stop(now + 0.28);
+    }
+
+    /**
+     * Tắt/mở nhạc nền (BGM)
+     * @returns {boolean} Trạng thái bật nhạc mới (true = bật, false = tắt)
+     */
+    toggleMusic() {
+        this.musicEnabled = !this.musicEnabled;
+        if (this.bgm) {
+            if (this.musicEnabled) {
+                if (this.bgm.paused) {
+                    this.bgm.play().catch(err => console.log("Failed to resume BGM:", err));
+                }
+            } else {
+                this.bgm.pause();
+            }
+        } else if (this.musicEnabled) {
+            this.playBGM();
+        }
+        return this.musicEnabled;
     }
 }
 

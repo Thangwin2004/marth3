@@ -32,11 +32,11 @@ export class MainMenuScene {
         // Phát nhạc nền khi người chơi tương tác lần đầu
         const startBGM = () => {
             soundManager.playBGM();
-            document.removeEventListener('click', startBGM);
-            document.removeEventListener('pointerdown', startBGM);
+            window.removeEventListener('click', startBGM);
+            window.removeEventListener('pointerdown', startBGM);
         };
-        document.addEventListener('click', startBGM);
-        document.addEventListener('pointerdown', startBGM);
+        window.addEventListener('click', startBGM);
+        window.addEventListener('pointerdown', startBGM);
 
         // === BACKGROUND ===
         this.bg = new Sprite(Texture.WHITE);
@@ -243,6 +243,43 @@ export class MainMenuScene {
         this.versionText.anchor.set(0.5);
         this.container.addChild(this.versionText);
 
+        // === MUSIC TOGGLE BUTTON ===
+        this.musicBtn = new Container();
+        this.musicBtn.eventMode = 'static';
+        this.musicBtn.cursor = 'pointer';
+        this.container.addChild(this.musicBtn);
+
+        const musicBg = new Graphics();
+        musicBg.circle(0, 0, 22);
+        musicBg.fill({ color: 0xffffff, alpha: 0.15 });
+        musicBg.stroke({ color: 0xffffff, width: 2, alpha: 0.5 });
+        this.musicBtn.addChild(musicBg);
+
+        this.musicIcon = new Text({
+            text: soundManager.musicEnabled ? '🎵' : '🔇',
+            style: { fontFamily: 'Arial', fontSize: 18, fill: '#ffffff' }
+        });
+        this.musicIcon.anchor.set(0.5);
+        this.musicBtn.addChild(this.musicIcon);
+
+        this.musicBtn.on('pointerover', () => {
+            gsap.to(this.musicBtn.scale, { x: 1.1, y: 1.1, duration: 0.15 });
+            gsap.to(musicBg, { alpha: 0.35, duration: 0.15 });
+            soundManager.playClick();
+        });
+        this.musicBtn.on('pointerout', () => {
+            gsap.to(this.musicBtn.scale, { x: 1, y: 1, duration: 0.15 });
+            gsap.to(musicBg, { alpha: 0.15, duration: 0.15 });
+        });
+        this.musicBtn.on('pointerdown', () => {
+            soundManager.playClick();
+            const enabled = soundManager.toggleMusic();
+            this.musicIcon.text = enabled ? '🎵' : '🔇';
+            gsap.timeline()
+                .to(musicBg, { alpha: 0.6, duration: 0.08 })
+                .to(musicBg, { alpha: 0.15, duration: 0.15 });
+        });
+
         // === ANIMAL SCROLLING BANNER (PARADE) ===
         this.paradeContainer = new Container();
         this.container.addChild(this.paradeContainer);
@@ -325,6 +362,12 @@ export class MainMenuScene {
         if (this.bg) {
             this.bg.width = width;
             this.bg.height = height;
+        }
+
+        // 1.5. Music Button
+        if (this.musicBtn) {
+            this.musicBtn.x = width - 50;
+            this.musicBtn.y = 50;
         }
 
         // 2. Title Container

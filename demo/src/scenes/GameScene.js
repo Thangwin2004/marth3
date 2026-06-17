@@ -306,6 +306,43 @@ export class GameScene {
         this.comboText.anchor.set(0.5);
         this.comboText.visible = false;
         this.uiContainer.addChild(this.comboText);
+
+        // === MUSIC TOGGLE BUTTON ===
+        this.musicBtn = new Container();
+        this.musicBtn.eventMode = 'static';
+        this.musicBtn.cursor = 'pointer';
+        this.uiContainer.addChild(this.musicBtn);
+
+        const musicBg = new Graphics();
+        musicBg.circle(0, 0, 20);
+        musicBg.fill({ color: 0xffffff, alpha: 0.15 });
+        musicBg.stroke({ color: 0xffffff, width: 1.5, alpha: 0.5 });
+        this.musicBtn.addChild(musicBg);
+
+        this.musicIcon = new Text({
+            text: soundManager.musicEnabled ? '🎵' : '🔇',
+            style: { fontFamily: 'Arial', fontSize: 16, fill: '#ffffff' }
+        });
+        this.musicIcon.anchor.set(0.5);
+        this.musicBtn.addChild(this.musicIcon);
+
+        this.musicBtn.on('pointerover', () => {
+            gsap.to(this.musicBtn.scale, { x: 1.1, y: 1.1, duration: 0.15 });
+            gsap.to(musicBg, { alpha: 0.35, duration: 0.15 });
+            soundManager.playClick();
+        });
+        this.musicBtn.on('pointerout', () => {
+            gsap.to(this.musicBtn.scale, { x: 1, y: 1, duration: 0.15 });
+            gsap.to(musicBg, { alpha: 0.15, duration: 0.15 });
+        });
+        this.musicBtn.on('pointerdown', () => {
+            soundManager.playClick();
+            const enabled = soundManager.toggleMusic();
+            this.musicIcon.text = enabled ? '🎵' : '🔇';
+            gsap.timeline()
+                .to(musicBg, { alpha: 0.6, duration: 0.08 })
+                .to(musicBg, { alpha: 0.15, duration: 0.15 });
+        });
     }
 
     /**
@@ -2117,6 +2154,12 @@ export class GameScene {
             this.movesText.style.fontSize = fontSize;
             this.movesText.x = this.movesPanel.x + panelWidth / 2;
             this.movesText.y = this.movesPanel.y + panelHeight / 2;
+        }
+
+        // 4.5. Position Music Button in Gameplay
+        if (this.musicBtn) {
+            this.musicBtn.x = width - 36;
+            this.musicBtn.y = height - 36;
         }
 
         // 5. Position Combo Text
