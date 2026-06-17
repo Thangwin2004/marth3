@@ -18,11 +18,11 @@ export const Config = {
     /** Default board size (can be overridden by level config) */
     board: {
         rows: 8,
-        cols: 8,
+        cols: 7,
     },
 
     /** Tile size in pixels */
-    tileSize: 70,
+    tileSize: 100,
 
     /**
      * All tile types available in the game.

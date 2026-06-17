@@ -51,7 +51,7 @@ export class MainMenuScene {
         Assets.load(bgPath).then(texture => {
             if (this.bg.destroyed) return;
             this.bg.texture = texture;
-            this.bg.tint = 0x444444; // dim background for higher contrast
+            this.bg.tint = 0x888888; // brighter background for clearer landscape
         }).catch(err => {
             console.error("Failed to load Main Menu background:", err);
         });

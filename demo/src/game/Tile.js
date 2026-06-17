@@ -39,6 +39,7 @@
 import { App } from '../system/App.js';
 import { Graphics } from 'pixi.js';
 import gsap from 'gsap';
+import { soundManager } from '../system/SoundManager.js';
 
 export class Tile {
     /**
@@ -67,6 +68,7 @@ export class Tile {
         this.hiddenDuration = 0;     // Turns remaining hidden
         this.isRune = false;         // Ghép 4: Rune Tile phát nổ chữ thập
         this.isRainbow = false;      // Ghép 5: Rainbow Gem hút ngọc đồng màu
+        this.isDrum = false;         // Ghép chữ T/L: Ngọc Trống Đồng phát nổ 3x3
 
         // Overlay graphics for special states
         this.stateOverlay = null;
@@ -134,9 +136,28 @@ export class Tile {
                 x: position.x + halfTile,
                 y: position.y + halfTile,
                 duration: duration,
-                ease: 'back.out(1.2)',  // Hiệu ứng "đi quá rồi quay lại" nhẹ
-                onComplete: () => resolve(),
+                ease: 'back.out(1.4)',
+                onComplete: () => {
+                    if (this.sprite && !this.sprite.destroyed) {
+                        const targetSize = App.config.tileSize;
+                        const texture = this.sprite.texture;
+                        const baseScale = (targetSize / Math.max(texture.orig.width, texture.orig.height)) * 0.95;
+
+                        gsap.timeline()
+                            .to(this.sprite.scale, { x: baseScale * 1.08, y: baseScale * 0.92, duration: 0.06 })
+                            .to(this.sprite.scale, { x: baseScale, y: baseScale, duration: 0.08 });
+                    }
+                    resolve();
+                },
             });
+            if (this.stateOverlay && !this.stateOverlay.destroyed) {
+                gsap.to(this.stateOverlay, {
+                    x: position.x + halfTile,
+                    y: position.y + halfTile,
+                    duration: duration,
+                    ease: 'back.out(1.4)'
+                });
+            }
         });
     }
 
@@ -145,8 +166,8 @@ export class Tile {
      * 
      * Khác moveTo():
      *   - Chỉ thay đổi Y (rơi thẳng đứng)
-     *   - Dùng ease 'bounce.out' (hiệu ứng nảy)
-     *   - Có delay (trì hoãn) để tạo hiệu ứng "rơi lần lượt"
+     *   - Dùng ease 'power2.in' để rơi gia tốc
+     *   - Thêm hiệu ứng nén (squash) và giãn (stretch) khi chạm đất
      * 
      * @param {{x: number, y: number}} position - Vị trí đích
      * @param {number} delay - Thời gian chờ trước khi bắt đầu rơi (giây)
@@ -157,11 +178,32 @@ export class Tile {
         return new Promise(resolve => {
             gsap.to(this.sprite, {
                 y: position.y + halfTile,
-                duration: 0.5,
+                duration: 0.45,
                 delay: delay,
-                ease: 'bounce.out',  // Hiệu ứng nảy như quả bóng
-                onComplete: () => resolve(),
+                ease: 'power2.in',
+                onComplete: () => {
+                    soundManager.playLand();
+                    if (this.sprite && !this.sprite.destroyed) {
+                        const targetSize = App.config.tileSize;
+                        const texture = this.sprite.texture;
+                        const baseScale = (targetSize / Math.max(texture.orig.width, texture.orig.height)) * 0.95;
+
+                        gsap.timeline()
+                            .to(this.sprite.scale, { x: baseScale * 1.15, y: baseScale * 0.82, duration: 0.08, ease: 'power1.out' })
+                            .to(this.sprite.scale, { x: baseScale * 0.9, y: baseScale * 1.08, duration: 0.08, ease: 'power1.inOut' })
+                            .to(this.sprite.scale, { x: baseScale, y: baseScale, duration: 0.1, ease: 'sine.out' });
+                    }
+                    resolve();
+                },
             });
+            if (this.stateOverlay && !this.stateOverlay.destroyed) {
+                gsap.to(this.stateOverlay, {
+                    y: position.y + halfTile,
+                    duration: 0.45,
+                    delay: delay,
+                    ease: 'power2.in'
+                });
+            }
         });
     }
 
@@ -235,6 +277,7 @@ export class Tile {
         this.poisoned = false;
         this.isRune = false;
         this.isRainbow = false;
+        this.isDrum = false;
 
         // Save current sprite state
         const oldX = this.sprite.x;
@@ -301,41 +344,65 @@ export class Tile {
             overlay.rect(-2, 6, 4, 4);
             overlay.fill({ color: 0xffffff, alpha: 0.5 });
         } else if (this.isRune) {
-            // Gorgeous golden border + central core glowing symbol for Rune Tiles
-            overlay.roundRect(-tileSize / 2 + 3, -tileSize / 2 + 3, tileSize - 6, tileSize - 6, 12);
-            overlay.stroke({ color: 0xffdd57, width: 3, alpha: 0.9 });
-            overlay.circle(0, 0, 10);
-            overlay.stroke({ color: 0xffdd57, width: 2, alpha: 0.7 });
-            overlay.circle(0, 0, 4);
-            overlay.fill({ color: 0xffffff, alpha: 0.9 });
-            gsap.to(overlay, { alpha: 0.6, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+            // Thick glowing golden border (Center left transparent to show avatar)
+            overlay.roundRect(-tileSize / 2 + 4, -tileSize / 2 + 4, tileSize - 8, tileSize - 8, 12);
+            overlay.stroke({ color: 0xffdd57, width: 4, alpha: 0.95 });
+            
+            overlay.roundRect(-tileSize / 2 + 7, -tileSize / 2 + 7, tileSize - 14, tileSize - 14, 10);
+            overlay.stroke({ color: 0xffffff, width: 1.5, alpha: 0.5 });
+            
+            gsap.to(overlay, { alpha: 0.65, duration: 0.65, yoyo: true, repeat: -1, ease: 'sine.inOut' });
         } else if (this.isRainbow) {
-            // Concentric rainbow spectrum rings + white hot core for Rainbow Gems!
+            // Glowing outer nested rainbow spectrum borders (Center left transparent to show avatar)
             const rainbowColors = [0xff1744, 0xff9100, 0xffea00, 0x00e676, 0x2979ff, 0xd500f9];
             rainbowColors.forEach((c, idx) => {
-                overlay.circle(0, 0, (tileSize / 2.2) * (1 - idx * 0.14));
-                overlay.stroke({ color: c, width: 3.5, alpha: 0.95 });
+                const offset = 3 + idx * 2.8;
+                overlay.roundRect(-tileSize / 2 + offset, -tileSize / 2 + offset, tileSize - offset * 2, tileSize - offset * 2, 12 - idx);
+                overlay.stroke({ color: c, width: 2.2, alpha: 0.95 });
             });
-            overlay.circle(0, 0, 3);
-            overlay.fill({ color: 0xffffff, alpha: 1.0 });
-            // Pulsing animation
+            
             overlay.scale.set(1.0);
             gsap.to(overlay.scale, {
-                x: 1.12,
-                y: 1.12,
-                duration: 0.55,
+                x: 1.08,
+                y: 1.08,
+                duration: 0.6,
                 yoyo: true,
                 repeat: -1,
                 ease: 'sine.inOut'
             });
+        } else if (this.isDrum) {
+            // Draw a gorgeous Bronze Drum (Trống Đồng Đông Sơn) procedurally:
+            // 1. Bronze colored circular base outline
+            overlay.circle(0, 0, tileSize / 2 - 4);
+            overlay.stroke({ color: 0xcd7f32, width: 4.5, alpha: 0.95 });
+
+            // 2. Inner gold circle
+            overlay.circle(0, 0, tileSize / 2 - 8);
+            overlay.stroke({ color: 0xffa726, width: 1.8, alpha: 0.75 });
+
+            // 3. Central Sunburst rays (Ngôi sao mặt trời 8 cánh ở tâm trống đồng)
+            const rays = 8;
+            for (let r = 0; r < rays; r++) {
+                const angle = (r * Math.PI * 2) / rays;
+                const outerX = Math.cos(angle) * 12;
+                const outerY = Math.sin(angle) * 12;
+                overlay.moveTo(0, 0);
+                overlay.lineTo(outerX, outerY);
+            }
+            overlay.stroke({ color: 0xffe082, width: 2.2, alpha: 0.9 });
+
+            // 4. Subtle rotation pulsing animation
+            gsap.to(overlay, { rotation: Math.PI * 2, duration: 12, repeat: -1, ease: 'none' });
         }
 
-        if (overlay.geometry && this.sprite.parent) {
+        if (this.sprite.parent && (this.frozen || this.corrupt || this.poisoned || this.hidden || this.isRune || this.isRainbow || this.isDrum)) {
             this.stateOverlay = overlay;
             overlay.x = this.sprite.x;
             overlay.y = this.sprite.y;
             overlay.zIndex = this.sprite.zIndex + 0.5;
             this.sprite.parent.addChild(overlay);
+        } else {
+            overlay.destroy();
         }
     }
 

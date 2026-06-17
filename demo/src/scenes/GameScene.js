@@ -57,8 +57,25 @@ export class GameScene {
             const bgPath = `/assets/backgroud/vietnamese_cultural_landscape_background_${bgIndex}/screen.png`;
             this.bgTexture = await Assets.load(bgPath);
 
-            // 2. Randomize and select 6 distinct avatars from the 44
-            const chosenFiles = [...ALL_AVATAR_FILES].sort(() => 0.5 - Math.random()).slice(0, 6);
+            // 2. Randomize and select 6 distinct avatars from the 44, avoiding duplicates (e.g., cat_lick1 and cat_lick2)
+            const getBaseName = (filename) => {
+                const name = filename.replace('.png', '').split('_').slice(2).join('_');
+                return name.replace(/\d+$/, ''); // Remove trailing numbers
+            };
+
+            const chosenFiles = [];
+            const chosenBases = new Set();
+            const shuffledFiles = [...ALL_AVATAR_FILES].sort(() => 0.5 - Math.random());
+
+            for (const file of shuffledFiles) {
+                const base = getBaseName(file);
+                if (!chosenBases.has(base)) {
+                    chosenFiles.push(file);
+                    chosenBases.add(base);
+                }
+                if (chosenFiles.length === 6) break;
+            }
+
             this.sessionColors = chosenFiles.map(file => {
                 const parts = file.replace('.png', '').split('_');
                 return parts.slice(2).join('_');
@@ -88,7 +105,7 @@ export class GameScene {
         this.bg = new Sprite(this.bgTexture);
         this.bg.width = App.app.screen.width;
         this.bg.height = App.app.screen.height;
-        this.bg.tint = 0x333333; // dim background for higher contrast
+        this.bg.tint = 0x888888; // brighter background for clearer landscape
         this.container.addChild(this.bg);
 
         // === CREATE AMBIENT PARTICLES ===
@@ -365,11 +382,39 @@ export class GameScene {
     selectTile(tile) {
         this.selectedTile = tile;
         this.selectedTile.field.select();
+
+        // Wobble and pulse the selected tile scale
+        if (tile.sprite && !tile.sprite.destroyed) {
+            gsap.killTweensOf(tile.sprite.scale);
+            const targetSize = App.config.tileSize;
+            const texture = tile.sprite.texture;
+            const baseScale = (targetSize / Math.max(texture.orig.width, texture.orig.height)) * 0.95;
+
+            gsap.to(tile.sprite.scale, {
+                x: baseScale * 1.12,
+                y: baseScale * 1.12,
+                duration: 0.22,
+                yoyo: true,
+                repeat: -1,
+                ease: 'sine.inOut'
+            });
+        }
     }
 
     clearSelection() {
         if (this.selectedTile) {
             this.selectedTile.field.unselect();
+
+            // Restore scale of selection
+            const tile = this.selectedTile;
+            if (tile.sprite && !tile.sprite.destroyed) {
+                gsap.killTweensOf(tile.sprite.scale);
+                const targetSize = App.config.tileSize;
+                const texture = tile.sprite.texture;
+                const baseScale = (targetSize / Math.max(texture.orig.width, texture.orig.height)) * 0.95;
+                gsap.to(tile.sprite.scale, { x: baseScale, y: baseScale, duration: 0.15 });
+            }
+
             this.selectedTile = null;
         }
     }
@@ -388,6 +433,12 @@ export class GameScene {
         this.disabled = true;
         this.clearSelection();
         selectedTile.sprite.zIndex = 2;
+
+        if (!reverse) {
+            soundManager.playSwap();
+            this.lastSwappedTile1 = selectedTile;
+            this.lastSwappedTile2 = tile;
+        }
 
         selectedTile.moveTo(tile.field.position, 0.2);
         tile.moveTo(selectedTile.field.position, 0.2).then(() => {
@@ -419,31 +470,239 @@ export class GameScene {
 
     async processMatches(matches) {
         this.comboCount++;
-        this.calculateScore(matches);
+
+        // Mark matches that are Super Blasts (match of 4 or 5 containing a special tile)
+        matches.forEach(match => {
+            const hasSpecial = match.tiles.some(tile => tile.isRune || tile.isRainbow || tile.isDrum);
+            if ((match.length >= 4 || match.isTLMatch) && hasSpecial) {
+                match.isSuperBlast = true;
+            }
+        });
+
         this.showComboText(this.comboCount);
 
-        if (this.comboCount >= 2) {
+        // Cache original field references before any explosions nullify them
+        matches.forEach(match => {
+            match.tiles.forEach(tile => {
+                if (tile.field) {
+                    tile.originalField = tile.field;
+                }
+            });
+        });
+
+        // 1. Gather all matches details (center, coordinates, etc.)
+        const pendingExplosions = [];
+
+        matches.forEach(match => {
+            let centerTile = match.intersectionTile || match.tiles.find(t => t === this.lastSwappedTile1 || t === this.lastSwappedTile2);
+            if (!centerTile) {
+                centerTile = match.tiles[Math.floor(match.tiles.length / 2)];
+            }
+            const centerField = centerTile.originalField || centerTile.field;
+            if (!centerField) return;
+
+            const r = centerField.row;
+            const c = centerField.col;
+            
+            // Get screen coordinates
+            const pX = centerTile.sprite ? (centerTile.sprite.x * this.board.container.scale.x + this.board.container.x) : (c * App.config.tileSize * this.board.container.scale.x + this.board.container.x + (App.config.tileSize * this.board.container.scale.x)/2);
+            const pY = centerTile.sprite ? (centerTile.sprite.y * this.board.container.scale.y + this.board.container.y) : (r * App.config.tileSize * this.board.container.scale.y + this.board.container.y + (App.config.tileSize * this.board.container.scale.y)/2);
+
+            pendingExplosions.push({
+                match,
+                length: match.length,
+                row: r,
+                col: c,
+                x: pX,
+                y: pY,
+                color: match.tiles[0].color
+            });
+        });
+
+        let totalAdded = 0;
+        const multiplier = Math.max(1, this.comboCount);
+        let playSoundType = this.comboCount >= 2 ? 'combo' : 'match';
+        let hasMatch4 = false;
+        let hasMatch5 = false;
+
+        // 2. Process each explosion & calculate score
+        pendingExplosions.forEach(exp => {
+            if (exp.match.isSuperBlast) {
+                playSoundType = 'super';
+                if (exp.match.isTLMatch) {
+                    hasMatch4 = true;
+                    // Super Drum Blast (T/L shape containing special tile)
+                    this.spawnDrumVFX(exp.x, exp.y, true);
+                    const extraTiles = this.board.destroyArea5x5(exp.row, exp.col);
+                    
+                    // Base 250 + 18 per extra tile destroyed
+                    const matchPoints = (250 + extraTiles.length * 18) * multiplier;
+                    totalAdded += matchPoints;
+                    
+                    this.spawnFloatingScore(exp.x, exp.y, `SIÊU TRỐNG ĐỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                    this.spawnRipple(exp.x, exp.y, 0xffa726);
+                } else if (exp.length === 4) {
+                    hasMatch4 = true;
+                    // Super Cross Blast (Match-4 containing special tile)
+                    this.spawnSuperCrossVFX(exp.x, exp.y);
+                    const extraTiles = this.board.destroySuperCross(exp.row, exp.col);
+                    
+                    // Base 150 + 15 per extra tile destroyed
+                    const matchPoints = (150 + extraTiles.length * 15) * multiplier;
+                    totalAdded += matchPoints;
+                    
+                    this.spawnFloatingScore(exp.x, exp.y, `SIÊU CHỮ THẬP! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                    this.spawnRipple(exp.x, exp.y, 0x00e676);
+                } else {
+                    hasMatch5 = true;
+                    // Super Board Wipe (Match-5 containing special tile)
+                    this.spawnSuperRainbowVFX(exp.x, exp.y);
+                    const extraTiles = this.board.destroySuperRainbow();
+
+                    // Base 350 + 20 per extra tile destroyed
+                    const matchPoints = (350 + extraTiles.length * 20) * multiplier;
+                    totalAdded += matchPoints;
+
+                    this.spawnFloatingScore(exp.x, exp.y, `SIÊU BÃO NỔ! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                    this.spawnRipple(exp.x, exp.y, 0xff00ff);
+                }
+            } else if (exp.match.isTLMatch) {
+                // Normal T/L-shape: Spawns special Drum Gem, no immediate explosion
+                const matchPoints = 40 * multiplier;
+                totalAdded += matchPoints;
+                this.spawnFloatingScore(exp.x, exp.y, `TRỐNG ĐỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                
+                this.spawnRipple(exp.x, exp.y, 0xcd7f32);
+            } else if (exp.length === 4) {
+                // Normal Match-4: Spawns special Rune tile, no immediate explosion
+                const matchPoints = 25 * multiplier;
+                totalAdded += matchPoints;
+                this.spawnFloatingScore(exp.x, exp.y, `MATCH-4! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                
+                const slotIndex = this.sessionColors.indexOf(exp.color);
+                const palette = [0xff3d00, 0x00e5ff, 0x2979ff, 0x00e676, 0xffd600, 0xd500f9];
+                const rippleColor = slotIndex !== -1 ? palette[slotIndex] : 0xffffff;
+                this.spawnRipple(exp.x, exp.y, rippleColor);
+            } else if (exp.length >= 5) {
+                // Normal Match-5: Spawns special Rainbow Gem, no immediate explosion
+                const matchPoints = 50 * multiplier;
+                totalAdded += matchPoints;
+                this.spawnFloatingScore(exp.x, exp.y, `MATCH-5! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                
+                const slotIndex = this.sessionColors.indexOf(exp.color);
+                const palette = [0xff3d00, 0x00e5ff, 0x2979ff, 0x00e676, 0xffd600, 0xd500f9];
+                const rippleColor = slotIndex !== -1 ? palette[slotIndex] : 0xffffff;
+                this.spawnRipple(exp.x, exp.y, rippleColor);
+            } else {
+                // Normal Match-3
+                // Check if any tile in the match was special (Rune, Rainbow, or Drum)
+                const hasSpecialRune = exp.match.tiles.some(t => t.isRune);
+                const hasSpecialRainbow = exp.match.tiles.some(t => t.isRainbow);
+                const hasSpecialDrum = exp.match.tiles.some(t => t.isDrum);
+
+                if (hasSpecialDrum) {
+                    hasMatch4 = true;
+                    if (playSoundType !== 'super' && playSoundType !== 'rainbow') playSoundType = 'drum';
+                    
+                    this.spawnDrumVFX(exp.x, exp.y, false);
+                    const extraTiles = this.board.destroyArea3x3(exp.row, exp.col);
+                    const matchPoints = (120 + extraTiles.length * 12) * multiplier;
+                    totalAdded += matchPoints;
+                    this.spawnFloatingScore(exp.x, exp.y, `SẤM VANG TRỐNG ĐỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                    this.spawnRipple(exp.x, exp.y, 0xffa726);
+                } else if (hasSpecialRune) {
+                    hasMatch4 = true;
+                    if (playSoundType !== 'super' && playSoundType !== 'rainbow' && playSoundType !== 'drum') playSoundType = 'rune';
+                    
+                    this.spawnCrossLeaves(exp.x, exp.y);
+                    const extraTiles = this.board.destroyCross(exp.row, exp.col);
+                    const matchPoints = (100 + extraTiles.length * 10) * multiplier;
+                    totalAdded += matchPoints;
+                    this.spawnFloatingScore(exp.x, exp.y, `HIỆU ỨNG CHỮ THẬP! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                    this.spawnRipple(exp.x, exp.y, 0x00e676);
+                } else if (hasSpecialRainbow) {
+                    hasMatch5 = true;
+                    if (playSoundType !== 'super') playSoundType = 'rainbow';
+
+                    // Normal Rainbow Blast (Destroy all of that color)
+                    const targetPositions = [];
+                    this.board.fields.forEach(field => {
+                        if (field.tile && !field.isVoid && field.tile.color === exp.color && field.tile.sprite) {
+                            const tX = field.tile.sprite.x * this.board.container.scale.x + this.board.container.x;
+                            const tY = field.tile.sprite.y * this.board.container.scale.y + this.board.container.y;
+                            targetPositions.push({ x: tX, y: tY, color: exp.color });
+                        }
+                    });
+                    this.spawnRainbowBlast(exp.x, exp.y, targetPositions);
+                    const extraTiles = this.board.destroyAllOfColor(exp.color);
+                    
+                    const matchPoints = (150 + extraTiles.length * 12) * multiplier;
+                    totalAdded += matchPoints;
+                    this.spawnFloatingScore(exp.x, exp.y, `NỔ SẮC CẦU VỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                    this.spawnRipple(exp.x, exp.y, 0xff00ff);
+                } else {
+                    // Normal match-3
+                    const matchPoints = 10 * multiplier;
+                    totalAdded += matchPoints;
+                    this.spawnFloatingScore(exp.x, exp.y, `+${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+
+                    // Ripple Color based on tile color
+                    const slotIndex = this.sessionColors.indexOf(exp.color);
+                    const palette = [0xff3d00, 0x00e5ff, 0x2979ff, 0x00e676, 0xffd600, 0xd500f9];
+                    const rippleColor = slotIndex !== -1 ? palette[slotIndex] : 0xffffff;
+                    this.spawnRipple(exp.x, exp.y, rippleColor);
+                }
+            }
+        });
+
+        this.score += totalAdded;
+        this.updateUI();
+
+        // 3. Sound triggers
+        if (playSoundType === 'super') {
+            soundManager.playSuperExplosion();
+        } else if (playSoundType === 'rainbow') {
+            soundManager.playRainbowExplosion();
+        } else if (playSoundType === 'drum') {
+            soundManager.playDrumExplosion();
+        } else if (playSoundType === 'rune') {
+            soundManager.playRuneExplosion();
+        } else if (playSoundType === 'combo') {
+            soundManager.playCombo(this.comboCount);
+        } else {
+            soundManager.playMatch();
+        }
+
+        // 4. Screen shake triggers
+        if (hasMatch5) {
+            this.screenShake(25);
+        } else if (hasMatch4) {
+            this.screenShake(16);
+        } else if (this.comboCount >= 2) {
             this.screenShake();
         }
 
-        // Collect cols affected by cascade and spawn particles
-        const affectedCols = new Set(this.lastAffectedCols || []);
+        // Spawn normal particles for matched tiles (for Match-3 and remaining tiles)
         matches.forEach(match => {
             match.tiles.forEach(tile => {
                 if (tile.sprite) {
-                    // Get global pixel positions
                     const pX = tile.sprite.x * this.board.container.scale.x + this.board.container.x;
                     const pY = tile.sprite.y * this.board.container.scale.y + this.board.container.y;
                     this.spawnParticles(pX, pY, tile.color);
-                }
-                if (tile.field) {
-                    affectedCols.add(tile.field.col);
                 }
             });
         });
 
         // Visually remove matches
         this.removeMatches(matches);
+
+        // Collect all columns that have empty fields (where tiles were destroyed/matched)
+        const affectedCols = new Set();
+        this.board.fields.forEach(field => {
+            if (field.tile === null && !field.isVoid) {
+                affectedCols.add(field.col);
+            }
+        });
 
         // Wait for pop/fade animation
         await this.delay(180);
@@ -478,68 +737,113 @@ export class GameScene {
         }
     }
 
-    calculateScore(matches) {
-        if (matches.length > 0) {
-            if (this.comboCount >= 2) {
-                soundManager.playCombo(this.comboCount);
-            } else {
-                soundManager.playMatch();
-            }
-        }
-        let totalAdded = 0;
-        const multiplier = Math.max(1, this.comboCount);
-
-        matches.forEach(match => {
-            let basePoints = 0;
-            if (match.length === 3) {
-                basePoints = 10;
-            } else if (match.length === 4) {
-                basePoints = 25;
-            } else if (match.length >= 5) {
-                basePoints = 50;
-            }
-
-            const pointsForThisMatch = basePoints * multiplier;
-            totalAdded += pointsForThisMatch;
-
-            // Tính vị trí trung tâm của cụm ngọc bị phá
-            let sumX = 0;
-            let sumY = 0;
-            let count = 0;
-
-            match.tiles.forEach(tile => {
-                if (tile.sprite) {
-                    const pX = tile.sprite.x * this.board.container.scale.x + this.board.container.x;
-                    const pY = tile.sprite.y * this.board.container.scale.y + this.board.container.y;
-                    sumX += pX;
-                    sumY += pY;
-                    count++;
-                }
-            });
-
-            if (count > 0) {
-                const avgX = sumX / count;
-                const avgY = sumY / count;
-                // Hiển thị text bay như "+20" hoặc "+50 (x2)"
-                const textStr = `+${pointsForThisMatch}${multiplier > 1 ? ` (x${multiplier})` : ''}`;
-                this.spawnFloatingScore(avgX, avgY, textStr);
-            }
-        });
-
-        this.score += totalAdded;
-        this.updateUI();
-    }
-
-    removeMatches(matches) {
+    removeMatches(matches, immediate = false) {
         const removed = new Set();
+        const specialSpawns = [];
+
         matches.forEach(match => {
-            match.tiles.forEach(tile => {
-                if (!removed.has(tile)) {
-                    removed.add(tile);
-                    tile.remove();
+            if (match.isTLMatch) {
+                // Determine which tile is the intersection tile
+                const specialTile = match.intersectionTile || match.tiles.find(t => t === this.lastSwappedTile1 || t === this.lastSwappedTile2) || match.tiles[0];
+                const targetField = specialTile.originalField || specialTile.field;
+                if (targetField && !match.isSuperBlast) {
+                    specialSpawns.push({ field: targetField, type: 'drum', color: specialTile.color });
                 }
-            });
+
+                match.tiles.forEach(tile => {
+                    if (tile !== specialTile && !removed.has(tile)) {
+                        removed.add(tile);
+                        tile.remove(immediate);
+                    }
+                });
+
+                if (match.isSuperBlast && specialTile && !removed.has(specialTile)) {
+                    removed.add(specialTile);
+                    specialTile.remove(immediate);
+                }
+            } else if (match.length === 4) {
+                // Determine which tile becomes the special Rune tile
+                let specialTile = match.tiles.find(t => t === this.lastSwappedTile1 || t === this.lastSwappedTile2);
+                if (!specialTile) {
+                    specialTile = match.tiles[Math.floor(match.tiles.length / 2)];
+                }
+                
+                const targetField = specialTile.originalField || specialTile.field;
+                if (targetField && !match.isSuperBlast) {
+                    specialSpawns.push({ field: targetField, type: 'rune', color: specialTile.color });
+                }
+
+                match.tiles.forEach(tile => {
+                    if (tile !== specialTile && !removed.has(tile)) {
+                        removed.add(tile);
+                        tile.remove(immediate);
+                    }
+                });
+
+                if (match.isSuperBlast && specialTile && !removed.has(specialTile)) {
+                    removed.add(specialTile);
+                    specialTile.remove(immediate);
+                }
+            } else if (match.length >= 5) {
+                // Determine which tile becomes the Rainbow Gem
+                let specialTile = match.tiles.find(t => t === this.lastSwappedTile1 || t === this.lastSwappedTile2);
+                if (!specialTile) {
+                    specialTile = match.tiles[Math.floor(match.tiles.length / 2)];
+                }
+
+                const targetField = specialTile.originalField || specialTile.field;
+                if (targetField && !match.isSuperBlast) {
+                    specialSpawns.push({ field: targetField, type: 'rainbow', color: specialTile.color });
+                }
+
+                match.tiles.forEach(tile => {
+                    if (tile !== specialTile && !removed.has(tile)) {
+                        removed.add(tile);
+                        tile.remove(immediate);
+                    }
+                });
+
+                if (match.isSuperBlast && specialTile && !removed.has(specialTile)) {
+                    removed.add(specialTile);
+                    specialTile.remove(immediate);
+                }
+            } else {
+                // Normal match-3, remove all tiles
+                match.tiles.forEach(tile => {
+                    if (!removed.has(tile)) {
+                        removed.add(tile);
+                        tile.remove(immediate);
+                    }
+                });
+            }
         });
+
+        // Instantiate/convert the special tiles
+        specialSpawns.forEach(spawn => {
+            const field = spawn.field;
+            if (field) {
+                // If the field is currently empty (due to an explosion in this turn), recreate a tile first
+                if (field.tile === null) {
+                    this.board.createTile(field, spawn.color);
+                }
+                if (spawn.type === 'rune') {
+                    field.tile.isRune = true;
+                    field.tile.updateStateOverlay();
+                    console.log("🌟 Spawned Rune Tile at row:", field.row, "col:", field.col);
+                } else if (spawn.type === 'rainbow') {
+                    field.tile.isRainbow = true;
+                    field.tile.updateStateOverlay();
+                    console.log("🌈 Spawned Rainbow Gem at row:", field.row, "col:", field.col);
+                } else if (spawn.type === 'drum') {
+                    field.tile.isDrum = true;
+                    field.tile.updateStateOverlay();
+                    console.log("🥁 Spawned Bronze Drum Gem at row:", field.row, "col:", field.col);
+                }
+            }
+        });
+
+        this.lastSwappedTile1 = null;
+        this.lastSwappedTile2 = null;
     }
 
     processFallDown() {
@@ -587,9 +891,11 @@ export class GameScene {
             if (total === 0) { resolve(); return; }
 
             emptyFields.forEach(field => {
-                const tile = this.board.createTile(field);
-                // Set spawning position above the grid
+                const tile = this.board.createTile(field, null, true);
                 tile.sprite.y = -App.config.tileSize * 2;
+                if (tile.stateOverlay) {
+                    tile.stateOverlay.y = tile.sprite.y;
+                }
 
                 const delay = Math.random() * 0.15 + 0.2 / (field.row + 1);
                 tile.fallDownTo(field.position, delay).then(() => {
@@ -600,14 +906,11 @@ export class GameScene {
         });
     }
 
-    /**
-     * Loops to shuffle the board until there are no initial match-3 clusters.
-     */
     removeStartMatches() {
         let matches = this.combinationManager.getMatches();
 
         while (matches.length) {
-            this.removeMatches(matches);
+            this.removeMatches(matches, true);
 
             const emptyFields = this.board.fields.filter(f => f.tile === null);
             emptyFields.forEach(field => {
@@ -634,47 +937,599 @@ export class GameScene {
         ];
         const particleColor = slotIndex !== -1 ? palette[slotIndex] : 0xffffff;
 
-        for (let i = 0; i < 8; i++) {
+        const count = 24; // Increased for a richer explosion
+        for (let i = 0; i < count; i++) {
             const p = new Graphics();
-            p.circle(0, 0, 4 + Math.random() * 4);
-            p.fill({ color: particleColor });
+            const isLeaf = Math.random() > 0.4; // 60% leaves, 40% sparks
+
+            if (isLeaf) {
+                // Draw a beautiful small bamboo leaf
+                // Shadow
+                p.moveTo(1, -7);
+                p.quadraticCurveTo(4, 0, 1, 7);
+                p.quadraticCurveTo(-2, 0, 1, -7);
+                p.fill({ color: 0x000000, alpha: 0.35 });
+
+                // Body (vivid green)
+                p.moveTo(0, -8);
+                p.quadraticCurveTo(3, 0, 0, 8);
+                p.quadraticCurveTo(-3, 0, 0, -8);
+                p.fill({ color: 0x2e7d32 });
+                p.stroke({ color: 0xaeed9e, width: 0.8 });
+            } else {
+                // Draw a glowing firefly spark
+                p.circle(0, 0, 5);
+                p.fill({ color: particleColor, alpha: 0.25 });
+                p.circle(0, 0, 3);
+                p.fill({ color: 0xffffff, alpha: 0.95 });
+            }
+
             p.x = x;
             p.y = y;
-            p.alpha = 0.9;
+            p.alpha = 0.95;
+            p.zIndex = 95;
+            p.scale.set(1.0 + Math.random() * 0.5);
             this.container.addChild(p);
 
-            const angle = (Math.PI * 2 * i) / 8;
-            const distance = 40 + Math.random() * 40;
-
+            const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
+            const speed = 70 + Math.random() * 100;
+            
+            // Physics simulation via GSAP (adds gravity drop)
             gsap.to(p, {
-                x: x + Math.cos(angle) * distance,
-                y: y + Math.sin(angle) * distance,
+                x: x + Math.cos(angle) * speed,
+                y: y + Math.sin(angle) * speed + 80, // Gravity pull
                 alpha: 0,
-                duration: 0.6,
+                duration: 0.7 + Math.random() * 0.3,
                 ease: 'power2.out',
                 onComplete: () => p.destroy(),
             });
 
             gsap.to(p.scale, {
-                x: 0, y: 0,
-                duration: 0.5,
+                x: 0.1, y: 0.1,
+                duration: 0.65,
                 delay: 0.1,
+            });
+
+            gsap.to(p, {
+                rotation: (Math.random() - 0.5) * 15,
+                duration: 0.8
             });
         }
     }
 
-    screenShake() {
-        const intensity = Math.min(this.comboCount * 3, 12);
-        // Shake the board container itself for visual feedback
+    spawnRipple(x, y, colorHex = 0xffffff) {
+        const rippleContainer = new Container();
+        rippleContainer.zIndex = 95;
+        this.container.addChild(rippleContainer);
+
+        let activeTweens = 0;
+        const checkCleanup = () => {
+            activeTweens--;
+            if (activeTweens <= 0 && rippleContainer && !rippleContainer.destroyed) {
+                rippleContainer.destroy({ children: true });
+            }
+        };
+
+        // 1. Hạt lúa vàng mộc mạc (Rustic Golden Rice Grains)
+        // Draw 6-8 golden rice grains that shoot out radially
+        const grainCount = 6 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < grainCount; i++) {
+            const grain = new Graphics();
+            
+            // Slender rice grain shape
+            grain.moveTo(-5, 0);
+            grain.quadraticCurveTo(0, -2.5, 5, 0);
+            grain.quadraticCurveTo(0, 2.5, -5, 0);
+            
+            // Rice golden colors: amber/gold/yellow
+            const grainColors = [0xffd54f, 0xffb300, 0xffc107];
+            const grainColor = grainColors[Math.floor(Math.random() * grainColors.length)];
+            grain.fill({ color: grainColor });
+
+            // Highlight line on the upper edge
+            grain.moveTo(-3, -1);
+            grain.quadraticCurveTo(0, -2, 3, -1);
+            grain.stroke({ color: 0xffffff, width: 0.8, alpha: 0.6 });
+
+            grain.x = x;
+            grain.y = y;
+            grain.rotation = Math.random() * Math.PI * 2;
+            rippleContainer.addChild(grain);
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 40 + Math.random() * 45;
+            const targetX = x + Math.cos(angle) * distance;
+            // Add positive Y offset to simulate a small gravity fall
+            const targetY = y + Math.sin(angle) * distance + 15;
+
+            activeTweens++;
+            gsap.to(grain, {
+                x: targetX,
+                y: targetY,
+                rotation: grain.rotation + (Math.random() - 0.5) * 8,
+                alpha: 0,
+                duration: 0.5 + Math.random() * 0.3,
+                ease: 'power2.out',
+                onComplete: () => {
+                    if (grain && !grain.destroyed) {
+                        grain.destroy();
+                    }
+                    checkCleanup();
+                }
+            });
+        }
+
+        // 2. Cánh hoa / Lá quê sắc màu (Colored rural petals/leaves matching the tile color)
+        const leafCount = 5 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < leafCount; i++) {
+            const leaf = new Graphics();
+            // A simple curved leaf/petal shape
+            leaf.moveTo(0, -5);
+            leaf.quadraticCurveTo(2.5, 0, 0, 5);
+            leaf.quadraticCurveTo(-2.5, 0, 0, -5);
+            leaf.fill({ color: colorHex, alpha: 0.95 });
+            leaf.stroke({ color: 0xffffff, width: 0.8, alpha: 0.5 });
+
+            leaf.x = x;
+            leaf.y = y;
+            leaf.rotation = Math.random() * Math.PI * 2;
+            rippleContainer.addChild(leaf);
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 35 + Math.random() * 40;
+            const targetX = x + Math.cos(angle) * distance;
+            const targetY = y + Math.sin(angle) * distance + 10;
+
+            activeTweens++;
+            gsap.to(leaf, {
+                x: targetX,
+                y: targetY,
+                rotation: leaf.rotation + (Math.random() - 0.5) * 6,
+                alpha: 0,
+                duration: 0.5 + Math.random() * 0.3,
+                ease: 'power1.out',
+                onComplete: () => {
+                    if (leaf && !leaf.destroyed) {
+                        leaf.destroy();
+                    }
+                    checkCleanup();
+                }
+            });
+        }
+
+        // 3. Khói sương bụi mộc mạc (Soft smoke/mist puffs that drift and expand slightly)
+        // Spawns 3 tiny drifting smoke puffs instead of scaling up a single giant concentric circle
+        const smokeCount = 3;
+        for (let i = 0; i < smokeCount; i++) {
+            const smoke = new Graphics();
+            smoke.circle(0, 0, 10);
+            smoke.fill({ color: colorHex, alpha: 0.22 });
+            smoke.circle(-4, 3, 7);
+            smoke.fill({ color: 0xffffff, alpha: 0.12 });
+
+            smoke.x = x;
+            smoke.y = y;
+            smoke.scale.set(0.6);
+            rippleContainer.addChild(smoke);
+
+            const angle = Math.random() * Math.PI * 2;
+            const driftDistance = 15 + Math.random() * 20;
+            const targetX = x + Math.cos(angle) * driftDistance;
+            const targetY = y + Math.sin(angle) * driftDistance;
+
+            activeTweens++;
+            gsap.to(smoke, {
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                duration: 0.45 + Math.random() * 0.15,
+                ease: 'sine.out',
+                onComplete: () => {
+                    if (smoke && !smoke.destroyed) {
+                        smoke.destroy();
+                    }
+                    checkCleanup();
+                }
+            });
+
+            gsap.to(smoke.scale, {
+                x: 2.2,
+                y: 2.2,
+                duration: 0.45 + Math.random() * 0.15,
+                ease: 'sine.out'
+            });
+        }
+    }
+
+    spawnCrossLeaves(x, y) {
+        const leafContainer = new Container();
+        leafContainer.zIndex = 90;
+        this.container.addChild(leafContainer);
+
+        const count = 54; // All 54 are green bamboo leaves for high clarity
+
+        for (let i = 0; i < count; i++) {
+            const p = new Graphics();
+
+            // Bamboo leaf: Very long, vibrant green slender leaf with central vein (lá tre xanh)
+            // 1. Shadow (offset +2px x/y)
+            p.moveTo(2, -23);
+            p.quadraticCurveTo(10, -4, 2, 25);
+            p.quadraticCurveTo(-6, -4, 2, -23);
+            p.fill({ color: 0x000000, alpha: 0.35 });
+
+            // 2. Main body (Vibrant green instead of dark forest green for high contrast)
+            p.moveTo(0, -25);
+            p.quadraticCurveTo(8, -6, 0, 23);
+            p.quadraticCurveTo(-8, -6, 0, -25);
+            p.fill({ color: 0x2e7d32 });
+            p.stroke({ color: 0xaeed9e, width: 1.8 });
+
+            // 3. Central leaf vein (light/white green)
+            p.moveTo(0, -21);
+            p.lineTo(0, 21);
+            p.stroke({ color: 0xffffff, width: 1.5, alpha: 0.9 });
+
+            p.x = x;
+            p.y = y;
+            p.scale.set(1.4 + Math.random() * 0.7); 
+            leafContainer.addChild(p);
+
+            // Determine direction: horizontal or vertical
+            const isHorizontal = i % 2 === 0;
+            const direction = Math.random() > 0.5 ? 1 : -1;
+            
+            // Concentrated wind flow along the lines
+            const targetX = isHorizontal ? x + direction * (350 + Math.random() * 450) : x + (Math.random() - 0.5) * 35;
+            const targetY = isHorizontal ? y + (Math.random() - 0.5) * 35 : y + direction * (300 + Math.random() * 400);
+
+            gsap.to(p, {
+                x: targetX,
+                y: targetY,
+                rotation: (Math.random() - 0.5) * 12,
+                alpha: 0,
+                duration: 0.9 + Math.random() * 0.5,
+                ease: 'power1.out',
+                onComplete: () => p.destroy()
+            });
+        }
+
+        gsap.delayedCall(1.6, () => {
+            leafContainer.destroy();
+        });
+    }
+
+    spawnRainbowBlast(fromX, fromY, targets) {
+        const blastContainer = new Container();
+        blastContainer.zIndex = 90;
+        this.container.addChild(blastContainer);
+
+        const colors = [0xff80ab, 0x00e5ff, 0xffeb3b, 0x00e676, 0xd500f9];
+
+        targets.forEach((target, idx) => {
+            // Draw a very soft, faint wind trail line (làn gió mỏng)
+            const trail = new Graphics();
+            trail.moveTo(target.x, target.y);
+            trail.lineTo(fromX, fromY);
+            trail.stroke({ color: 0xffffff, width: 1.5, alpha: 0.25 });
+            blastContainer.addChild(trail);
+
+            gsap.to(trail, {
+                alpha: 0,
+                duration: 1.0,
+                onComplete: () => trail.destroy()
+            });
+
+            // Spawn 4 beautiful leaves at target flying towards the Rainbow Gem
+            const targetColorHex = colors[idx % colors.length];
+            for (let j = 0; j < 4; j++) {
+                const p = new Graphics();
+                
+                // 1. Shadow
+                p.moveTo(1, -9);
+                p.quadraticCurveTo(3, -2, 1, 9);
+                p.quadraticCurveTo(-2, -2, 1, -9);
+                p.fill({ color: 0x000000, alpha: 0.35 });
+
+                // 2. Leaf Body (slender leaf shape)
+                p.moveTo(0, -10);
+                p.quadraticCurveTo(4, -2, 0, 10);
+                p.quadraticCurveTo(-4, -2, 0, -10);
+                p.fill({ color: targetColorHex });
+                p.stroke({ color: 0xffffff, width: 0.8, alpha: 0.6 });
+
+                // 3. Central vein
+                p.moveTo(0, -8);
+                p.lineTo(0, 8);
+                p.stroke({ color: 0xffffff, width: 0.8, alpha: 0.8 });
+
+                p.x = target.x + (Math.random() - 0.5) * 20;
+                p.y = target.y + (Math.random() - 0.5) * 20;
+                p.scale.set(0.9 + Math.random() * 0.5);
+                blastContainer.addChild(p);
+
+                // Animate flying and spiraling into the Rainbow Gem
+                const delay = Math.random() * 0.15;
+                gsap.to(p, {
+                    x: fromX,
+                    y: fromY,
+                    rotation: (Math.random() - 0.5) * 10,
+                    duration: 0.9 + Math.random() * 0.4,
+                    delay: delay,
+                    ease: 'power1.inOut',
+                    onComplete: () => p.destroy()
+                });
+            }
+
+            this.spawnParticles(target.x, target.y, target.color);
+        });
+
+        gsap.delayedCall(1.8, () => {
+            blastContainer.destroy({ children: true });
+        });
+    }
+
+    screenShake(customIntensity = null) {
+        const intensity = customIntensity !== null ? customIntensity : Math.min(this.comboCount * 3, 12);
         gsap.killTweensOf(this.board.container);
         const originalX = this.board.container.x;
         gsap.to(this.board.container, {
             x: originalX + intensity,
             duration: 0.05,
             yoyo: true,
-            repeat: 5,
+            repeat: customIntensity !== null ? 8 : 5,
             ease: 'power2.inOut',
             onComplete: () => { this.board.container.x = originalX; },
+        });
+    }
+
+    /**
+     * Spawns a screen-clearing super cross explosion of green bamboo leaves.
+     */
+    spawnSuperCrossVFX(x, y) {
+        const leafContainer = new Container();
+        leafContainer.zIndex = 95;
+        this.container.addChild(leafContainer);
+
+        // Draw a giant cross flash
+        const flash = new Graphics();
+        const boardWidth = this.board.cols * App.config.tileSize * this.board.container.scale.x;
+        const boardHeight = this.board.rows * App.config.tileSize * this.board.container.scale.y;
+
+        flash.rect(x - 45, this.board.container.y, 90, boardHeight);
+        flash.rect(this.board.container.x, y - 45, boardWidth, 90);
+        flash.fill({ color: 0xaeed9e, alpha: 0.45 });
+        leafContainer.addChild(flash);
+
+        gsap.to(flash, {
+            alpha: 0,
+            duration: 0.5,
+            ease: 'power2.out',
+            onComplete: () => flash.destroy()
+        });
+
+        // Spawn 80 green bamboo leaves blowing along the lines
+        const count = 80;
+        for (let i = 0; i < count; i++) {
+            const p = new Graphics();
+            // Shadow
+            p.moveTo(2, -23);
+            p.quadraticCurveTo(10, -4, 2, 25);
+            p.quadraticCurveTo(-6, -4, 2, -23);
+            p.fill({ color: 0x000000, alpha: 0.35 });
+
+            // Body
+            p.moveTo(0, -25);
+            p.quadraticCurveTo(8, -6, 0, 23);
+            p.quadraticCurveTo(-8, -6, 0, -25);
+            p.fill({ color: 0x2e7d32 });
+            p.stroke({ color: 0xaeed9e, width: 1.8 });
+
+            p.moveTo(0, -21);
+            p.lineTo(0, 21);
+            p.stroke({ color: 0xffffff, width: 1.5, alpha: 0.9 });
+
+            p.x = x;
+            p.y = y;
+            p.scale.set(1.5 + Math.random() * 0.9);
+            leafContainer.addChild(p);
+
+            const isHorizontal = i % 2 === 0;
+            const direction = Math.random() > 0.5 ? 1 : -1;
+            const targetX = isHorizontal ? x + direction * (400 + Math.random() * 500) : x + (Math.random() - 0.5) * 75;
+            const targetY = isHorizontal ? y + (Math.random() - 0.5) * 75 : y + direction * (350 + Math.random() * 450);
+
+            gsap.to(p, {
+                x: targetX,
+                y: targetY,
+                rotation: (Math.random() - 0.5) * 16,
+                alpha: 0,
+                duration: 1.0 + Math.random() * 0.6,
+                ease: 'power2.out',
+                onComplete: () => p.destroy()
+            });
+        }
+
+        // Spawn ripples
+        this.spawnRipple(x, y, 0x00e676);
+        gsap.delayedCall(0.12, () => this.spawnRipple(x, y, 0xffffff));
+
+        gsap.delayedCall(1.8, () => {
+            leafContainer.destroy();
+        });
+    }
+
+    /**
+     * Spawns a full board rainbow wipe VFX.
+     */
+    spawnSuperRainbowVFX(x, y) {
+        const vfxContainer = new Container();
+        vfxContainer.zIndex = 95;
+        this.container.addChild(vfxContainer);
+
+        // Giant expanding color circle
+        const shockwave = new Graphics();
+        shockwave.circle(0, 0, 20);
+        shockwave.fill({ color: 0xffffff, alpha: 0.6 });
+        shockwave.x = x;
+        shockwave.y = y;
+        vfxContainer.addChild(shockwave);
+
+        gsap.to(shockwave.scale, {
+            x: 40,
+            y: 40,
+            duration: 0.75,
+            ease: 'power2.out'
+        });
+        gsap.to(shockwave, {
+            alpha: 0,
+            duration: 0.75,
+            ease: 'power2.out',
+            onComplete: () => shockwave.destroy()
+        });
+
+        // Spawn 100 colorful firefly sparks shooting out in all directions
+        const colors = [0xff1744, 0xff9100, 0xffea00, 0x00e676, 0x2979ff, 0xd500f9];
+        const count = 100;
+        for (let i = 0; i < count; i++) {
+            const p = new Graphics();
+            const color = colors[i % colors.length];
+
+            p.circle(0, 0, 7);
+            p.fill({ color: color, alpha: 0.3 });
+            p.circle(0, 0, 4);
+            p.fill({ color: 0xffffff, alpha: 0.95 });
+
+            p.x = x;
+            p.y = y;
+            p.scale.set(1.0 + Math.random() * 0.8);
+            vfxContainer.addChild(p);
+
+            const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.25;
+            const speed = 120 + Math.random() * 250;
+
+            gsap.to(p, {
+                x: x + Math.cos(angle) * speed,
+                y: y + Math.sin(angle) * speed + 50,
+                alpha: 0,
+                duration: 0.8 + Math.random() * 0.4,
+                ease: 'power3.out',
+                onComplete: () => p.destroy()
+            });
+        }
+
+    }
+
+    /**
+     * Spawns a Vietnamese Bronze Drum (Trống Đồng) face that expands,
+     * along with soaring golden Chim Lạc birds that spiral outward.
+     */
+    spawnDrumVFX(x, y, isSuper = false) {
+        const vfxContainer = new Container();
+        vfxContainer.zIndex = 95;
+        this.container.addChild(vfxContainer);
+
+        // 1. Draw expanding Bronze Drum Face
+        const drumFace = new Graphics();
+        
+        // Outer bronze ring
+        drumFace.circle(0, 0, 40);
+        drumFace.stroke({ color: 0xcd7f32, width: 6, alpha: 0.8 });
+        
+        // Inner gold ring
+        drumFace.circle(0, 0, 32);
+        drumFace.stroke({ color: 0xffa726, width: 2, alpha: 0.6 });
+        
+        // Starburst center
+        const rays = 8;
+        for (let r = 0; r < rays; r++) {
+            const angle = (r * Math.PI * 2) / rays;
+            drumFace.moveTo(0, 0);
+            drumFace.lineTo(Math.cos(angle) * 20, Math.sin(angle) * 20);
+        }
+        drumFace.stroke({ color: 0xffe082, width: 3, alpha: 0.9 });
+        
+        drumFace.x = x;
+        drumFace.y = y;
+        drumFace.scale.set(0.5);
+        vfxContainer.addChild(drumFace);
+
+        gsap.to(drumFace.scale, {
+            x: isSuper ? 6.5 : 4.0,
+            y: isSuper ? 6.5 : 4.0,
+            duration: 0.85,
+            ease: 'sine.out'
+        });
+        gsap.to(drumFace, {
+            alpha: 0,
+            rotation: Math.PI * 0.75,
+            duration: 0.85,
+            ease: 'sine.out',
+            onComplete: () => drumFace.destroy()
+        });
+
+        // 2. Spawn golden Chim Lạc birds spiraling out
+        const birdCount = isSuper ? 16 : 8;
+        for (let i = 0; i < birdCount; i++) {
+            const birdWrapper = new Container();
+            birdWrapper.x = x;
+            birdWrapper.y = y;
+            birdWrapper.rotation = (Math.PI * 2 * i) / birdCount;
+            vfxContainer.addChild(birdWrapper);
+
+            const bird = new Graphics();
+            // Draw stylized Chim Lạc:
+            // Beak & Head
+            bird.moveTo(0, -5);
+            bird.lineTo(10, 0); // Head/Beak pointing right
+            bird.lineTo(0, 3);
+            // Body & Tail
+            bird.lineTo(-12, 0);
+            bird.closePath();
+            bird.fill({ color: 0xffd54f }); // Golden body
+
+            // Wings
+            bird.moveTo(-2, -2);
+            bird.quadraticCurveTo(-6, -10, -10, -8); // Left wing
+            bird.moveTo(-2, 2);
+            bird.quadraticCurveTo(-6, 10, -10, 8); // Right wing
+            bird.stroke({ color: 0xffffff, width: 1.5, alpha: 0.8 });
+
+            bird.x = 10;
+            bird.y = 0;
+            bird.scale.set(1.2 + Math.random() * 0.5);
+            birdWrapper.addChild(bird);
+
+            // Animate spiral movement
+            const targetRadius = isSuper ? (220 + Math.random() * 120) : (140 + Math.random() * 80);
+            const rotationDelta = (Math.PI * 1.5) * (Math.random() > 0.5 ? 1 : -1);
+
+            gsap.to(birdWrapper, {
+                rotation: birdWrapper.rotation + rotationDelta,
+                duration: 0.9 + Math.random() * 0.4,
+                ease: 'power1.out'
+            });
+
+            gsap.to(bird, {
+                x: targetRadius,
+                alpha: 0,
+                duration: 0.9 + Math.random() * 0.4,
+                ease: 'power1.out'
+            });
+
+            // Soft flap wings animation
+            gsap.to(bird.scale, {
+                y: bird.scale.y * 0.35,
+                duration: 0.15,
+                repeat: 6,
+                yoyo: true,
+                ease: 'sine.inOut'
+            });
+        }
+
+        // Cleanup container
+        gsap.delayedCall(1.6, () => {
+            vfxContainer.destroy();
         });
     }
 
@@ -992,7 +1847,7 @@ export class GameScene {
                 this.scorePanel.y = (height - panelHeight) / 2;
 
                 // Căn giữa bảng Moves ở khoảng trống bên phải bảng ngọc
-                const boardRight = this.board.container.x + (this.board.cols * 70 * this.board.container.scale.x);
+                const boardRight = this.board.container.x + (this.board.cols * App.config.tileSize * this.board.container.scale.x);
                 const rightSpace = width - boardRight;
                 this.movesPanel.x = boardRight + (rightSpace - panelWidth) / 2;
                 this.movesPanel.y = (height - panelHeight) / 2;

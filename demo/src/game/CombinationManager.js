@@ -121,7 +121,74 @@ export class CombinationManager {
             });
         });
 
-        return result;
+        // Combine intersections to form T-shape/L-shape matches!
+        return this.combineIntersections(result);
+    }
+
+    combineIntersections(combos) {
+        const combosByColor = {};
+        combos.forEach(combo => {
+            if (combo.tiles.length === 0) return;
+            const color = combo.tiles[0].color;
+            if (!combosByColor[color]) combosByColor[color] = [];
+            combosByColor[color].push(combo);
+        });
+
+        const combined = [];
+        
+        for (const color in combosByColor) {
+            const colorCombos = combosByColor[color];
+            
+            const horizontals = [];
+            const verticals = [];
+            
+            colorCombos.forEach(combo => {
+                const firstTile = combo.tiles[0];
+                const isHoriz = combo.tiles.every(t => t.field && t.field.row === firstTile.field.row);
+                if (isHoriz) {
+                    horizontals.push(combo);
+                } else {
+                    verticals.push(combo);
+                }
+            });
+            
+            const mergedIndices = new Set();
+            
+            for (let i = 0; i < horizontals.length; i++) {
+                const h = horizontals[i];
+                
+                for (let j = 0; j < verticals.length; j++) {
+                    const v = verticals[j];
+                    
+                    const sharedTile = h.tiles.find(t => v.tiles.includes(t));
+                    if (sharedTile) {
+                        const mergedTiles = [...new Set([...h.tiles, ...v.tiles])];
+                        combined.push({
+                            tiles: mergedTiles,
+                            length: mergedTiles.length,
+                            isTLMatch: true,
+                            intersectionTile: sharedTile
+                        });
+                        mergedIndices.add(`h_${i}`);
+                        mergedIndices.add(`v_${j}`);
+                    }
+                }
+            }
+            
+            horizontals.forEach((h, idx) => {
+                if (!mergedIndices.has(`h_${idx}`)) {
+                    combined.push(h);
+                }
+            });
+            
+            verticals.forEach((v, idx) => {
+                if (!mergedIndices.has(`v_${idx}`)) {
+                    combined.push(v);
+                }
+            });
+        }
+        
+        return combined;
     }
 
     /**

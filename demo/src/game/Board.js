@@ -202,13 +202,28 @@ export class Board {
      * @param {Field} field - Ô cần đặt tile
      * @returns {Tile} Tile vừa tạo
      */
-    createTile(field) {
-        // 1. Random màu from level-specific allowed tiles
+    createTile(field, customColor = null, allowSpecial = false) {
+        // 1. Random màu hoặc sử dụng màu được chỉ định
         const colors = this.allowedTiles;
-        const color = colors[Math.floor(Math.random() * colors.length)];
+        const color = customColor || colors[Math.floor(Math.random() * colors.length)];
 
         // 2. Tạo Tile
         const tile = new Tile(color);
+
+        // Roll for random special tile drop
+        if (allowSpecial && !customColor) {
+            const rand = Math.random();
+            if (rand < 0.04) {
+                const typeRand = Math.random();
+                if (typeRand < 0.4) {
+                    tile.isRune = true;
+                } else if (typeRand < 0.7) {
+                    tile.isDrum = true;
+                } else {
+                    tile.isRainbow = true;
+                }
+            }
+        }
 
         // 3. Tham chiếu 2 chiều
         field.tile = tile;     // Field → Tile
@@ -219,6 +234,11 @@ export class Board {
 
         // 5. Thêm vào container (hiển thị)
         this.container.addChild(tile.sprite);
+
+        // 5.5 Update state overlay if special tile was rolled
+        if (tile.isRune || tile.isRainbow || tile.isDrum) {
+            tile.updateStateOverlay();
+        }
 
         // 6. Bật interactivity
         tile.sprite.eventMode = 'static';   // Nhận click events
@@ -307,8 +327,8 @@ export class Board {
         } else {
             // Màn hình bình thường hoặc màn hình dọc: HUD nằm ở trên cùng
             maxBoardWidth = canvasWidth - 24;
-            maxBoardHeight = canvasHeight - 150;
-            topOffset = 95;
+            maxBoardHeight = canvasHeight - 120; // Increased space for larger tiles
+            topOffset = 85; // Lowered top offset slightly
         }
 
         const scaleX = maxBoardWidth / boardWidth;
@@ -747,6 +767,78 @@ export class Board {
                 field.tile.remove();
             }
         });
+        return tiles;
+    }
+
+    /**
+     * Destroy all tiles in 3 rows and 3 columns centered at (row, col) (Super Cross Blast).
+     * Used when a match of 4 or 5 containing a special tile triggers a Super Blast.
+     */
+    destroySuperCross(row, col) {
+        const destroyedFields = new Set();
+        // Rows r-1, r, r+1
+        for (let r = row - 1; r <= row + 1; r++) {
+            if (r < 0 || r >= this.rows) continue;
+            for (let c = 0; c < this.cols; c++) {
+                const field = this.getField(r, c);
+                if (field && field.tile && !field.isVoid) {
+                    destroyedFields.add(field);
+                }
+            }
+        }
+        // Columns c-1, c, c+1
+        for (let c = col - 1; c <= col + 1; c++) {
+            if (c < 0 || c >= this.cols) continue;
+            for (let r = 0; r < this.rows; r++) {
+                const field = this.getField(r, c);
+                if (field && field.tile && !field.isVoid) {
+                    destroyedFields.add(field);
+                }
+            }
+        }
+
+        const tiles = [];
+        destroyedFields.forEach(field => {
+            tiles.push(field.tile);
+            this._removeTileOverlays(field.tile);
+            field.tile.remove();
+        });
+        return tiles;
+    }
+
+    /**
+     * Clear all normal/special tiles from the entire board (Super Board Wipe).
+     * Used when a Rainbow Gem is matched in a match-5 combo.
+     */
+    destroySuperRainbow() {
+        const tiles = [];
+        this.fields.forEach(field => {
+            if (field.tile && !field.isVoid && !field.tile.isStone) {
+                tiles.push(field.tile);
+                this._removeTileOverlays(field.tile);
+                field.tile.remove();
+            }
+        });
+        return tiles;
+    }
+
+    /**
+     * Destroy all tiles in a 5x5 area centered at (centerRow, centerCol) (Super Drum Blast).
+     * Used when a T/L-shape match containing a special tile triggers a Super Drum Blast.
+     */
+    destroyArea5x5(centerRow, centerCol) {
+        const tiles = [];
+        for (let r = centerRow - 2; r <= centerRow + 2; r++) {
+            for (let c = centerCol - 2; c <= centerCol + 2; c++) {
+                if (r < 0 || r >= this.rows || c < 0 || c >= this.cols) continue;
+                const field = this.getField(r, c);
+                if (field && field.tile && !field.isVoid) {
+                    tiles.push(field.tile);
+                    this._removeTileOverlays(field.tile);
+                    field.tile.remove();
+                }
+            }
+        }
         return tiles;
     }
 
