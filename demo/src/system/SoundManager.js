@@ -57,7 +57,11 @@ class SoundManager {
         // Sử dụng nhạc nền cục bộ
         this.bgm = new Audio("/assets/music/music.mp3");
         this.bgm.loop = true;
-        this.bgm.volume = this.isMobile ? this.bgmVolume * 0.25 : this.bgmVolume; // Sử dụng mức âm lượng được thiết lập
+        let factor = 1.0;
+        if (this.isMobile) {
+            factor = (this.bgmVolume >= 0.35) ? 0.25 : 0.08;
+        }
+        this.bgm.volume = this.bgmVolume * factor; // Sử dụng mức âm lượng được thiết lập
 
         // Đồng bộ với trạng thái tắt tiếng của wink-bridge
         if (window.__GLOBAL_MUTE__) {
@@ -88,7 +92,11 @@ class SoundManager {
     setBGMVolume(vol) {
         this.bgmVolume = vol;
         if (this.bgm) {
-            this.bgm.volume = this.isMobile ? vol * 0.20 : vol;
+            let factor = 1.0;
+            if (this.isMobile) {
+                factor = (vol >= 0.35) ? 0.25 : 0.08;
+            }
+            this.bgm.volume = vol * factor;
         }
     }
 
