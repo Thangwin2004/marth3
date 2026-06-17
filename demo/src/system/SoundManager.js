@@ -15,9 +15,9 @@ class SoundManager {
         this.bgmVolume = 0.1;     // default BGM volume
         this.lastLandTime = 0;
 
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                         (navigator.maxTouchPoints > 0) || 
-                         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+            (navigator.maxTouchPoints > 0) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         this.isMobile = isMobile;
         this.sfxMultiplier = isMobile ? 1.45 : 1.0;
     }
@@ -28,7 +28,7 @@ class SoundManager {
     init() {
         if (this.ctx) {
             if (this.ctx.state === 'suspended') {
-                this.ctx.resume().catch(() => {});
+                this.ctx.resume().catch(() => { });
             }
             return;
         }
@@ -36,7 +36,7 @@ class SoundManager {
         if (AudioContextClass) {
             this.ctx = new AudioContextClass();
             if (this.ctx.state === 'suspended') {
-                this.ctx.resume().catch(() => {});
+                this.ctx.resume().catch(() => { });
             }
         }
     }
@@ -49,7 +49,7 @@ class SoundManager {
         this.init();
         if (this.bgm) {
             if (this.bgm.paused) {
-                this.bgm.play().catch(() => {});
+                this.bgm.play().catch(() => { });
             }
             return;
         }
@@ -57,7 +57,7 @@ class SoundManager {
         // Sử dụng nhạc nền cục bộ
         this.bgm = new Audio("/assets/music/music.mp3");
         this.bgm.loop = true;
-        this.bgm.volume = this.isMobile ? this.bgmVolume * 0.45 : this.bgmVolume; // Sử dụng mức âm lượng được thiết lập
+        this.bgm.volume = this.isMobile ? this.bgmVolume * 0.25 : this.bgmVolume; // Sử dụng mức âm lượng được thiết lập
 
         // Đồng bộ với trạng thái tắt tiếng của wink-bridge
         if (window.__GLOBAL_MUTE__) {
@@ -88,7 +88,7 @@ class SoundManager {
     setBGMVolume(vol) {
         this.bgmVolume = vol;
         if (this.bgm) {
-            this.bgm.volume = this.isMobile ? vol * 0.45 : vol;
+            this.bgm.volume = this.isMobile ? vol * 0.20 : vol;
         }
     }
 
@@ -158,26 +158,26 @@ class SoundManager {
         const baseFreq = 261.63; // Nốt Đồ trung tâm (C4)
         const pitchStep = 1 + (comboNum - 1) * 0.12;
         const rootFreq = baseFreq * pitchStep;
-        
+
         const now = this.ctx.currentTime;
         // Ascending major arpeggio sweep (Root -> Major 3rd -> Perfect 5th -> Octave)
         const notes = [rootFreq, rootFreq * 1.25, rootFreq * 1.5, rootFreq * 2];
-        
+
         notes.forEach((freq, index) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.connect(gain);
             gain.connect(this.ctx.destination);
-            
+
             osc.type = 'triangle'; // triangle waves create a warm, punchy arcade chime
             osc.frequency.setValueAtTime(freq, now + index * 0.04);
             osc.frequency.exponentialRampToValueAtTime(freq * 1.15, now + index * 0.04 + 0.08);
-            
+
             // Volume increases slightly with higher combos to feel more intense/satisfying
             const vol = (0.25 + Math.min(0.12, comboNum * 0.02)) * this.sfxMultiplier;
             gain.gain.setValueAtTime(vol, now + index * 0.04);
             gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.04 + 0.08);
-            
+
             osc.start(now + index * 0.04);
             osc.stop(now + index * 0.04 + 0.08);
         });
@@ -280,14 +280,14 @@ class SoundManager {
         const clickGain = this.ctx.createGain();
         clickOsc.connect(clickGain);
         clickGain.connect(this.ctx.destination);
-        
+
         clickOsc.type = 'sine';
         clickOsc.frequency.setValueAtTime(1800, ctxTime);
         clickOsc.frequency.exponentialRampToValueAtTime(800, ctxTime + 0.02);
-        
+
         clickGain.gain.setValueAtTime(0.28 * this.sfxMultiplier, ctxTime);
         clickGain.gain.exponentialRampToValueAtTime(0.01, ctxTime + 0.02);
-        
+
         clickOsc.start();
         clickOsc.stop(ctxTime + 0.02);
 
@@ -296,14 +296,14 @@ class SoundManager {
         const bodyGain = this.ctx.createGain();
         bodyOsc.connect(bodyGain);
         bodyGain.connect(this.ctx.destination);
-        
+
         bodyOsc.type = 'triangle';
         bodyOsc.frequency.setValueAtTime(360, ctxTime);
         bodyOsc.frequency.exponentialRampToValueAtTime(110, ctxTime + 0.1);
-        
+
         bodyGain.gain.setValueAtTime(0.45 * this.sfxMultiplier, ctxTime); // Louder resonant body thump
         bodyGain.gain.exponentialRampToValueAtTime(0.01, ctxTime + 0.1);
-        
+
         bodyOsc.start();
         bodyOsc.stop(ctxTime + 0.1);
     }
@@ -336,12 +336,12 @@ class SoundManager {
             const gain = this.ctx.createGain();
             osc.connect(gain);
             gain.connect(this.ctx.destination);
-            
+
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, now + idx * 0.05);
             gain.gain.setValueAtTime(0.2 * this.sfxMultiplier, now + idx * 0.05);
             gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.05 + 0.04);
-            
+
             osc.start(now + idx * 0.05);
             osc.stop(now + idx * 0.05 + 0.04);
         });
@@ -388,14 +388,14 @@ class SoundManager {
             const gain = this.ctx.createGain();
             osc.connect(gain);
             gain.connect(this.ctx.destination);
-            
+
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, now + idx * 0.03);
             osc.frequency.exponentialRampToValueAtTime(freq * 1.15, now + idx * 0.03 + 0.08);
-            
+
             gain.gain.setValueAtTime(0.24 * this.sfxMultiplier, now + idx * 0.03);
             gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.03 + 0.08);
-            
+
             osc.start(now + idx * 0.03);
             osc.stop(now + idx * 0.03 + 0.08);
         });
@@ -409,7 +409,7 @@ class SoundManager {
         if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
 
         const now = this.ctx.currentTime;
-        
+
         // 1. Massive deep rumble (Low-frequency triangle sweep)
         const osc1 = this.ctx.createOscillator();
         const gain1 = this.ctx.createGain();
@@ -457,7 +457,7 @@ class SoundManager {
         this.init();
         if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
         const now = this.ctx.currentTime;
-        
+
         // 1. Initial Sharp Metallic Strike (the hammer hit)
         const strikeFreqs = [440, 660, 990, 1320];
         strikeFreqs.forEach(freq => {
@@ -465,12 +465,12 @@ class SoundManager {
             const gain = this.ctx.createGain();
             osc.connect(gain);
             gain.connect(this.ctx.destination);
-            
+
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(freq, now);
             gain.gain.setValueAtTime(0.2 * this.sfxMultiplier, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-            
+
             osc.start();
             osc.stop(now + 0.08);
         });
@@ -487,7 +487,7 @@ class SoundManager {
         drumGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
         drumOsc.start();
         drumOsc.stop(now + 0.5);
-        
+
         // 3. Majestic Gong Resonance (Resounding ringing tone)
         // Three slightly detuned oscillators to create a natural, rich chorus/reverb ring
         const resonanceFreq = 220; // A3 (deep, powerful gong note)
@@ -497,15 +497,15 @@ class SoundManager {
             const gain = this.ctx.createGain();
             osc.connect(gain);
             gain.connect(this.ctx.destination);
-            
+
             osc.type = 'sine';
             osc.frequency.setValueAtTime(resonanceFreq, now);
             osc.detune.setValueAtTime(detune, now);
-            
+
             gain.gain.setValueAtTime(0.4 * this.sfxMultiplier, now);
             // Let it ring out for 1.25 seconds!
             gain.gain.exponentialRampToValueAtTime(0.005, now + 1.25);
-            
+
             osc.start();
             osc.stop(now + 1.25);
         });
