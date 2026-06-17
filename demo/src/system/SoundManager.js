@@ -14,6 +14,12 @@ class SoundManager {
         this.musicEnabled = true; // music toggle state (BGM on/off)
         this.bgmVolume = 0.1;     // default BGM volume
         this.lastLandTime = 0;
+
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                         (navigator.maxTouchPoints > 0) || 
+                         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        this.isMobile = isMobile;
+        this.sfxMultiplier = isMobile ? 1.45 : 1.0;
     }
 
     /**
@@ -51,7 +57,7 @@ class SoundManager {
         // Sử dụng nhạc nền cục bộ
         this.bgm = new Audio("/assets/music/music.mp3");
         this.bgm.loop = true;
-        this.bgm.volume = this.bgmVolume; // Sử dụng mức âm lượng được thiết lập
+        this.bgm.volume = this.isMobile ? this.bgmVolume * 0.45 : this.bgmVolume; // Sử dụng mức âm lượng được thiết lập
 
         // Đồng bộ với trạng thái tắt tiếng của wink-bridge
         if (window.__GLOBAL_MUTE__) {
@@ -82,7 +88,7 @@ class SoundManager {
     setBGMVolume(vol) {
         this.bgmVolume = vol;
         if (this.bgm) {
-            this.bgm.volume = vol;
+            this.bgm.volume = this.isMobile ? vol * 0.45 : vol;
         }
     }
 
@@ -108,7 +114,7 @@ class SoundManager {
         osc.frequency.setValueAtTime(450, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.08);
 
-        gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.18 * this.sfxMultiplier, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
 
         osc.start();
@@ -132,7 +138,7 @@ class SoundManager {
         osc.frequency.setValueAtTime(280, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.16);
 
-        gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.35 * this.sfxMultiplier, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.16);
 
         osc.start();
@@ -168,7 +174,7 @@ class SoundManager {
             osc.frequency.exponentialRampToValueAtTime(freq * 1.15, now + index * 0.04 + 0.08);
             
             // Volume increases slightly with higher combos to feel more intense/satisfying
-            const vol = 0.25 + Math.min(0.12, comboNum * 0.02);
+            const vol = (0.25 + Math.min(0.12, comboNum * 0.02)) * this.sfxMultiplier;
             gain.gain.setValueAtTime(vol, now + index * 0.04);
             gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.04 + 0.08);
             
@@ -192,7 +198,7 @@ class SoundManager {
             gain.connect(this.ctx.destination);
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, now + start);
-            gain.gain.setValueAtTime(0.28, now + start);
+            gain.gain.setValueAtTime(0.28 * this.sfxMultiplier, now + start);
             gain.gain.exponentialRampToValueAtTime(0.01, now + start + duration);
             osc.start(now + start);
             osc.stop(now + start + duration);
@@ -220,7 +226,7 @@ class SoundManager {
             gain.connect(this.ctx.destination);
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(freq, now + start);
-            gain.gain.setValueAtTime(0.22, now + start);
+            gain.gain.setValueAtTime(0.22 * this.sfxMultiplier, now + start);
             gain.gain.exponentialRampToValueAtTime(0.01, now + start + duration);
             osc.start(now + start);
             osc.stop(now + start + duration);
@@ -249,7 +255,7 @@ class SoundManager {
         osc.frequency.setValueAtTime(300, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.15);
 
-        gain.gain.setValueAtTime(0.22, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.22 * this.sfxMultiplier, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
 
         osc.start();
@@ -279,7 +285,7 @@ class SoundManager {
         clickOsc.frequency.setValueAtTime(1800, ctxTime);
         clickOsc.frequency.exponentialRampToValueAtTime(800, ctxTime + 0.02);
         
-        clickGain.gain.setValueAtTime(0.28, ctxTime);
+        clickGain.gain.setValueAtTime(0.28 * this.sfxMultiplier, ctxTime);
         clickGain.gain.exponentialRampToValueAtTime(0.01, ctxTime + 0.02);
         
         clickOsc.start();
@@ -295,7 +301,7 @@ class SoundManager {
         bodyOsc.frequency.setValueAtTime(360, ctxTime);
         bodyOsc.frequency.exponentialRampToValueAtTime(110, ctxTime + 0.1);
         
-        bodyGain.gain.setValueAtTime(0.45, ctxTime); // Louder resonant body thump
+        bodyGain.gain.setValueAtTime(0.45 * this.sfxMultiplier, ctxTime); // Louder resonant body thump
         bodyGain.gain.exponentialRampToValueAtTime(0.01, ctxTime + 0.1);
         
         bodyOsc.start();
@@ -318,7 +324,7 @@ class SoundManager {
         osc1.type = 'triangle';
         osc1.frequency.setValueAtTime(180, now);
         osc1.frequency.exponentialRampToValueAtTime(45, now + 0.35);
-        gain1.gain.setValueAtTime(0.45, now);
+        gain1.gain.setValueAtTime(0.45 * this.sfxMultiplier, now);
         gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
         osc1.start();
         osc1.stop(now + 0.35);
@@ -333,7 +339,7 @@ class SoundManager {
             
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, now + idx * 0.05);
-            gain.gain.setValueAtTime(0.2, now + idx * 0.05);
+            gain.gain.setValueAtTime(0.2 * this.sfxMultiplier, now + idx * 0.05);
             gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.05 + 0.04);
             
             osc.start(now + idx * 0.05);
@@ -348,7 +354,7 @@ class SoundManager {
         oscLeaf.type = 'sine';
         oscLeaf.frequency.setValueAtTime(1000, now);
         oscLeaf.frequency.exponentialRampToValueAtTime(250, now + 0.3);
-        gainLeaf.gain.setValueAtTime(0.18, now);
+        gainLeaf.gain.setValueAtTime(0.18 * this.sfxMultiplier, now);
         gainLeaf.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
         oscLeaf.start();
         oscLeaf.stop(now + 0.3);
@@ -370,7 +376,7 @@ class SoundManager {
         baseOsc.type = 'sine';
         baseOsc.frequency.setValueAtTime(220, now);
         baseOsc.frequency.exponentialRampToValueAtTime(650, now + 0.42);
-        baseGain.gain.setValueAtTime(0.3, now);
+        baseGain.gain.setValueAtTime(0.3 * this.sfxMultiplier, now);
         baseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.42);
         baseOsc.start();
         baseOsc.stop(now + 0.42);
@@ -387,7 +393,7 @@ class SoundManager {
             osc.frequency.setValueAtTime(freq, now + idx * 0.03);
             osc.frequency.exponentialRampToValueAtTime(freq * 1.15, now + idx * 0.03 + 0.08);
             
-            gain.gain.setValueAtTime(0.24, now + idx * 0.03);
+            gain.gain.setValueAtTime(0.24 * this.sfxMultiplier, now + idx * 0.03);
             gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.03 + 0.08);
             
             osc.start(now + idx * 0.03);
@@ -412,7 +418,7 @@ class SoundManager {
         osc1.type = 'triangle';
         osc1.frequency.setValueAtTime(180, now);
         osc1.frequency.linearRampToValueAtTime(30, now + 0.85);
-        gain1.gain.setValueAtTime(0.65, now);
+        gain1.gain.setValueAtTime(0.65 * this.sfxMultiplier, now);
         gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.85);
         osc1.start();
         osc1.stop(now + 0.85);
@@ -425,7 +431,7 @@ class SoundManager {
         osc2.type = 'sawtooth';
         osc2.frequency.setValueAtTime(240, now);
         osc2.frequency.exponentialRampToValueAtTime(60, now + 0.5);
-        gain2.gain.setValueAtTime(0.38, now);
+        gain2.gain.setValueAtTime(0.38 * this.sfxMultiplier, now);
         gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
         osc2.start();
         osc2.stop(now + 0.5);
@@ -438,7 +444,7 @@ class SoundManager {
         osc3.type = 'sine';
         osc3.frequency.setValueAtTime(500, now);
         osc3.frequency.exponentialRampToValueAtTime(2200, now + 0.5);
-        gain3.gain.setValueAtTime(0.38, now);
+        gain3.gain.setValueAtTime(0.38 * this.sfxMultiplier, now);
         gain3.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
         osc3.start();
         osc3.stop(now + 0.5);
@@ -462,7 +468,7 @@ class SoundManager {
             
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(freq, now);
-            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.setValueAtTime(0.2 * this.sfxMultiplier, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
             
             osc.start();
@@ -477,7 +483,7 @@ class SoundManager {
         drumOsc.type = 'triangle';
         drumOsc.frequency.setValueAtTime(140, now);
         drumOsc.frequency.linearRampToValueAtTime(45, now + 0.5);
-        drumGain.gain.setValueAtTime(0.6, now);
+        drumGain.gain.setValueAtTime(0.6 * this.sfxMultiplier, now);
         drumGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
         drumOsc.start();
         drumOsc.stop(now + 0.5);
@@ -496,7 +502,7 @@ class SoundManager {
             osc.frequency.setValueAtTime(resonanceFreq, now);
             osc.detune.setValueAtTime(detune, now);
             
-            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.setValueAtTime(0.4 * this.sfxMultiplier, now);
             // Let it ring out for 1.25 seconds!
             gain.gain.exponentialRampToValueAtTime(0.005, now + 1.25);
             
@@ -521,7 +527,7 @@ class SoundManager {
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, now + start);
             osc.frequency.exponentialRampToValueAtTime(freq * 1.25, now + start + duration);
-            gain.gain.setValueAtTime(vol, now + start);
+            gain.gain.setValueAtTime(vol * this.sfxMultiplier, now + start);
             gain.gain.exponentialRampToValueAtTime(0.01, now + start + duration);
             osc.start(now + start);
             osc.stop(now + start + duration);
@@ -549,7 +555,7 @@ class SoundManager {
         osc.frequency.setValueAtTime(350, now);
         osc.frequency.exponentialRampToValueAtTime(1400, now + 0.3);
 
-        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.setValueAtTime(0.28 * this.sfxMultiplier, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
 
         osc.start();
@@ -571,7 +577,7 @@ class SoundManager {
         osc1.type = 'triangle';
         osc1.frequency.setValueAtTime(120, now);
         osc1.frequency.linearRampToValueAtTime(300, now + 0.28);
-        gain1.gain.setValueAtTime(0.38, now);
+        gain1.gain.setValueAtTime(0.38 * this.sfxMultiplier, now);
         gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
         osc1.start();
         osc1.stop(now + 0.28);
@@ -583,7 +589,7 @@ class SoundManager {
         osc2.type = 'sine';
         osc2.frequency.setValueAtTime(240, now);
         osc2.frequency.linearRampToValueAtTime(600, now + 0.28);
-        gain2.gain.setValueAtTime(0.2, now);
+        gain2.gain.setValueAtTime(0.2 * this.sfxMultiplier, now);
         gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
         osc2.start();
         osc2.stop(now + 0.28);
