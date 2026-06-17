@@ -48,8 +48,10 @@ class SoundManager {
             return;
         }
 
-        // Sử dụng nhạc nền cục bộ
-        this.bgm = new Audio("/assets/music/music.mp3");
+        // Sử dụng nhạc nền cục bộ với CORS để tránh bị ngắt âm thanh sau 3-5 giây trong iframe trên mobile
+        this.bgm = new Audio();
+        this.bgm.crossOrigin = "anonymous";
+        this.bgm.src = "/assets/music/music.mp3";
         this.bgm.loop = true;
 
         // Detect Safari and iOS
