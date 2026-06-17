@@ -14,6 +14,32 @@ class SoundManager {
         this.musicEnabled = true; // music toggle state (BGM on/off)
         this.bgmVolume = 0.1;     // default BGM volume
         this.lastLandTime = 0;
+        this._bgmWatchdogTimer = null;
+    }
+
+    /**
+     * Bắt đầu watchdog: kiểm tra định kỳ xem BGM có bị dừng không và tự resume.
+     * Đây là fix chính cho lỗi nhạc tắt sau 3-5s trên mobile.
+     */
+    _startBGMWatchdog() {
+        if (this._bgmWatchdogTimer) return; // đã chạy rồi
+        this._bgmWatchdogTimer = setInterval(() => {
+            // Resume AudioContext nếu bị suspend (mobile policy)
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume().catch(() => {});
+            }
+            // Restart BGM nếu bị pause ngoài ý muốn
+            if (this.musicEnabled && this.bgm && this.bgm.paused && !this.bgm.ended) {
+                this.bgm.play().catch(() => {});
+            }
+        }, 1000); // kiểm tra mỗi 1 giây
+    }
+
+    _stopBGMWatchdog() {
+        if (this._bgmWatchdogTimer) {
+            clearInterval(this._bgmWatchdogTimer);
+            this._bgmWatchdogTimer = null;
+        }
     }
 
     /**
@@ -41,10 +67,26 @@ class SoundManager {
     playBGM() {
         if (!this.musicEnabled) return;
         this.init();
+
+        // Resume AudioContext ngay nếu đang suspended (critical for mobile)
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+        }
+
         if (this.bgm) {
             if (this.bgm.paused) {
-                this.bgm.play().catch(() => {});
+                // Resume AudioContext trước khi play
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume().then(() => {
+                        this.bgm.play().catch(() => {});
+                    }).catch(() => {
+                        this.bgm.play().catch(() => {});
+                    });
+                } else {
+                    this.bgm.play().catch(() => {});
+                }
             }
+            this._startBGMWatchdog();
             return;
         }
 
@@ -92,20 +134,52 @@ class SoundManager {
             this.bgm.muted = true;
         }
 
+        // Lắng nghe sự kiện bị pause/dừng bất ngờ để tự khởi động lại (fix mobile)
+        this.bgm.addEventListener('pause', () => {
+            if (this.musicEnabled && !this._bgmIntentionalPause) {
+                // Bị dừng ngoài ý muốn → thử resume AudioContext rồi play lại
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume().then(() => {
+                        if (this.bgm && this.musicEnabled) this.bgm.play().catch(() => {});
+                    }).catch(() => {});
+                } else {
+                    setTimeout(() => {
+                        if (this.bgm && this.musicEnabled && this.bgm.paused) {
+                            this.bgm.play().catch(() => {});
+                        }
+                    }, 300);
+                }
+            }
+        });
+
+        this.bgm.addEventListener('ended', () => {
+            // loop=true nên không nên xảy ra, nhưng nếu có thì restart
+            if (this.musicEnabled) {
+                this.bgm.currentTime = 0;
+                this.bgm.play().catch(() => {});
+            }
+        });
+
         this.bgm.play().catch(err => {
             console.log("Audio play deferred until user interaction:", err);
         });
+
+        // Bắt đầu watchdog để đảm bảo BGM không bị ngắt
+        this._startBGMWatchdog();
     }
 
     /**
      * Dừng nhạc nền
      */
     stopBGM() {
+        this._stopBGMWatchdog();
         if (this.bgm) {
             try {
+                this._bgmIntentionalPause = true;
                 this.bgm.pause();
             } catch (_) { }
             this.bgm = null;
+            this._bgmIntentionalPause = false;
         }
         if (this.bgmSource) {
             try { this.bgmSource.disconnect(); } catch (_) {}
@@ -650,11 +724,21 @@ class SoundManager {
         this.musicEnabled = !this.musicEnabled;
         if (this.bgm) {
             if (this.musicEnabled) {
-                if (this.bgm.paused) {
+                // Bật nhạc: resume AudioContext rồi play
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume().then(() => {
+                        if (this.bgm) this.bgm.play().catch(err => console.log("Failed to resume BGM:", err));
+                    }).catch(() => {});
+                } else if (this.bgm.paused) {
                     this.bgm.play().catch(err => console.log("Failed to resume BGM:", err));
                 }
+                this._startBGMWatchdog();
             } else {
+                // Tắt nhạc chủ động: dùng flag để không trigger auto-restart
+                this._bgmIntentionalPause = true;
+                this._stopBGMWatchdog();
                 this.bgm.pause();
+                this._bgmIntentionalPause = false;
             }
         } else if (this.musicEnabled) {
             this.playBGM();

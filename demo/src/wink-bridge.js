@@ -128,9 +128,23 @@
             var a = window.__ALL_AUDIOS__[i];
             if (a && a.__BYPASS_MUTE__) continue;
             try { a.muted = false; } catch (_) { }
+            // Resume any audio that was paused by muteAll
+            try { if (a && a.paused && !a.ended) a.play(); } catch (_) { }
         }
         for (i = 0; i < window.__ALL_AUDIO_CONTEXTS__.length; i++) {
             try { window.__ALL_AUDIO_CONTEXTS__[i].resume(); } catch (_) { }
+        }
+    }
+
+    // 1f. Auto-resume ALL suspended AudioContexts on every user interaction.
+    //     This is the critical fix for mobile (iOS/Android) where AudioContext
+    //     gets suspended after a few seconds of inactivity or due to browser policy.
+    function resumeAllAudioContexts() {
+        for (var i = 0; i < window.__ALL_AUDIO_CONTEXTS__.length; i++) {
+            var ctx = window.__ALL_AUDIO_CONTEXTS__[i];
+            if (ctx && ctx.state === 'suspended') {
+                try { ctx.resume(); } catch (_) { }
+            }
         }
     }
 
@@ -188,6 +202,8 @@
     function startInteraction() {
         lastEventTime = _DateNow();
         notify();
+        // Always try to resume AudioContexts on interaction (critical for mobile)
+        resumeAllAudioContexts();
     }
 
     // 2d. Event handler wrapper — REJECTS synthetic/programmatic events.
