@@ -126,25 +126,32 @@ class SoundManager {
         this.init();
         if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
 
-        const baseFreq = 523.25; // Nốt Đồ (C5)
-        const multiplier = 1 + (comboNum - 1) * 0.16;
-        const freq = baseFreq * multiplier;
-
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(freq * 1.4, this.ctx.currentTime + 0.22);
-
-        gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.22);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.22);
+        const baseFreq = 261.63; // Nốt Đồ trung tâm (C4)
+        const pitchStep = 1 + (comboNum - 1) * 0.12;
+        const rootFreq = baseFreq * pitchStep;
+        
+        const now = this.ctx.currentTime;
+        // Ascending major arpeggio sweep (Root -> Major 3rd -> Perfect 5th -> Octave)
+        const notes = [rootFreq, rootFreq * 1.25, rootFreq * 1.5, rootFreq * 2];
+        
+        notes.forEach((freq, index) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.type = 'triangle'; // triangle waves create a warm, punchy arcade chime
+            osc.frequency.setValueAtTime(freq, now + index * 0.04);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.15, now + index * 0.04 + 0.08);
+            
+            // Volume increases slightly with higher combos to feel more intense/satisfying
+            const vol = 0.25 + Math.min(0.12, comboNum * 0.02);
+            gain.gain.setValueAtTime(vol, now + index * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.04 + 0.08);
+            
+            osc.start(now + index * 0.04);
+            osc.stop(now + index * 0.04 + 0.08);
+        });
     }
 
     /**
@@ -260,22 +267,50 @@ class SoundManager {
     playRuneExplosion() {
         this.init();
         if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
+        const now = this.ctx.currentTime;
 
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        // 1. Deep rumble punch
+        const osc1 = this.ctx.createOscillator();
+        const gain1 = this.ctx.createGain();
+        osc1.connect(gain1);
+        gain1.connect(this.ctx.destination);
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(180, now);
+        osc1.frequency.exponentialRampToValueAtTime(45, now + 0.35);
+        gain1.gain.setValueAtTime(0.45, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc1.start();
+        osc1.stop(now + 0.35);
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        // 2. Bamboo snapping crackles (3 rapid high-pitched wood cracking sounds)
+        const snaps = [880, 1150, 680];
+        snaps.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+            gain.gain.setValueAtTime(0.2, now + idx * 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.05 + 0.04);
+            
+            osc.start(now + idx * 0.05);
+            osc.stop(now + idx * 0.05 + 0.04);
+        });
 
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.4);
-
-        gain.gain.setValueAtTime(0.45, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.4);
+        // 3. Bamboo leaf rustle sweep
+        const oscLeaf = this.ctx.createOscillator();
+        const gainLeaf = this.ctx.createGain();
+        oscLeaf.connect(gainLeaf);
+        gainLeaf.connect(this.ctx.destination);
+        oscLeaf.type = 'sine';
+        oscLeaf.frequency.setValueAtTime(1000, now);
+        oscLeaf.frequency.exponentialRampToValueAtTime(250, now + 0.3);
+        gainLeaf.gain.setValueAtTime(0.18, now);
+        gainLeaf.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        oscLeaf.start();
+        oscLeaf.stop(now + 0.3);
     }
 
     /**
@@ -284,25 +319,39 @@ class SoundManager {
     playRainbowExplosion() {
         this.init();
         if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
-
         const now = this.ctx.currentTime;
-        const playTone = (freq, start, duration) => {
+
+        // 1. Warm base swell
+        const baseOsc = this.ctx.createOscillator();
+        const baseGain = this.ctx.createGain();
+        baseOsc.connect(baseGain);
+        baseGain.connect(this.ctx.destination);
+        baseOsc.type = 'sine';
+        baseOsc.frequency.setValueAtTime(220, now);
+        baseOsc.frequency.exponentialRampToValueAtTime(650, now + 0.42);
+        baseGain.gain.setValueAtTime(0.3, now);
+        baseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.42);
+        baseOsc.start();
+        baseOsc.stop(now + 0.42);
+
+        // 2. Magical pentatonic sparkle cascade (G4, A4, C5, D5, E5, G5, A5, C6)
+        const scale = [392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+        scale.forEach((freq, idx) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.connect(gain);
             gain.connect(this.ctx.destination);
+            
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + start);
-            osc.frequency.exponentialRampToValueAtTime(freq * 2, now + start + duration);
-            gain.gain.setValueAtTime(0.25, now + start);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + start + duration);
-            osc.start(now + start);
-            osc.stop(now + start + duration);
-        };
-
-        playTone(300, 0, 0.15);
-        playTone(450, 0.08, 0.15);
-        playTone(600, 0.16, 0.25);
+            osc.frequency.setValueAtTime(freq, now + idx * 0.03);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.15, now + idx * 0.03 + 0.08);
+            
+            gain.gain.setValueAtTime(0.24, now + idx * 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.03 + 0.08);
+            
+            osc.start(now + idx * 0.03);
+            osc.stop(now + idx * 0.03 + 0.08);
+        });
     }
 
     /**
@@ -314,31 +363,44 @@ class SoundManager {
 
         const now = this.ctx.currentTime;
         
-        // 1. Bass drop (Deep sawtooth)
+        // 1. Massive deep rumble (Low-frequency triangle sweep)
         const osc1 = this.ctx.createOscillator();
         const gain1 = this.ctx.createGain();
         osc1.connect(gain1);
         gain1.connect(this.ctx.destination);
-        osc1.type = 'sawtooth';
-        osc1.frequency.setValueAtTime(220, now);
-        osc1.frequency.linearRampToValueAtTime(30, now + 0.6);
-        gain1.gain.setValueAtTime(0.55, now);
-        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(180, now);
+        osc1.frequency.linearRampToValueAtTime(30, now + 0.85);
+        gain1.gain.setValueAtTime(0.65, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.85);
         osc1.start();
-        osc1.stop(now + 0.6);
+        osc1.stop(now + 0.85);
 
-        // 2. High-pitch chime sweep (Sine wave)
+        // 2. Exploding crackle (Sawtooth burst)
         const osc2 = this.ctx.createOscillator();
         const gain2 = this.ctx.createGain();
         osc2.connect(gain2);
         gain2.connect(this.ctx.destination);
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(600, now);
-        osc2.frequency.exponentialRampToValueAtTime(1800, now + 0.4);
-        gain2.gain.setValueAtTime(0.3, now);
-        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc2.type = 'sawtooth';
+        osc2.frequency.setValueAtTime(240, now);
+        osc2.frequency.exponentialRampToValueAtTime(60, now + 0.5);
+        gain2.gain.setValueAtTime(0.38, now);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
         osc2.start();
-        osc2.stop(now + 0.4);
+        osc2.stop(now + 0.5);
+
+        // 3. Shimmering sweep
+        const osc3 = this.ctx.createOscillator();
+        const gain3 = this.ctx.createGain();
+        osc3.connect(gain3);
+        gain3.connect(this.ctx.destination);
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(500, now);
+        osc3.frequency.exponentialRampToValueAtTime(2200, now + 0.5);
+        gain3.gain.setValueAtTime(0.38, now);
+        gain3.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc3.start();
+        osc3.stop(now + 0.5);
     }
 
     /**
@@ -349,31 +411,57 @@ class SoundManager {
         if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
         const now = this.ctx.currentTime;
         
-        // Bass strike (Low-frequency drum body)
-        const osc1 = this.ctx.createOscillator();
-        const gain1 = this.ctx.createGain();
-        osc1.connect(gain1);
-        gain1.connect(this.ctx.destination);
-        osc1.type = 'triangle';
-        osc1.frequency.setValueAtTime(130, now);
-        osc1.frequency.linearRampToValueAtTime(40, now + 0.55);
-        gain1.gain.setValueAtTime(0.5, now);
-        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
-        osc1.start();
-        osc1.stop(now + 0.55);
+        // 1. Initial Sharp Metallic Strike (the hammer hit)
+        const strikeFreqs = [440, 660, 990, 1320];
+        strikeFreqs.forEach(freq => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            
+            osc.start();
+            osc.stop(now + 0.08);
+        });
+
+        // 2. Deep Drum Body Strike (Low-frequency impact)
+        const drumOsc = this.ctx.createOscillator();
+        const drumGain = this.ctx.createGain();
+        drumOsc.connect(drumGain);
+        drumGain.connect(this.ctx.destination);
+        drumOsc.type = 'triangle';
+        drumOsc.frequency.setValueAtTime(140, now);
+        drumOsc.frequency.linearRampToValueAtTime(45, now + 0.5);
+        drumGain.gain.setValueAtTime(0.6, now);
+        drumGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        drumOsc.start();
+        drumOsc.stop(now + 0.5);
         
-        // Metallic gong resonance (Muffled overtones)
-        const osc2 = this.ctx.createOscillator();
-        const gain2 = this.ctx.createGain();
-        osc2.connect(gain2);
-        gain2.connect(this.ctx.destination);
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(415, now); // G#4 gong overtone
-        osc2.frequency.linearRampToValueAtTime(523, now + 0.45); // C5 gong sweep
-        gain2.gain.setValueAtTime(0.25, now);
-        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
-        osc2.start();
-        osc2.stop(now + 0.45);
+        // 3. Majestic Gong Resonance (Resounding ringing tone)
+        // Three slightly detuned oscillators to create a natural, rich chorus/reverb ring
+        const resonanceFreq = 220; // A3 (deep, powerful gong note)
+        const detunes = [-4, 0, 5]; // cents
+        detunes.forEach(detune => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(resonanceFreq, now);
+            osc.detune.setValueAtTime(detune, now);
+            
+            gain.gain.setValueAtTime(0.4, now);
+            // Let it ring out for 1.25 seconds!
+            gain.gain.exponentialRampToValueAtTime(0.005, now + 1.25);
+            
+            osc.start();
+            osc.stop(now + 1.25);
+        });
     }
 }
 
