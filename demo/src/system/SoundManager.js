@@ -50,6 +50,13 @@ class SoundManager {
 
         // Sử dụng nhạc nền cục bộ với CORS để tránh bị ngắt âm thanh sau 3-5 giây trong iframe trên mobile
         this.bgm = new Audio();
+        this.bgm.__BYPASS_MUTE__ = true;
+        if (window.__ALL_AUDIOS__) {
+            const idx = window.__ALL_AUDIOS__.indexOf(this.bgm);
+            if (idx !== -1) {
+                window.__ALL_AUDIOS__.splice(idx, 1);
+            }
+        }
         this.bgm.crossOrigin = "anonymous";
         this.bgm.src = "/assets/music/music.mp3";
         this.bgm.loop = true;
@@ -61,14 +68,6 @@ class SoundManager {
 
         if (isSafari || isIOS) {
             this.bgm.muted = true;
-            // Shield it from wink-bridge so it cannot be unmuted (which would cause double audio / full volume on iOS)
-            Object.defineProperty(this.bgm, 'muted', {
-                get: () => true,
-                set: (val) => {
-                    // Always keep it true on Safari/iOS to prevent double / full-volume playback
-                },
-                configurable: true
-            });
         }
 
         // Route BGM through AudioContext to bypass iOS Safari volume limitation (which locks HTML5 volume to 1.0)

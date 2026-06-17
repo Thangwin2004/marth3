@@ -84,6 +84,9 @@
     // 1c. Intercept HTMLMediaElement.prototype.play
     var origPlay = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
+        if (this.__BYPASS_MUTE__) {
+            return origPlay.apply(this, arguments);
+        }
         if (window.__GLOBAL_MUTE__) this.muted = true;
         if (window.__ALL_AUDIOS__.indexOf(this) === -1) {
             window.__ALL_AUDIOS__.push(this);
@@ -96,8 +99,10 @@
         window.__GLOBAL_MUTE__ = true;
         var i;
         for (i = 0; i < window.__ALL_AUDIOS__.length; i++) {
-            try { window.__ALL_AUDIOS__[i].muted = true; } catch (_) { }
-            try { window.__ALL_AUDIOS__[i].pause(); } catch (_) { }
+            var a = window.__ALL_AUDIOS__[i];
+            if (a && a.__BYPASS_MUTE__) continue;
+            try { a.muted = true; } catch (_) { }
+            try { a.pause(); } catch (_) { }
         }
         for (i = 0; i < window.__ALL_AUDIO_CONTEXTS__.length; i++) {
             try { window.__ALL_AUDIO_CONTEXTS__[i].suspend(); } catch (_) { }
@@ -106,6 +111,7 @@
         try {
             var els = document.querySelectorAll("audio, video");
             for (var j = 0; j < els.length; j++) {
+                if (els[j].__BYPASS_MUTE__) continue;
                 els[j].muted = true;
                 try { els[j].pause(); } catch (_) { }
                 if (window.__ALL_AUDIOS__.indexOf(els[j]) === -1) {
@@ -119,7 +125,9 @@
         window.__GLOBAL_MUTE__ = false;
         var i;
         for (i = 0; i < window.__ALL_AUDIOS__.length; i++) {
-            try { window.__ALL_AUDIOS__[i].muted = false; } catch (_) { }
+            var a = window.__ALL_AUDIOS__[i];
+            if (a && a.__BYPASS_MUTE__) continue;
+            try { a.muted = false; } catch (_) { }
         }
         for (i = 0; i < window.__ALL_AUDIO_CONTEXTS__.length; i++) {
             try { window.__ALL_AUDIO_CONTEXTS__[i].resume(); } catch (_) { }
