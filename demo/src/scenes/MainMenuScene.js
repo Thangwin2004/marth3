@@ -29,6 +29,9 @@ export class MainMenuScene {
 
         App.setBackgroundColor(0x0a0a1a);
 
+        // Make music slightly louder than click SFX (0.18) on Main Menu
+        soundManager.setBGMVolume(0.22);
+
         // Phát nhạc nền khi người chơi tương tác lần đầu
         const startBGM = () => {
             soundManager.playBGM();

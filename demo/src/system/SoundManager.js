@@ -12,6 +12,7 @@ class SoundManager {
         this.bgm = null;
         this.enabled = true;
         this.musicEnabled = true; // music toggle state (BGM on/off)
+        this.bgmVolume = 0.1;     // default BGM volume
         this.lastLandTime = 0;
     }
 
@@ -50,7 +51,7 @@ class SoundManager {
         // Sử dụng nhạc nền cục bộ
         this.bgm = new Audio("/assets/music/music.mp3");
         this.bgm.loop = true;
-        this.bgm.volume = 0.1; // Nhạc nền vừa phải để không lấn lướt SFX
+        this.bgm.volume = this.bgmVolume; // Sử dụng mức âm lượng được thiết lập
 
         // Đồng bộ với trạng thái tắt tiếng của wink-bridge
         if (window.__GLOBAL_MUTE__) {
@@ -71,6 +72,17 @@ class SoundManager {
                 this.bgm.pause();
             } catch (_) { }
             this.bgm = null;
+        }
+    }
+
+    /**
+     * Thay đổi âm lượng nhạc nền (BGM)
+     * @param {number} vol - Độ lớn âm lượng (0.0 đến 1.0)
+     */
+    setBGMVolume(vol) {
+        this.bgmVolume = vol;
+        if (this.bgm) {
+            this.bgm.volume = vol;
         }
     }
 

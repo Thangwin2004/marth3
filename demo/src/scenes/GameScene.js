@@ -28,6 +28,9 @@ export class GameScene {
 
         App.setBackgroundColor(0x0a0a1a);
 
+        // Lower BGM volume during gameplay so explosion SFX pop out
+        soundManager.setBGMVolume(0.12);
+
         // === SHOW LOADING OVERLAY ===
         this.loadingText = new Text({
             text: 'ĐANG TẢI HÌNH ẢNH NGẪU NHIÊN...',
