@@ -826,17 +826,28 @@ export class GameScene {
                 if (field.tile === null) {
                     this.board.createTile(field, spawn.color);
                 }
+
+                // Get screen coordinates of the tile/field
+                const tX = field.tile.sprite ? (field.tile.sprite.x * this.board.container.scale.x + this.board.container.x) : (field.col * App.config.tileSize * this.board.container.scale.x + this.board.container.x + (App.config.tileSize * this.board.container.scale.x)/2);
+                const tY = field.tile.sprite ? (field.tile.sprite.y * this.board.container.scale.y + this.board.container.y) : (field.row * App.config.tileSize * this.board.container.scale.y + this.board.container.y + (App.config.tileSize * this.board.container.scale.y)/2);
+
                 if (spawn.type === 'rune') {
                     field.tile.isRune = true;
                     field.tile.updateStateOverlay();
+                    this.spawnRuneCreationVFX(tX, tY);
+                    soundManager.playRuneCreation();
                     console.log("🌟 Spawned Rune Tile at row:", field.row, "col:", field.col);
                 } else if (spawn.type === 'rainbow') {
                     field.tile.isRainbow = true;
                     field.tile.updateStateOverlay();
+                    this.spawnRainbowCreationVFX(tX, tY);
+                    soundManager.playRainbowCreation();
                     console.log("🌈 Spawned Rainbow Gem at row:", field.row, "col:", field.col);
                 } else if (spawn.type === 'drum') {
                     field.tile.isDrum = true;
                     field.tile.updateStateOverlay();
+                    this.spawnDrumCreationVFX(tX, tY);
+                    soundManager.playDrumCreation();
                     console.log("🥁 Spawned Bronze Drum Gem at row:", field.row, "col:", field.col);
                 }
             }
@@ -1139,6 +1150,211 @@ export class GameScene {
                 ease: 'sine.out'
             });
         }
+    }
+
+    spawnRuneCreationVFX(x, y) {
+        const vfxContainer = new Container();
+        vfxContainer.zIndex = 92;
+        this.container.addChild(vfxContainer);
+
+        const offsets = [
+            { dx: -35, dy: -35 },
+            { dx: 35, dy: -35 },
+            { dx: -35, dy: 35 },
+            { dx: 35, dy: 35 }
+        ];
+
+        let completed = 0;
+        offsets.forEach(offset => {
+            const p = new Graphics();
+            // Star/diamond spark
+            p.moveTo(0, -6);
+            p.lineTo(3, 0);
+            p.lineTo(0, 6);
+            p.lineTo(-3, 0);
+            p.fill({ color: 0xffd54f }); // gold
+
+            p.x = x + offset.dx;
+            p.y = y + offset.dy;
+            p.scale.set(0.2);
+            p.alpha = 0;
+            vfxContainer.addChild(p);
+
+            gsap.to(p, {
+                x: x,
+                y: y,
+                alpha: 1,
+                duration: 0.35,
+                ease: 'power1.out'
+            });
+
+            gsap.to(p.scale, {
+                x: 1.4,
+                y: 1.4,
+                duration: 0.35,
+                ease: 'power1.out',
+                onComplete: () => {
+                    p.destroy();
+                    completed++;
+                    if (completed === 4) {
+                        // Flash at the center
+                        const flash = new Graphics();
+                        flash.circle(0, 0, 15);
+                        flash.fill({ color: 0xffffff });
+                        flash.x = x;
+                        flash.y = y;
+                        vfxContainer.addChild(flash);
+
+                        gsap.to(flash, {
+                            alpha: 0,
+                            duration: 0.2,
+                            ease: 'sine.out',
+                            onComplete: () => {
+                                vfxContainer.destroy();
+                            }
+                        });
+                        gsap.to(flash.scale, {
+                            x: 2.2,
+                            y: 2.2,
+                            duration: 0.2,
+                            ease: 'sine.out'
+                        });
+                    }
+                }
+            });
+        });
+    }
+
+    spawnRainbowCreationVFX(x, y) {
+        const vfxContainer = new Container();
+        vfxContainer.zIndex = 92;
+        this.container.addChild(vfxContainer);
+
+        const rainbowColors = [0xff1744, 0xff9100, 0xffea00, 0x00e676, 0x00e5ff, 0x2979ff, 0xd500f9];
+        const dotCount = 14;
+        let completed = 0;
+
+        for (let i = 0; i < dotCount; i++) {
+            const p = new Graphics();
+            const color = rainbowColors[i % rainbowColors.length];
+            p.circle(0, 0, 4);
+            p.fill({ color: color });
+            
+            p.x = x;
+            p.y = y;
+            vfxContainer.addChild(p);
+
+            const startAngle = (i * Math.PI * 2) / dotCount;
+            const startRadius = 45;
+
+            // Set initial position on circle
+            p.x = x + Math.cos(startAngle) * startRadius;
+            p.y = y + Math.sin(startAngle) * startRadius;
+
+            // Animate spiral inward
+            const obj = { radius: startRadius, angle: startAngle };
+            gsap.to(obj, {
+                radius: 0,
+                angle: startAngle + Math.PI * 1.5, // 270 degree rotation
+                duration: 0.45,
+                ease: 'sine.out',
+                onUpdate: () => {
+                    if (p && !p.destroyed) {
+                        p.x = x + Math.cos(obj.angle) * obj.radius;
+                        p.y = y + Math.sin(obj.angle) * obj.radius;
+                    }
+                },
+                onComplete: () => {
+                    p.destroy();
+                    completed++;
+                    if (completed === dotCount) {
+                        // Rainbow flash
+                        const flash = new Graphics();
+                        flash.circle(0, 0, 16);
+                        flash.fill({ color: 0xffffff });
+                        flash.x = x;
+                        flash.y = y;
+                        vfxContainer.addChild(flash);
+
+                        gsap.to(flash, {
+                            alpha: 0,
+                            duration: 0.25,
+                            ease: 'sine.out',
+                            onComplete: () => {
+                                vfxContainer.destroy();
+                            }
+                        });
+                        gsap.to(flash.scale, {
+                            x: 2.5,
+                            y: 2.5,
+                            duration: 0.25,
+                            ease: 'sine.out'
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    spawnDrumCreationVFX(x, y) {
+        const vfxContainer = new Container();
+        vfxContainer.zIndex = 92;
+        this.container.addChild(vfxContainer);
+
+        // 1. Gathering bronze/gold ring
+        const ring = new Graphics();
+        ring.circle(0, 0, 48);
+        ring.stroke({ color: 0xffa726, width: 3, alpha: 0.8 });
+        ring.x = x;
+        ring.y = y;
+        vfxContainer.addChild(ring);
+
+        gsap.to(ring.scale, {
+            x: 0.1,
+            y: 0.1,
+            duration: 0.35,
+            ease: 'power2.in',
+            onComplete: () => {
+                ring.destroy();
+                
+                // 2. Radial gold spark blast (8 rays)
+                const rays = 8;
+                let raysCompleted = 0;
+                for (let r = 0; r < rays; r++) {
+                    const spark = new Graphics();
+                    // Slender diamond ray
+                    spark.moveTo(0, -10);
+                    spark.lineTo(2, 0);
+                    spark.lineTo(0, 10);
+                    spark.lineTo(-2, 0);
+                    spark.fill({ color: 0xffd54f });
+
+                    spark.x = x;
+                    spark.y = y;
+                    const angle = (r * Math.PI * 2) / rays;
+                    spark.rotation = angle;
+                    vfxContainer.addChild(spark);
+
+                    const destX = x + Math.cos(angle) * 35;
+                    const destY = y + Math.sin(angle) * 35;
+
+                    gsap.to(spark, {
+                        x: destX,
+                        y: destY,
+                        alpha: 0,
+                        duration: 0.25,
+                        ease: 'sine.out',
+                        onComplete: () => {
+                            spark.destroy();
+                            raysCompleted++;
+                            if (raysCompleted === rays) {
+                                vfxContainer.destroy();
+                            }
+                        }
+                    });
+                }
+            }
+        });
     }
 
     spawnCrossLeaves(x, y) {

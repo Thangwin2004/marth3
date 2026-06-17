@@ -481,6 +481,90 @@ class SoundManager {
             osc.stop(now + 1.25);
         });
     }
+
+    /**
+     * Hiệu ứng âm thanh khi tạo ngọc Rune phép thuật (Match-4)
+     */
+    playRuneCreation() {
+        this.init();
+        if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
+        const now = this.ctx.currentTime;
+
+        const playTone = (freq, start, duration, vol) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + start);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.25, now + start + duration);
+            gain.gain.setValueAtTime(vol, now + start);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + start + duration);
+            osc.start(now + start);
+            osc.stop(now + start + duration);
+        };
+
+        // Rising minor-third interval chime (E5 -> G5)
+        playTone(659.25, 0, 0.15, 0.25);
+        playTone(783.99, 0.06, 0.2, 0.22);
+    }
+
+    /**
+     * Hiệu ứng âm thanh khi tạo ngọc Sắc Cầu Vồng (Match-5)
+     */
+    playRainbowCreation() {
+        this.init();
+        if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(350, now);
+        osc.frequency.exponentialRampToValueAtTime(1400, now + 0.3);
+
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+        osc.start();
+        osc.stop(now + 0.3);
+    }
+
+    /**
+     * Hiệu ứng âm thanh khi tạo ngọc Trống Đồng Đông Sơn (Ghép T/L)
+     */
+    playDrumCreation() {
+        this.init();
+        if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
+        const now = this.ctx.currentTime;
+
+        const osc1 = this.ctx.createOscillator();
+        const gain1 = this.ctx.createGain();
+        osc1.connect(gain1);
+        gain1.connect(this.ctx.destination);
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(120, now);
+        osc1.frequency.linearRampToValueAtTime(300, now + 0.28);
+        gain1.gain.setValueAtTime(0.38, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+        osc1.start();
+        osc1.stop(now + 0.28);
+
+        const osc2 = this.ctx.createOscillator();
+        const gain2 = this.ctx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(this.ctx.destination);
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(240, now);
+        osc2.frequency.linearRampToValueAtTime(600, now + 0.28);
+        gain2.gain.setValueAtTime(0.2, now);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+        osc2.start();
+        osc2.stop(now + 0.28);
+    }
 }
 
 export const soundManager = new SoundManager();
