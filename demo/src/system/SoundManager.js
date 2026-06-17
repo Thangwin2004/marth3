@@ -59,7 +59,7 @@ class SoundManager {
         this.bgm.loop = true;
         let factor = 1.0;
         if (this.isMobile) {
-            factor = (this.bgmVolume >= 0.35) ? 0.25 : 0.08;
+            factor = (this.bgmVolume >= 0.35) ? 0.25 : 0.02;
         }
         this.bgm.volume = this.bgmVolume * factor; // Sử dụng mức âm lượng được thiết lập
 
@@ -94,7 +94,7 @@ class SoundManager {
         if (this.bgm) {
             let factor = 1.0;
             if (this.isMobile) {
-                factor = (vol >= 0.35) ? 0.25 : 0.08;
+                factor = (vol >= 0.35) ? 0.25 : 0.02;
             }
             this.bgm.volume = vol * factor;
         }
