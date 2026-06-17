@@ -47,10 +47,10 @@ class SoundManager {
             return;
         }
 
-        // Tải nhạc nền chiptune từ CDN Phaser chính thức
-        this.bgm = new Audio("https://labs.phaser.io/assets/audio/CatAstroPhi_shmup_normal.mp3");
+        // Sử dụng nhạc nền cục bộ
+        this.bgm = new Audio("/assets/music/music.mp3");
         this.bgm.loop = true;
-        this.bgm.volume = 0.05; // Giảm nhạc nền nhỏ nhẹ hơn nữa để SFX nổi bật
+        this.bgm.volume = 0.1; // Nhạc nền vừa phải để không lấn lướt SFX
 
         // Đồng bộ với trạng thái tắt tiếng của wink-bridge
         if (window.__GLOBAL_MUTE__) {
