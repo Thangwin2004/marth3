@@ -36,10 +36,10 @@ export class MainMenuScene {
         const startBGM = () => {
             soundManager.playBGM();
             window.removeEventListener('click', startBGM);
-            window.removeEventListener('pointerdown', startBGM);
+            window.removeEventListener('touchend', startBGM);
         };
         window.addEventListener('click', startBGM);
-        window.addEventListener('pointerdown', startBGM);
+        window.addEventListener('touchend', startBGM);
 
         // === BACKGROUND ===
         this.bg = new Sprite(Texture.WHITE);

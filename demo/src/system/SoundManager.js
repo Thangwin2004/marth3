@@ -51,10 +51,42 @@ class SoundManager {
         // Sử dụng nhạc nền cục bộ
         this.bgm = new Audio("/assets/music/music.mp3");
         this.bgm.loop = true;
-        this.bgm.volume = this.bgmVolume; // Sử dụng mức âm lượng được thiết lập
 
-        // Đồng bộ với trạng thái tắt tiếng của wink-bridge
-        if (window.__GLOBAL_MUTE__) {
+        // Detect Safari and iOS
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (isSafari || isIOS) {
+            this.bgm.muted = true;
+            // Shield it from wink-bridge so it cannot be unmuted (which would cause double audio / full volume on iOS)
+            Object.defineProperty(this.bgm, 'muted', {
+                get: () => true,
+                set: (val) => {
+                    // Always keep it true on Safari/iOS to prevent double / full-volume playback
+                },
+                configurable: true
+            });
+        }
+
+        // Route BGM through AudioContext to bypass iOS Safari volume limitation (which locks HTML5 volume to 1.0)
+        if (this.ctx) {
+            try {
+                this.bgmSource = this.ctx.createMediaElementSource(this.bgm);
+                this.bgmGain = this.ctx.createGain();
+                this.bgmSource.connect(this.bgmGain);
+                this.bgmGain.connect(this.ctx.destination);
+                this.bgmGain.gain.setValueAtTime(this.bgmVolume, this.ctx.currentTime);
+            } catch (e) {
+                console.warn("Failed to route BGM through Web Audio API:", e);
+            }
+        }
+
+        // Set fallback volume for non-iOS platforms
+        this.bgm.volume = this.bgmVolume;
+
+        // Đồng bộ với trạng thái tắt tiếng của wink-bridge (chỉ khi không phải iOS/Safari để tránh ghi đè)
+        if (!(isSafari || isIOS) && window.__GLOBAL_MUTE__) {
             this.bgm.muted = true;
         }
 
@@ -73,6 +105,14 @@ class SoundManager {
             } catch (_) { }
             this.bgm = null;
         }
+        if (this.bgmSource) {
+            try { this.bgmSource.disconnect(); } catch (_) {}
+            this.bgmSource = null;
+        }
+        if (this.bgmGain) {
+            try { this.bgmGain.disconnect(); } catch (_) {}
+            this.bgmGain = null;
+        }
     }
 
     /**
@@ -81,6 +121,9 @@ class SoundManager {
      */
     setBGMVolume(vol) {
         this.bgmVolume = vol;
+        if (this.bgmGain && this.ctx) {
+            this.bgmGain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        }
         if (this.bgm) {
             this.bgm.volume = vol;
         }

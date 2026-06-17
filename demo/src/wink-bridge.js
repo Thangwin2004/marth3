@@ -48,7 +48,7 @@
     // 1. AUDIO CONTROL
     // ═══════════════════════════════════════════════════════════════
 
-    window.__GLOBAL_MUTE__ = true;
+    window.__GLOBAL_MUTE__ = (window.parent !== window);
     window.__ALL_AUDIOS__ = [];
     window.__ALL_AUDIO_CONTEXTS__ = [];
 
