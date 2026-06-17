@@ -48,7 +48,7 @@
     // 1. AUDIO CONTROL
     // ═══════════════════════════════════════════════════════════════
 
-    window.__GLOBAL_MUTE__ = (window.parent !== window);
+    window.__GLOBAL_MUTE__ = true;
     window.__ALL_AUDIOS__ = [];
     window.__ALL_AUDIO_CONTEXTS__ = [];
 
@@ -84,9 +84,6 @@
     // 1c. Intercept HTMLMediaElement.prototype.play
     var origPlay = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
-        if (this.__BYPASS_MUTE__) {
-            return origPlay.apply(this, arguments);
-        }
         if (window.__GLOBAL_MUTE__) this.muted = true;
         if (window.__ALL_AUDIOS__.indexOf(this) === -1) {
             window.__ALL_AUDIOS__.push(this);
@@ -99,10 +96,8 @@
         window.__GLOBAL_MUTE__ = true;
         var i;
         for (i = 0; i < window.__ALL_AUDIOS__.length; i++) {
-            var a = window.__ALL_AUDIOS__[i];
-            if (a && a.__BYPASS_MUTE__) continue;
-            try { a.muted = true; } catch (_) { }
-            try { a.pause(); } catch (_) { }
+            try { window.__ALL_AUDIOS__[i].muted = true; } catch (_) { }
+            try { window.__ALL_AUDIOS__[i].pause(); } catch (_) { }
         }
         for (i = 0; i < window.__ALL_AUDIO_CONTEXTS__.length; i++) {
             try { window.__ALL_AUDIO_CONTEXTS__[i].suspend(); } catch (_) { }
@@ -111,7 +106,6 @@
         try {
             var els = document.querySelectorAll("audio, video");
             for (var j = 0; j < els.length; j++) {
-                if (els[j].__BYPASS_MUTE__) continue;
                 els[j].muted = true;
                 try { els[j].pause(); } catch (_) { }
                 if (window.__ALL_AUDIOS__.indexOf(els[j]) === -1) {
@@ -125,26 +119,10 @@
         window.__GLOBAL_MUTE__ = false;
         var i;
         for (i = 0; i < window.__ALL_AUDIOS__.length; i++) {
-            var a = window.__ALL_AUDIOS__[i];
-            if (a && a.__BYPASS_MUTE__) continue;
-            try { a.muted = false; } catch (_) { }
-            // Resume any audio that was paused by muteAll
-            try { if (a && a.paused && !a.ended) a.play(); } catch (_) { }
+            try { window.__ALL_AUDIOS__[i].muted = false; } catch (_) { }
         }
         for (i = 0; i < window.__ALL_AUDIO_CONTEXTS__.length; i++) {
             try { window.__ALL_AUDIO_CONTEXTS__[i].resume(); } catch (_) { }
-        }
-    }
-
-    // 1f. Auto-resume ALL suspended AudioContexts on every user interaction.
-    //     This is the critical fix for mobile (iOS/Android) where AudioContext
-    //     gets suspended after a few seconds of inactivity or due to browser policy.
-    function resumeAllAudioContexts() {
-        for (var i = 0; i < window.__ALL_AUDIO_CONTEXTS__.length; i++) {
-            var ctx = window.__ALL_AUDIO_CONTEXTS__[i];
-            if (ctx && ctx.state === 'suspended') {
-                try { ctx.resume(); } catch (_) { }
-            }
         }
     }
 
@@ -202,8 +180,6 @@
     function startInteraction() {
         lastEventTime = _DateNow();
         notify();
-        // Always try to resume AudioContexts on interaction (critical for mobile)
-        resumeAllAudioContexts();
     }
 
     // 2d. Event handler wrapper — REJECTS synthetic/programmatic events.
