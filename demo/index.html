@@ -1,59 +1,71 @@
 <!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <script src="/src/wink-bridge.js"></script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/style.css" />
     <title>Animal Crush - Pure Match-3</title>
     <script>
-        // Global error visual logger for remote debugging
-        window.addEventListener('error', function (e) {
-            const errDiv = document.createElement('div');
-            errDiv.style.position = 'fixed';
-            errDiv.style.top = '10px';
-            errDiv.style.left = '10px';
-            errDiv.style.right = '10px';
-            errDiv.style.padding = '15px';
-            errDiv.style.background = '#ffebee';
-            errDiv.style.color = '#c62828';
-            errDiv.style.border = '2px solid #ef9a9a';
-            errDiv.style.borderRadius = '8px';
-            errDiv.style.zIndex = '99999';
-            errDiv.style.fontFamily = 'monospace';
-            errDiv.style.fontSize = '12px';
-            errDiv.style.whiteSpace = 'pre-wrap';
-            errDiv.innerHTML = '<strong>[Global Error]</strong> ' + e.message + '<br>at ' + e.filename + ':' + e.lineno + ':' + e.colno + '<br><br><strong>Stack:</strong><br>' + (e.error ? e.error.stack : 'No stack trace');
-            document.body.appendChild(errDiv);
-        });
-        window.addEventListener('unhandledrejection', function (e) {
-            const errDiv = document.createElement('div');
-            errDiv.style.position = 'fixed';
-            errDiv.style.top = '10px';
-            errDiv.style.left = '10px';
-            errDiv.style.right = '10px';
-            errDiv.style.padding = '15px';
-            errDiv.style.background = '#ffebee';
-            errDiv.style.color = '#c62828';
-            errDiv.style.border = '2px solid #ef9a9a';
-            errDiv.style.borderRadius = '8px';
-            errDiv.style.zIndex = '99999';
-            errDiv.style.fontFamily = 'monospace';
-            errDiv.style.fontSize = '12px';
-            errDiv.style.whiteSpace = 'pre-wrap';
-            errDiv.innerHTML = '<strong>[Promise Rejection]</strong> ' + (e.reason ? (e.reason.message || e.reason) : 'Unknown reason') + '<br><br><strong>Stack:</strong><br>' + (e.reason && e.reason.stack ? e.reason.stack : 'No stack trace');
-            document.body.appendChild(errDiv);
-        });
+      // Global error visual logger for remote debugging
+      window.addEventListener("error", function (e) {
+        const errDiv = document.createElement("div");
+        errDiv.style.position = "fixed";
+        errDiv.style.top = "10px";
+        errDiv.style.left = "10px";
+        errDiv.style.right = "10px";
+        errDiv.style.padding = "15px";
+        errDiv.style.background = "#ffebee";
+        errDiv.style.color = "#c62828";
+        errDiv.style.border = "2px solid #ef9a9a";
+        errDiv.style.borderRadius = "8px";
+        errDiv.style.zIndex = "99999";
+        errDiv.style.fontFamily = "monospace";
+        errDiv.style.fontSize = "12px";
+        errDiv.style.whiteSpace = "pre-wrap";
+        errDiv.innerHTML =
+          "<strong>[Global Error]</strong> " +
+          e.message +
+          "<br>at " +
+          e.filename +
+          ":" +
+          e.lineno +
+          ":" +
+          e.colno +
+          "<br><br><strong>Stack:</strong><br>" +
+          (e.error ? e.error.stack : "No stack trace");
+        document.body.appendChild(errDiv);
+      });
+      window.addEventListener("unhandledrejection", function (e) {
+        const errDiv = document.createElement("div");
+        errDiv.style.position = "fixed";
+        errDiv.style.top = "10px";
+        errDiv.style.left = "10px";
+        errDiv.style.right = "10px";
+        errDiv.style.padding = "15px";
+        errDiv.style.background = "#ffebee";
+        errDiv.style.color = "#c62828";
+        errDiv.style.border = "2px solid #ef9a9a";
+        errDiv.style.borderRadius = "8px";
+        errDiv.style.zIndex = "99999";
+        errDiv.style.fontFamily = "monospace";
+        errDiv.style.fontSize = "12px";
+        errDiv.style.whiteSpace = "pre-wrap";
+        errDiv.innerHTML =
+          "<strong>[Promise Rejection]</strong> " +
+          (e.reason ? e.reason.message || e.reason : "Unknown reason") +
+          "<br><br><strong>Stack:</strong><br>" +
+          (e.reason && e.reason.stack ? e.reason.stack : "No stack trace");
+        document.body.appendChild(errDiv);
+      });
     </script>
-</head>
+  </head>
 
-<body>
+  <body>
     <div id="app">
-        <div id="pixi-container"></div>
+      <div id="pixi-container"></div>
     </div>
     <script type="module" src="/src/main.js"></script>
-</body>
-
+  </body>
 </html>

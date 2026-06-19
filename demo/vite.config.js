@@ -13,8 +13,8 @@ export default defineConfig({
         // code-splitting from breaking internal pipe registrations
         // and RenderGroup state, which causes updateRenderable crashes
         manualChunks(id) {
-          if (id.includes('pixi.js') || id.includes('pixi')) {
-            return 'pixi';
+          if (id.includes("pixi.js") || id.includes("pixi")) {
+            return "pixi";
           }
         },
       },

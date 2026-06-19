@@ -4,7 +4,7 @@
  *   No PixiJS dependency — pure data management.
  */
 
-const KEY = 'match3_pure_leaderboard';
+const KEY = "match3_pure_leaderboard";
 
 /**
  * Returns a fresh default save object (deep copy).
@@ -12,7 +12,7 @@ const KEY = 'match3_pure_leaderboard';
  */
 function defaultSave() {
   return {
-    leaderboard: []
+    leaderboard: [],
   };
 }
 
@@ -28,7 +28,7 @@ class SaveManager {
     try {
       localStorage.setItem(KEY, JSON.stringify(data));
     } catch (err) {
-      console.error('[SaveManager] Failed to save:', err);
+      console.error("[SaveManager] Failed to save:", err);
     }
   }
 
@@ -43,10 +43,10 @@ class SaveManager {
       if (!raw) return defaultSave();
       const loaded = JSON.parse(raw);
       return {
-        leaderboard: loaded.leaderboard || []
+        leaderboard: loaded.leaderboard || [],
       };
     } catch (err) {
-      console.warn('[SaveManager] Corrupt save data, resetting:', err);
+      console.warn("[SaveManager] Corrupt save data, resetting:", err);
       return defaultSave();
     }
   }
@@ -71,11 +71,11 @@ class SaveManager {
     const leaderboard = data.leaderboard || [];
 
     const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
     const year = now.getFullYear();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
     const dateString = `${day}/${month}/${year} ${hours}:${minutes}`;
 
     const newEntry = { score, date: dateString };
@@ -91,7 +91,9 @@ class SaveManager {
 
     // Find if the new score made it into the top 5, and at what rank
     // (If there are duplicate scores, findIndex will find the first matching entry)
-    const index = trimmed.findIndex(entry => entry.score === score && entry.date === dateString);
+    const index = trimmed.findIndex(
+      (entry) => entry.score === score && entry.date === dateString,
+    );
     return index !== -1 ? index + 1 : null;
   }
 
@@ -102,7 +104,7 @@ class SaveManager {
     try {
       localStorage.removeItem(KEY);
     } catch (err) {
-      console.error('[SaveManager] Failed to reset:', err);
+      console.error("[SaveManager] Failed to reset:", err);
     }
   }
 }

@@ -4,8 +4,8 @@
  *   PixiJS scenes using GSAP fade animations.
  */
 
-import { Container } from 'pixi.js';
-import gsap from 'gsap';
+import { Container } from "pixi.js";
+import gsap from "gsap";
 
 /**
  * Manages PixiJS scene lifecycle and animated transitions.
@@ -34,11 +34,11 @@ class SceneManager {
    */
   init(pixiApp) {
     this.app = pixiApp;
-    window.addEventListener('resize', () => {
+    window.addEventListener("resize", () => {
       if (this.app && this.app.renderer) {
         this.app.renderer.resize(window.innerWidth, window.innerHeight);
       }
-      if (this.currentScene && typeof this.currentScene.resize === 'function') {
+      if (this.currentScene && typeof this.currentScene.resize === "function") {
         this.currentScene.resize();
       }
     });
@@ -58,20 +58,20 @@ class SceneManager {
    */
   async switchTo(SceneClass, data = {}) {
     if (!this.app) {
-      throw new Error('[SceneManager] Not initialised – call init(app) first.');
+      throw new Error("[SceneManager] Not initialised – call init(app) first.");
     }
 
     // ── Fade out & destroy current scene ─────────────────────────────────
     if (this.currentScene) {
       if (this.currentScene.container) {
-        this.currentScene.container.eventMode = 'none';
+        this.currentScene.container.eventMode = "none";
         this.currentScene.container.interactiveChildren = false;
       }
 
       await gsap.to(this.currentScene.container, {
         alpha: 0,
         duration: 0.3,
-        ease: 'power2.inOut',
+        ease: "power2.inOut",
       });
 
       this.app.stage.removeChild(this.currentScene.container);
@@ -89,7 +89,7 @@ class SceneManager {
     await gsap.to(newScene.container, {
       alpha: 1,
       duration: 0.3,
-      ease: 'power2.inOut',
+      ease: "power2.inOut",
     });
 
     this.currentScene = newScene;
