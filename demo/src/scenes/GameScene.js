@@ -486,7 +486,7 @@ export class GameScene {
             this.board.swap(selectedTile, tile);
 
             if (!reverse) {
-                // Find matches in the affected rows and cols
+                // Find matches in the affected rows and cols first
                 const { dirtyRows, dirtyCols } =
                     this.combinationManager.getDirtyRegionAfterSwap(selectedTile, tile);
                 const matches = this.combinationManager.getMatchesInRegion(dirtyRows, dirtyCols);
@@ -496,7 +496,16 @@ export class GameScene {
                     this.comboCount = 0;
                     this.lastAffectedCols = [...dirtyCols];
                     this.updateUI();
-                    this.processMatches(matches);
+                    
+                    // Check if BOTH swapped tiles are special
+                    const isTile1Special = selectedTile.isRune || selectedTile.isRainbow || selectedTile.isDrum;
+                    const isTile2Special = tile.isRune || tile.isRainbow || tile.isDrum;
+                    
+                    if (isTile1Special && isTile2Special) {
+                        this.processSpecialCombo(selectedTile, tile);
+                    } else {
+                        this.processMatches(matches);
+                    }
                 } else {
                     // No matches -> Swap back
                     this.swap(tile, selectedTile, true);
@@ -507,6 +516,320 @@ export class GameScene {
             }
         });
     }
+
+    async processSpecialCombo(tile1, tile2) {
+        this.disabled = true;
+
+        const row = tile2.field ? tile2.field.row : 0;
+        const col = tile2.field ? tile2.field.col : 0;
+        const pX = tile2.sprite ? (tile2.sprite.x * this.board.container.scale.x + this.board.container.x) : 0;
+        const pY = tile2.sprite ? (tile2.sprite.y * this.board.container.scale.y + this.board.container.y) : 0;
+
+        let totalAdded = 0;
+        const multiplier = Math.max(1, this.comboCount);
+
+        let destroyedTiles = [];
+        let comboTextStr = "";
+        let soundType = "super";
+        let shakeIntensity = 20;
+
+        // Identify types
+        const isRainbow1 = tile1.isRainbow;
+        const isRainbow2 = tile2.isRainbow;
+        const isDrum1 = tile1.isDrum;
+        const isDrum2 = tile2.isDrum;
+        const isRune1 = tile1.isRune;
+        const isRune2 = tile2.isRune;
+
+        // Capture columns before removing tiles
+        const col1 = tile1.field ? tile1.field.col : col;
+        const col2 = tile2.field ? tile2.field.col : col;
+
+        // Remove the two swapped tiles first (so they don't get processed again)
+        tile1.remove(true);
+        tile2.remove(true);
+
+        if (isRainbow1 && isRainbow2) {
+            // 1. Rainbow + Rainbow: Clear board
+            comboTextStr = "SIÊU BÃO CẦU VỒNG! 🌈";
+            soundType = "super";
+            shakeIntensity = 30;
+            
+            // Multicolored expanding rainbow ripples
+            const rainbowColors = [0xff1744, 0xff9100, 0xffea00, 0x00e676, 0x2979ff, 0xd500f9];
+            rainbowColors.forEach((color, index) => {
+                gsap.delayedCall(index * 0.08, () => {
+                    this.spawnRipple(pX, pY, color);
+                    this.screenShake(25 - index * 2);
+                });
+            });
+            
+            // Wipe board
+            destroyedTiles = this.board.destroySuperRainbow();
+            totalAdded += (500 + destroyedTiles.length * 15) * multiplier;
+            
+        } else if ((isRainbow1 && (isDrum2 || isRune2)) || (isRainbow2 && (isDrum1 || isRune1))) {
+            // 2. Rainbow + Drum or Rainbow + Rune
+            const specialType = (isDrum1 || isDrum2) ? 'drum' : 'rune';
+            const otherTile = isRainbow1 ? tile2 : tile1;
+            const targetColor = (otherTile.color !== 'rainbow' && otherTile.color !== 'stone') ? otherTile.color : this.sessionColors[Math.floor(Math.random() * this.sessionColors.length)];
+            
+            comboTextStr = specialType === 'drum' ? "CƠN MƯA TRỐNG ĐỒNG! 🥁" : "BÃO CHỮ THẬP RUNE! ⚡";
+            soundType = specialType === 'drum' ? "drum" : "rune";
+            shakeIntensity = 25;
+            
+            this.spawnRipple(pX, pY, 0x00ffff);
+            soundManager.playRainbowExplosion();
+
+            // Find all tiles of targetColor
+            const targetFields = [];
+            this.board.fields.forEach(field => {
+                if (field.tile && !field.isVoid && field.tile.color === targetColor && !field.tile.isStone) {
+                    targetFields.push(field);
+                }
+            });
+
+            // Shoot rainbow laser beams to all target positions
+            const targetPositions = targetFields.map(field => {
+                const t = field.tile;
+                const tX = t.sprite.x * this.board.container.scale.x + this.board.container.x;
+                const tY = t.sprite.y * this.board.container.scale.y + this.board.container.y;
+                return { x: tX, y: tY, color: targetColor };
+            });
+            this.spawnRainbowBlast(pX, pY, targetPositions);
+
+            // Convert them to special tiles
+            targetFields.forEach(field => {
+                const t = field.tile;
+                if (specialType === 'drum') {
+                    t.isDrum = true;
+                    t.isRune = false;
+                    t.isRainbow = false;
+                } else {
+                    t.isRune = true;
+                    t.isDrum = false;
+                    t.isRainbow = false;
+                }
+                t.updateStateOverlay();
+            });
+
+            // Wait a brief moment for the visual conversion and laser travel
+            await this.delay(450);
+
+            // Now detonate all of them sequentially
+            const listToExplode = targetFields.map(f => f.tile);
+            for (const t of listToExplode) {
+                if (!t || !t.field) continue;
+                const r = t.field.row;
+                const c = t.field.col;
+                const tX = t.sprite.x * this.board.container.scale.x + this.board.container.x;
+                const tY = t.sprite.y * this.board.container.scale.y + this.board.container.y;
+                
+                let extra = [];
+                if (specialType === 'drum') {
+                    soundManager.playDrumExplosion();
+                    this.spawnDrumVFX(tX, tY, false);
+                    extra = this.board.destroyArea3x3(r, c);
+                } else {
+                    soundManager.playRuneExplosion();
+                    this.spawnCrossLeaves(tX, tY);
+                    extra = this.board.destroyCross(r, c);
+                }
+                
+                destroyedTiles.push(t, ...extra);
+                totalAdded += (40 + extra.length * 10) * multiplier;
+                this.spawnParticles(tX, tY, t.color);
+                await this.delay(100); // satisfying waterfall delay
+            }
+
+        } else if (isDrum1 && isDrum2) {
+            // 3. Drum + Drum: Giant 5x5 area explosion
+            comboTextStr = "ĐẠI TRỐNG ĐỒNG PHÁT NỔ! 💥";
+            soundType = "super";
+            shakeIntensity = 28;
+            
+            // Dual expanding bronze drums for cultural resonance
+            this.spawnDrumVFX(pX, pY, true);
+            gsap.delayedCall(0.15, () => {
+                this.spawnDrumVFX(pX, pY, false);
+                soundManager.playDrumExplosion();
+            });
+            
+            this.spawnRipple(pX, pY, 0xcd7f32);
+            gsap.delayedCall(0.12, () => this.spawnRipple(pX, pY, 0xffa726));
+            
+            destroyedTiles = this.board.destroyArea5x5(row, col);
+            totalAdded += (250 + destroyedTiles.length * 15) * multiplier;
+            
+        } else if (isRune1 && isRune2) {
+            // 4. Rune + Rune: Clears 3 rows and 3 columns (giant cross)
+            comboTextStr = "SIÊU LƯỚI CHỮ THẬP! ⚔️";
+            soundType = "rune";
+            shakeIntensity = 24;
+            
+            soundManager.playSuperExplosion();
+
+            const rowsToClear = [row - 1, row, row + 1].filter(r => r >= 0 && r < this.board.rows);
+            const colsToClear = [col - 1, col, col + 1].filter(c => c >= 0 && c < this.board.cols);
+            
+            const fieldsToDestroy = new Set();
+            rowsToClear.forEach(r => {
+                for (let c = 0; c < this.board.cols; c++) {
+                    const f = this.board.getField(r, c);
+                    if (f && f.tile && !f.isVoid) fieldsToDestroy.add(f);
+                }
+            });
+            colsToClear.forEach(c => {
+                for (let r = 0; r < this.board.rows; r++) {
+                    const f = this.board.getField(r, c);
+                    if (f && f.tile && !f.isVoid) fieldsToDestroy.add(f);
+                }
+            });
+
+            // Cross leaf whirlwind VFX along the axes
+            this.spawnCrossLeaves(pX, pY);
+            const tileSize = 100 * this.board.container.scale.x;
+            gsap.delayedCall(0.1, () => {
+                this.spawnCrossLeaves(pX - tileSize * 1.5, pY);
+                this.spawnCrossLeaves(pX + tileSize * 1.5, pY);
+                this.spawnCrossLeaves(pX, pY - tileSize * 1.5);
+                this.spawnCrossLeaves(pX, pY + tileSize * 1.5);
+            });
+
+            fieldsToDestroy.forEach(f => {
+                destroyedTiles.push(f.tile);
+                this.board._removeTileOverlays(f.tile);
+                f.tile.remove();
+            });
+
+            totalAdded += (200 + destroyedTiles.length * 12) * multiplier;
+
+        } else if ((isRune1 && isDrum2) || (isRune2 && isDrum1)) {
+            // 5. Rune + Drum: Giant cross (3 rows and 3 columns)
+            comboTextStr = "PHÁO HOA LIÊN HOÀN! 🎆";
+            soundType = "super";
+            shakeIntensity = 26;
+            
+            soundManager.playRuneExplosion();
+            gsap.delayedCall(0.12, () => soundManager.playDrumExplosion());
+
+            const rowsToClear = [row - 1, row, row + 1].filter(r => r >= 0 && r < this.board.rows);
+            const colsToClear = [col - 1, col, col + 1].filter(c => c >= 0 && c < this.board.cols);
+            
+            const fieldsToDestroy = new Set();
+            rowsToClear.forEach(r => {
+                for (let c = 0; c < this.board.cols; c++) {
+                    const f = this.board.getField(r, c);
+                    if (f && f.tile && !f.isVoid) fieldsToDestroy.add(f);
+                }
+            });
+            colsToClear.forEach(c => {
+                for (let r = 0; r < this.board.rows; r++) {
+                    const f = this.board.getField(r, c);
+                    if (f && f.tile && !f.isVoid) fieldsToDestroy.add(f);
+                }
+            });
+
+            // Golden Chim Lac birds and green bamboo leaves whirlwind combined!
+            this.spawnDrumVFX(pX, pY, true);
+            this.spawnCrossLeaves(pX, pY);
+
+            fieldsToDestroy.forEach(f => {
+                destroyedTiles.push(f.tile);
+                this.board._removeTileOverlays(f.tile);
+                f.tile.remove();
+            });
+
+            totalAdded += (220 + destroyedTiles.length * 12) * multiplier;
+        }
+
+        // Apply score and floating text
+        this.score += totalAdded;
+        this.updateUI();
+        this.spawnFloatingScore(pX, pY, `SIÊU PHỐI HỢP! +${totalAdded}`);
+
+        // Show floating combo text
+        if (comboTextStr) {
+            this.comboText.text = comboTextStr;
+            this.comboText.visible = true;
+            this.comboText.alpha = 1;
+            this.comboText.scale.set(0.5);
+            this.comboText.y = 750 / 2 - 100;
+
+            gsap.killTweensOf(this.comboText);
+            gsap.killTweensOf(this.comboText.scale);
+
+            gsap.to(this.comboText.scale, { x: 1.4, y: 1.4, duration: 0.35, ease: 'back.out(2.5)' });
+            gsap.to(this.comboText, {
+                alpha: 0,
+                y: 750 / 2 - 180,
+                duration: 1.2,
+                delay: 0.6,
+                ease: 'power2.out',
+                onComplete: () => { this.comboText.visible = false; },
+            });
+        }
+
+        // Sounds & Shake
+        if (soundType === 'super') {
+            soundManager.playSuperExplosion();
+        } else if (soundType === 'drum') {
+            soundManager.playDrumExplosion();
+        } else if (soundType === 'rune') {
+            soundManager.playRuneExplosion();
+        }
+        this.screenShake(shakeIntensity);
+
+        // Spawn particles for all destroyed tiles
+        destroyedTiles.forEach(t => {
+            if (t && t.sprite && !t.sprite.destroyed) {
+                const tX = t.sprite.x * this.board.container.scale.x + this.board.container.x;
+                const tY = t.sprite.y * this.board.container.scale.y + this.board.container.y;
+                this.spawnParticles(tX, tY, t.color);
+            }
+        });
+
+        // Wait for animations
+        await this.delay(250);
+
+        // Fall down
+        await this.processFallDown();
+
+        // Add tiles
+        await this.addTiles();
+
+        // Check cascades
+        const affectedCols = new Set([col1, col2]);
+        destroyedTiles.forEach(t => {
+            if (t && t.originalField) {
+                affectedCols.add(t.originalField.col);
+            } else if (t && t.field) {
+                affectedCols.add(t.field.col);
+            }
+        });
+        const { dirtyRows, dirtyCols } =
+            this.combinationManager.getDirtyRegionAfterCascade([...affectedCols]);
+        this.lastAffectedCols = dirtyCols;
+        const newMatches = this.combinationManager.getMatchesInRegion(dirtyRows, dirtyCols);
+
+        if (newMatches.length) {
+            await this.delay(150);
+            await this.processMatches(newMatches);
+            return;
+        }
+
+        // Check game over
+        if (this.moves <= 0) {
+            this.showGameOver();
+        } else {
+            if (!this.combinationManager.hasPossibleMoves()) {
+                await this.handleDeadlock();
+            } else {
+                this.disabled = false;
+            }
+        }
+    }
+
 
     async processMatches(matches) {
         this.comboCount++;
@@ -636,50 +959,58 @@ export class GameScene {
             } else {
                 // Normal Match-3
                 // Check if any tile in the match was special (Rune, Rainbow, or Drum)
-                const hasSpecialRune = exp.match.tiles.some(t => t.isRune);
-                const hasSpecialRainbow = exp.match.tiles.some(t => t.isRainbow);
-                const hasSpecialDrum = exp.match.tiles.some(t => t.isDrum);
+                const specialTiles = exp.match.tiles.filter(t => t.isRune || t.isRainbow || t.isDrum);
 
-                if (hasSpecialDrum) {
-                    hasMatch4 = true;
-                    if (playSoundType !== 'super' && playSoundType !== 'rainbow') playSoundType = 'drum';
-                    
-                    this.spawnDrumVFX(exp.x, exp.y, false);
-                    const extraTiles = this.board.destroyArea3x3(exp.row, exp.col);
-                    const matchPoints = (120 + extraTiles.length * 12) * multiplier;
-                    totalAdded += matchPoints;
-                    this.spawnFloatingScore(exp.x, exp.y, `SẤM VANG TRỐNG ĐỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
-                    this.spawnRipple(exp.x, exp.y, 0xffa726);
-                } else if (hasSpecialRune) {
-                    hasMatch4 = true;
-                    if (playSoundType !== 'super' && playSoundType !== 'rainbow' && playSoundType !== 'drum') playSoundType = 'rune';
-                    
-                    this.spawnCrossLeaves(exp.x, exp.y);
-                    const extraTiles = this.board.destroyCross(exp.row, exp.col);
-                    const matchPoints = (100 + extraTiles.length * 10) * multiplier;
-                    totalAdded += matchPoints;
-                    this.spawnFloatingScore(exp.x, exp.y, `HIỆU ỨNG CHỮ THẬP! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
-                    this.spawnRipple(exp.x, exp.y, 0x00e676);
-                } else if (hasSpecialRainbow) {
-                    hasMatch5 = true;
-                    if (playSoundType !== 'super') playSoundType = 'rainbow';
+                if (specialTiles.length > 0) {
+                    // Loop through all special tiles in this match and trigger them all!
+                    specialTiles.forEach(specialTile => {
+                        const r = specialTile.originalField ? specialTile.originalField.row : exp.row;
+                        const c = specialTile.originalField ? specialTile.originalField.col : exp.col;
+                        const tX = specialTile.sprite ? (specialTile.sprite.x * this.board.container.scale.x + this.board.container.x) : exp.x;
+                        const tY = specialTile.sprite ? (specialTile.sprite.y * this.board.container.scale.y + this.board.container.y) : exp.y;
 
-                    // Normal Rainbow Blast (Destroy all of that color)
-                    const targetPositions = [];
-                    this.board.fields.forEach(field => {
-                        if (field.tile && !field.isVoid && field.tile.color === exp.color && field.tile.sprite) {
-                            const tX = field.tile.sprite.x * this.board.container.scale.x + this.board.container.x;
-                            const tY = field.tile.sprite.y * this.board.container.scale.y + this.board.container.y;
-                            targetPositions.push({ x: tX, y: tY, color: exp.color });
+                        if (specialTile.isDrum) {
+                            hasMatch4 = true;
+                            if (playSoundType !== 'super' && playSoundType !== 'rainbow') playSoundType = 'drum';
+                            
+                            this.spawnDrumVFX(tX, tY, false);
+                            const extraTiles = this.board.destroyArea3x3(r, c);
+                            const matchPoints = (120 + extraTiles.length * 12) * multiplier;
+                            totalAdded += matchPoints;
+                            this.spawnFloatingScore(tX, tY, `SẤM VANG TRỐNG ĐỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                            this.spawnRipple(tX, tY, 0xffa726);
+                        } else if (specialTile.isRune) {
+                            hasMatch4 = true;
+                            if (playSoundType !== 'super' && playSoundType !== 'rainbow' && playSoundType !== 'drum') playSoundType = 'rune';
+                            
+                            this.spawnCrossLeaves(tX, tY);
+                            const extraTiles = this.board.destroyCross(r, c);
+                            const matchPoints = (100 + extraTiles.length * 10) * multiplier;
+                            totalAdded += matchPoints;
+                            this.spawnFloatingScore(tX, tY, `HIỆU ỨNG CHỮ THẬP! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                            this.spawnRipple(tX, tY, 0x00e676);
+                        } else if (specialTile.isRainbow) {
+                            hasMatch5 = true;
+                            if (playSoundType !== 'super') playSoundType = 'rainbow';
+
+                            // Normal Rainbow Blast (Destroy all of that color)
+                            const targetPositions = [];
+                            this.board.fields.forEach(field => {
+                                if (field.tile && !field.isVoid && field.tile.color === exp.color && field.tile.sprite) {
+                                    const tx = field.tile.sprite.x * this.board.container.scale.x + this.board.container.x;
+                                    const ty = field.tile.sprite.y * this.board.container.scale.y + this.board.container.y;
+                                    targetPositions.push({ x: tx, y: ty, color: exp.color });
+                                }
+                            });
+                            this.spawnRainbowBlast(tX, tY, targetPositions);
+                            const extraTiles = this.board.destroyAllOfColor(exp.color);
+                            
+                            const matchPoints = (150 + extraTiles.length * 12) * multiplier;
+                            totalAdded += matchPoints;
+                            this.spawnFloatingScore(tX, tY, `NỔ SẮC CẦU VỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
+                            this.spawnRipple(tX, tY, 0xff00ff);
                         }
                     });
-                    this.spawnRainbowBlast(exp.x, exp.y, targetPositions);
-                    const extraTiles = this.board.destroyAllOfColor(exp.color);
-                    
-                    const matchPoints = (150 + extraTiles.length * 12) * multiplier;
-                    totalAdded += matchPoints;
-                    this.spawnFloatingScore(exp.x, exp.y, `NỔ SẮC CẦU VỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ''}`);
-                    this.spawnRipple(exp.x, exp.y, 0xff00ff);
                 } else {
                     // Normal match-3
                     const matchPoints = 10 * multiplier;
