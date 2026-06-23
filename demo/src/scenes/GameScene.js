@@ -72,10 +72,10 @@ export class GameScene {
 
     // === SHOW LOADING OVERLAY ===
     this.loadingText = new Text({
-      text: "ĐANG TẢI HÌNH ẢNH NGẪU NHIÊN...",
+      text: "ĐANG TẢI HÌNH ẢNH...",
       style: {
         fontFamily: "Arial, sans-serif",
-        fontSize: 28,
+        fontSize: 22,
         fontWeight: "bold",
         fill: "#ffdd57",
         dropShadow: { color: "#000000", blur: 4, distance: 2 },
@@ -86,9 +86,25 @@ export class GameScene {
     this.loadingText.y = App.app.screen.height / 2;
     this.container.addChild(this.loadingText);
 
-    // Load background and avatars, then start
+    // Load background and avatars, then start with smooth fade out
+    const startTime = Date.now();
     this.loadResources().then(() => {
-      this.initGame();
+      const elapsed = Date.now() - startTime;
+      const minDuration = 600; // minimum duration in ms
+      const delay = Math.max(0, minDuration - elapsed);
+      setTimeout(() => {
+        if (this.loadingText && !this.loadingText.destroyed) {
+          gsap.to(this.loadingText, {
+            alpha: 0,
+            duration: 0.25,
+            onComplete: () => {
+              this.initGame();
+            },
+          });
+        } else {
+          this.initGame();
+        }
+      }, delay);
     });
   }
 
@@ -357,6 +373,20 @@ export class GameScene {
     this.comboText.anchor.set(0.5);
     this.comboText.visible = false;
     this.uiContainer.addChild(this.comboText);
+
+    // === TUTORIAL / INSTRUCTION TEXT ===
+    this.tutorialText = new Text({
+      text: "👉 Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
+      style: {
+        fontFamily: "Arial, sans-serif",
+        fontSize: 14,
+        fontWeight: "bold",
+        fill: "#ffecb3",
+        dropShadow: { color: "#000000", blur: 4, distance: 1.5 },
+      },
+    });
+    this.tutorialText.anchor.set(0.5);
+    this.uiContainer.addChild(this.tutorialText);
 
     // === MUSIC TOGGLE BUTTON ===
     this.musicBtn = new Container();
@@ -2543,20 +2573,22 @@ export class GameScene {
     // PLAY AGAIN Button
     this.createModalButton(
       this.gameOverModal,
-      "🔄 CHƠI LẠI",
-      -115,
+      "🔄",
+      -70,
       80,
       0x4caf50,
       async () => {
         await sceneManager.switchTo(GameScene);
       },
+      0xffffff,
+      100,
     );
 
     // MAIN MENU Button
     this.createModalButton(
       this.gameOverModal,
-      "🏠 TRANG CHỦ",
-      115,
+      "🏠",
+      70,
       80,
       0xe0e0e0,
       async () => {
@@ -2564,6 +2596,7 @@ export class GameScene {
         await sceneManager.switchTo(MainMenuScene);
       },
       0x333333,
+      100,
     );
 
     // Apply responsive layout immediately to compute target scale
@@ -2688,13 +2721,22 @@ export class GameScene {
     this.disabled = false;
   }
 
-  createModalButton(parent, label, x, y, color, onClick, textColor = 0xffffff) {
+  createModalButton(
+    parent,
+    label,
+    x,
+    y,
+    color,
+    onClick,
+    textColor = 0xffffff,
+    btnWidth = 180,
+  ) {
     const btn = new Container();
     btn.x = x;
     btn.y = y;
     parent.addChild(btn);
 
-    const width = 180;
+    const width = btnWidth;
     const height = 48;
 
     const bg = new Graphics();
@@ -2709,7 +2751,7 @@ export class GameScene {
       text: label,
       style: {
         fontFamily: "Arial, sans-serif",
-        fontSize: 16,
+        fontSize: 22,
         fontWeight: "bold",
         fill: textColor,
       },
@@ -2787,13 +2829,13 @@ export class GameScene {
         this.movesPanel.x = boardRight + (rightSpace - panelWidth) / 2;
         this.movesPanel.y = (height - panelHeight) / 2;
       } else if (isMobilePortrait) {
-        // Màn hình dọc điện thoại: xếp ở trên cùng
+        // Màn hình dọc điện thoại: xếp ở trên cùng nhưng lùi xuống để không bị nút Fullscreen đè
         panelWidth = Math.min(200, (width - 40) / 2);
         panelHeight = 50;
         fontSize = 18;
 
         const margin = 15;
-        const topY = 15;
+        const topY = 75; // Pushed down from 15 to clear the 16px top + 44px height profile/fullscreen buttons
 
         this.scorePanel.x = margin;
         this.scorePanel.y = topY;
@@ -2847,6 +2889,44 @@ export class GameScene {
     if (this.comboText) {
       this.comboText.x = width / 2;
       this.comboText.y = height / 2 - 100;
+    }
+
+    // 5.2. Position and Resize Loading Text
+    if (this.loadingText && !this.loadingText.destroyed) {
+      this.loadingText.x = width / 2;
+      this.loadingText.y = height / 2;
+      this.loadingText.style.fontSize = Math.max(
+        14,
+        Math.min(22, 22 * (width / 480)),
+      );
+    }
+
+    // 5.5. Position and Resize Tutorial Text
+    if (this.tutorialText && !this.tutorialText.destroyed) {
+      const isMobilePortrait = width < 600 || height > width;
+      if (isMobilePortrait) {
+        this.tutorialText.style.fontSize = Math.max(
+          10,
+          Math.min(13, 13 * (width / 450)),
+        );
+        this.tutorialText.x = width / 2;
+        // Position it in the bottom space below the board
+        let boardBottom = height - 100;
+        if (this.board && this.board.container) {
+          boardBottom =
+            this.board.container.y +
+            this.board.rows *
+              App.config.tileSize *
+              this.board.container.scale.y;
+        }
+        this.tutorialText.y = boardBottom + (height - 35 - boardBottom) / 2;
+        this.tutorialText.visible = true;
+      } else {
+        this.tutorialText.style.fontSize = 14;
+        this.tutorialText.x = width / 2;
+        this.tutorialText.y = 110;
+        this.tutorialText.visible = true;
+      }
     }
 
     // 6. Handle Game Over Screen

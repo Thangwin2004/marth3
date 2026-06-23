@@ -331,8 +331,8 @@ export class Board {
     } else {
       // Màn hình bình thường hoặc màn hình dọc: HUD nằm ở trên cùng
       maxBoardWidth = canvasWidth - 24;
-      maxBoardHeight = canvasHeight - 120; // Increased space for larger tiles
-      topOffset = 85; // Lowered top offset slightly
+      maxBoardHeight = canvasHeight - 195; // Increased space for top HUD and bottom tutorial text
+      topOffset = 135; // Lowered top offset to clear overlay buttons (Profile/Fullscreen)
     }
 
     const scaleX = maxBoardWidth / boardWidth;

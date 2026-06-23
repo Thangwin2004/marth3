@@ -261,40 +261,26 @@ export class MainMenuScene {
 
     // Button 1: Start Game
     this.menuButtons.push(
-      this.createMenuButton(
-        "🎮 CHƠI NGAY",
-        0,
-        btnStartY,
-        0x4fc3f7,
-        260,
-        async () => {
-          await sceneManager.switchTo(GameScene);
-        },
-      ),
+      this.createMenuButton("🎮", 0, btnStartY, 0x4fc3f7, 180, async () => {
+        await sceneManager.switchTo(GameScene);
+      }),
     );
 
     // Button 2: Leaderboard
     this.menuButtons.push(
-      this.createMenuButton(
-        "🏆 BẢNG THÀNH TÍCH",
-        0,
-        btnStartY + 70,
-        0xffb300,
-        260,
-        () => {
-          this.showLeaderboard();
-        },
-      ),
+      this.createMenuButton("🏆", 0, btnStartY + 70, 0xffb300, 180, () => {
+        this.showLeaderboard();
+      }),
     );
 
     // Button 3: Reset Data
     this.menuButtons.push(
       this.createMenuButton(
-        "🗑️ XÓA DỮ LIỆU",
+        "🗑️",
         0,
         btnStartY + 140,
         0x8b0000,
-        260,
+        180,
         async () => {
           saveManager.reset();
           // Reload main menu
@@ -305,11 +291,11 @@ export class MainMenuScene {
 
     // Button 4: Google Login
     this.googleLoginBtn = this.createMenuButton(
-      "🔑 ĐĂNG NHẬP GOOGLE",
+      "GOOGLE_ICON",
       0,
       btnStartY + 210,
       0x4285f4,
-      260,
+      180,
       () => {
         this.showGoogleLoginModal();
       },
@@ -561,17 +547,34 @@ export class MainMenuScene {
     shine.alpha = 0.08;
     btn.addChild(shine);
 
-    const text = new Text({
-      text: label,
-      style: {
-        fontFamily: "Arial",
-        fontSize: 16,
-        fontWeight: "bold",
-        fill: "#ffffff",
-      },
-    });
-    text.anchor.set(0.5);
-    btn.addChild(text);
+    if (label === "GOOGLE_ICON") {
+      // Load and display the official Google brand logo PNG
+      const icon = new Sprite();
+      btn.addChild(icon);
+      btn.icon = icon;
+      Assets.load("/google_logo.png")
+        .then((texture) => {
+          icon.texture = texture;
+          icon.anchor.set(0.5);
+          icon.width = 28;
+          icon.height = 28;
+        })
+        .catch((err) => {
+          console.error("Failed to load google_logo.png:", err);
+        });
+    } else {
+      const text = new Text({
+        text: label,
+        style: {
+          fontFamily: "Arial",
+          fontSize: 30,
+          fontWeight: "bold",
+          fill: "#ffffff",
+        },
+      });
+      text.anchor.set(0.5);
+      btn.addChild(text);
+    }
 
     bg.on("pointerover", () => {
       gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
@@ -754,7 +757,7 @@ export class MainMenuScene {
     closeBtn.y = 145;
     this.leaderboardModal.addChild(closeBtn);
 
-    const btnWidth = 160;
+    const btnWidth = 90;
     const btnHeight = 44;
 
     const btnBg = new Graphics();
@@ -766,10 +769,10 @@ export class MainMenuScene {
     closeBtn.addChild(btnBg);
 
     const btnText = new Text({
-      text: "ĐÓNG",
+      text: "❌",
       style: {
         fontFamily: "Arial",
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: "bold",
         fill: "#ffffff",
       },
