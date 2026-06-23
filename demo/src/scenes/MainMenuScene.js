@@ -442,10 +442,10 @@ export class MainMenuScene {
       this.bg.height = height;
     }
 
-    // 1.5. Music Button
+    // 1.5. Music Button (aligned horizontally with the top-right HTML fullscreen button)
     if (this.musicBtn) {
-      this.musicBtn.x = width - 50;
-      this.musicBtn.y = 50;
+      this.musicBtn.x = width - 85;
+      this.musicBtn.y = 38;
     }
 
     const scale = Math.min(1.0, width / 450, height / 650);

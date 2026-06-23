@@ -425,6 +425,40 @@ export class GameScene {
         .to(musicBg, { alpha: 0.6, duration: 0.08 })
         .to(musicBg, { alpha: 0.15, duration: 0.15 });
     });
+
+    // === HOME BUTTON ===
+    this.homeBtn = new Container();
+    this.homeBtn.eventMode = "static";
+    this.homeBtn.cursor = "pointer";
+    this.uiContainer.addChild(this.homeBtn);
+
+    const homeBg = new Graphics();
+    homeBg.circle(0, 0, 20);
+    homeBg.fill({ color: 0xffffff, alpha: 0.15 });
+    homeBg.stroke({ color: 0xffffff, width: 1.5, alpha: 0.5 });
+    this.homeBtn.addChild(homeBg);
+
+    const homeIcon = new Text({
+      text: "🏠",
+      style: { fontFamily: "Arial", fontSize: 16, fill: "#ffffff" },
+    });
+    homeIcon.anchor.set(0.5);
+    this.homeBtn.addChild(homeIcon);
+
+    this.homeBtn.on("pointerover", () => {
+      gsap.to(this.homeBtn.scale, { x: 1.1, y: 1.1, duration: 0.15 });
+      gsap.to(homeBg, { alpha: 0.35, duration: 0.15 });
+      soundManager.playClick();
+    });
+    this.homeBtn.on("pointerout", () => {
+      gsap.to(this.homeBtn.scale, { x: 1, y: 1, duration: 0.15 });
+      gsap.to(homeBg, { alpha: 0.15, duration: 0.15 });
+    });
+    this.homeBtn.on("pointerdown", async () => {
+      soundManager.playClick();
+      const { MainMenuScene } = await import("./MainMenuScene.js");
+      await sceneManager.switchTo(MainMenuScene);
+    });
   }
 
   /**
@@ -2848,7 +2882,7 @@ export class GameScene {
         panelHeight = 60;
         fontSize = 24;
 
-        const margin = 40;
+        const margin = 100;
         const topY = 25;
 
         this.scorePanel.x = margin;
@@ -2883,6 +2917,12 @@ export class GameScene {
     if (this.musicBtn) {
       this.musicBtn.x = width - 36;
       this.musicBtn.y = height - 36;
+    }
+
+    // 4.6. Position Home Button in Gameplay
+    if (this.homeBtn) {
+      this.homeBtn.x = 36;
+      this.homeBtn.y = height - 36;
     }
 
     // 5. Position Combo Text
