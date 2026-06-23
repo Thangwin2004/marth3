@@ -648,6 +648,32 @@ export class MainMenuScene {
     titleText.y = -140;
     this.leaderboardModal.addChild(titleText);
 
+    // Active User Profile Display
+    let currentUser = null;
+    try {
+      const savedUser = localStorage.getItem("google_user");
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    const userTextStr = currentUser
+      ? `Tài khoản: ${currentUser.name} (Google)`
+      : `Tài khoản: Khách (Điểm lưu thiết bị)`;
+    const userText = new Text({
+      text: userTextStr,
+      style: {
+        fontFamily: "Arial",
+        fontSize: 13,
+        fontWeight: "bold",
+        fill: currentUser ? "#ffea00" : "#aaaaaa",
+      },
+    });
+    userText.anchor.set(0.5);
+    userText.y = -105;
+    this.leaderboardModal.addChild(userText);
+
     // Fetch top scores
     const list = saveManager.getLeaderboard();
 
