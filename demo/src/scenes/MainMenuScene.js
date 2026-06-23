@@ -303,6 +303,19 @@ export class MainMenuScene {
       ),
     );
 
+    // Button 4: Google Login
+    this.googleLoginBtn = this.createMenuButton(
+      "🔑 ĐĂNG NHẬP GOOGLE",
+      0,
+      btnStartY + 210,
+      0x4285f4,
+      260,
+      () => {
+        this.showGoogleLoginModal();
+      },
+    );
+    this.menuButtons.push(this.googleLoginBtn);
+
     // === BOTTOM INFO ===
     this.versionText = new Text({
       text: "💎 Pure Match-3 v1.0 | PixiJS v8 | 6 Loại Thú | Bàn Cờ 8x8",
@@ -408,6 +421,9 @@ export class MainMenuScene {
     // Tự động căn chỉnh toàn bộ vị trí các nút và tiêu đề
     this.resize();
 
+    // Khởi tạo các DOM overlay (Google login và Fullscreen)
+    this.initDOMOverlays();
+
     // Entrance animation
     this.titleContent.alpha = 0;
     this.titleContent.y = -30;
@@ -466,10 +482,15 @@ export class MainMenuScene {
     const buttonStartPercent = height > width ? 0.52 : 0.56;
     const buttonSpacing = 68;
     if (this.menuButtons) {
-      this.menuButtons.forEach((btn, idx) => {
-        btn.x = width / 2;
-        btn.scale.set(scale);
-        btn.y = height * buttonStartPercent + idx * buttonSpacing * scale;
+      let visibleIdx = 0;
+      this.menuButtons.forEach((btn) => {
+        if (btn.visible) {
+          btn.x = width / 2;
+          btn.scale.set(scale);
+          btn.y =
+            height * buttonStartPercent + visibleIdx * buttonSpacing * scale;
+          visibleIdx++;
+        }
       });
     }
 
@@ -795,5 +816,210 @@ export class MainMenuScene {
     });
 
     this.container.destroy({ children: true });
+  }
+
+  initDOMOverlays() {
+    // 1. Fullscreen Button
+    const fsBtn = document.getElementById("fullscreen-btn");
+    if (fsBtn) {
+      fsBtn.onclick = () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch((err) => {
+            console.error("Error attempting to enable fullscreen:", err);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      };
+    }
+
+    // 2. Google Modal Account Items
+    const modal = document.getElementById("google-login-modal");
+    const accountItems = document.querySelectorAll(".google-account-item");
+    accountItems.forEach((item) => {
+      item.onclick = () => {
+        const accountId = item.getAttribute("data-account");
+        let name = "Guest";
+        let email = "";
+        let avatar = "";
+
+        if (accountId === "laclac") {
+          name = "Lạc Lạc (Bơ Lạc)";
+          email = "laclac.bolac@gmail.com";
+          avatar = "/assets/imagebldp/001_avatar_laclac.png";
+        } else if (accountId === "dauphong") {
+          name = "Đậu Phộng";
+          email = "dauphong.bolac@gmail.com";
+          avatar = "/assets/imagebldp/015_avatar_dauLan.png";
+        }
+
+        // Set current user
+        const user = { id: accountId, name, email, avatar };
+        localStorage.setItem("google_user", JSON.stringify(user));
+
+        // Hide modal
+        if (modal) modal.classList.remove("active");
+
+        // Update UI
+        this.updateUserUI();
+      };
+    });
+
+    // 3. Close Modal Button
+    const closeBtn = document.getElementById("google-modal-close-btn");
+    if (closeBtn && modal) {
+      closeBtn.onclick = () => {
+        modal.classList.remove("active");
+      };
+    }
+
+    // 4. Sign out Button
+    const signOutBtn = document.getElementById("user-signout");
+    if (signOutBtn) {
+      signOutBtn.onclick = () => {
+        localStorage.removeItem("google_user");
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "trigger_google_logout" }, "*");
+        }
+        this.updateUserUI();
+      };
+    }
+
+    // 5. Parent Iframe postMessage Bridge
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (data && data.type === "user_profile") {
+        const user = data.user; // { id: '...', name: '...', avatar: '...', email: '...' }
+        if (user) {
+          localStorage.setItem("google_user", JSON.stringify(user));
+        } else {
+          localStorage.removeItem("google_user");
+        }
+        this.updateUserUI();
+      }
+    });
+
+    // If running inside parent iframe, request the logged-in profile immediately
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "get_user_profile" }, "*");
+    }
+
+    // 6. Real Google Identity Services (GSI) Integration
+    try {
+      if (window.google && window.google.accounts) {
+        window.google.accounts.id.initialize({
+          client_id: "55776077309-8pco7q4b260ghldp.apps.googleusercontent.com",
+          callback: (response) => {
+            try {
+              const jwt = response.credential;
+              const base64Url = jwt.split(".")[1];
+              const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+              const jsonPayload = decodeURIComponent(
+                window
+                  .atob(base64)
+                  .split("")
+                  .map(
+                    (c) =>
+                      "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2),
+                  )
+                  .join(""),
+              );
+              const payload = JSON.parse(jsonPayload);
+              const user = {
+                id: payload.sub,
+                name: payload.name,
+                avatar: payload.picture,
+                email: payload.email,
+              };
+              localStorage.setItem("google_user", JSON.stringify(user));
+
+              if (modal) modal.classList.remove("active");
+
+              // Notify parent of successful login
+              if (window.parent !== window) {
+                window.parent.postMessage(
+                  { type: "google_login_success", user: user },
+                  "*",
+                );
+              }
+              this.updateUserUI();
+            } catch (err) {
+              console.error("Failed to parse Google JWT credential:", err);
+            }
+          },
+        });
+
+        // Render the official Google Sign-in button
+        const realBtnContainer = document.getElementById(
+          "google-real-signin-btn",
+        );
+        if (realBtnContainer) {
+          window.google.accounts.id.renderButton(realBtnContainer, {
+            theme: "outline",
+            size: "large",
+            width: 260,
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("GSI client initialization was blocked or failed:", e);
+    }
+
+    this.updateUserUI();
+  }
+
+  updateUserUI() {
+    let currentUser = null;
+    try {
+      const savedUser = localStorage.getItem("google_user");
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+      }
+    } catch (e) {
+      console.error("Error loading user profile:", e);
+    }
+
+    const profileWidget = document.getElementById("user-profile");
+    const avatarImg = document.getElementById("user-avatar");
+    const nameSpan = document.getElementById("user-name");
+
+    if (currentUser) {
+      if (profileWidget) profileWidget.style.display = "flex";
+      if (avatarImg) avatarImg.src = currentUser.avatar;
+      if (nameSpan) nameSpan.textContent = currentUser.name;
+
+      if (this.googleLoginBtn) {
+        this.googleLoginBtn.visible = false;
+      }
+    } else {
+      if (profileWidget) profileWidget.style.display = "none";
+
+      if (this.googleLoginBtn) {
+        this.googleLoginBtn.visible = true;
+      }
+    }
+
+    // Update the highest score banner display
+    const leaderboard = saveManager.getLeaderboard();
+    const topScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
+    if (this.infoText) {
+      this.infoText.text =
+        topScore > 0
+          ? `🏆 KỶ LỤC ĐIỂM: ${topScore}`
+          : `🎯 Hãy thiết lập kỷ lục điểm số ngay hôm nay!`;
+    }
+
+    this.resize();
+  }
+
+  showGoogleLoginModal() {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "trigger_google_login" }, "*");
+    } else {
+      const modal = document.getElementById("google-login-modal");
+      if (modal) {
+        modal.classList.add("active");
+      }
+    }
   }
 }

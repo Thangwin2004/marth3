@@ -4,7 +4,20 @@
  *   No PixiJS dependency — pure data management.
  */
 
-const KEY = "match3_pure_leaderboard";
+const BASE_KEY = "match3_pure_leaderboard";
+
+function getKey() {
+  try {
+    const savedUser = localStorage.getItem("google_user");
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      return `${BASE_KEY}_${user.id}`;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  return BASE_KEY;
+}
 
 /**
  * Returns a fresh default save object (deep copy).
@@ -26,7 +39,7 @@ class SaveManager {
    */
   save(data) {
     try {
-      localStorage.setItem(KEY, JSON.stringify(data));
+      localStorage.setItem(getKey(), JSON.stringify(data));
     } catch (err) {
       console.error("[SaveManager] Failed to save:", err);
     }
@@ -39,7 +52,7 @@ class SaveManager {
    */
   load() {
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = localStorage.getItem(getKey());
       if (!raw) return defaultSave();
       const loaded = JSON.parse(raw);
       return {
@@ -102,7 +115,7 @@ class SaveManager {
    */
   reset() {
     try {
-      localStorage.removeItem(KEY);
+      localStorage.removeItem(getKey());
     } catch (err) {
       console.error("[SaveManager] Failed to reset:", err);
     }
