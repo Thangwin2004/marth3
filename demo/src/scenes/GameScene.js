@@ -61,6 +61,12 @@ export class GameScene {
 
     App.setBackgroundColor(0x0a0a1a);
 
+    // Hide the user profile widget during gameplay to prevent overlapping with HUD
+    const profileWidget = document.getElementById("user-profile");
+    if (profileWidget) {
+      profileWidget.style.display = "none";
+    }
+
     // Lower BGM volume during gameplay so explosion SFX pop out
     soundManager.setBGMVolume(0.25);
 
@@ -2892,6 +2898,15 @@ export class GameScene {
   }
 
   destroy() {
+    // Show the user profile widget again when exiting GameScene
+    const profileWidget = document.getElementById("user-profile");
+    if (profileWidget) {
+      const savedUser = localStorage.getItem("google_user");
+      if (savedUser) {
+        profileWidget.style.display = "flex";
+      }
+    }
+
     // Kill all GSAP animations inside this scene
     gsap.killTweensOf(this.container);
     gsap.killTweensOf(this.comboText);
