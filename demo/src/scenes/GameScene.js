@@ -2607,22 +2607,22 @@ export class GameScene {
     // PLAY AGAIN Button
     this.createModalButton(
       this.gameOverModal,
-      "🔄",
-      -70,
+      "🔄 CHƠI LẠI",
+      -95,
       80,
       0x4caf50,
       async () => {
         await sceneManager.switchTo(GameScene);
       },
       0xffffff,
-      100,
+      170,
     );
 
     // MAIN MENU Button
     this.createModalButton(
       this.gameOverModal,
-      "🏠",
-      70,
+      "🏠 TRANG CHỦ",
+      95,
       80,
       0xe0e0e0,
       async () => {
@@ -2630,7 +2630,7 @@ export class GameScene {
         await sceneManager.switchTo(MainMenuScene);
       },
       0x333333,
-      100,
+      170,
     );
 
     // Apply responsive layout immediately to compute target scale
@@ -2785,7 +2785,7 @@ export class GameScene {
       text: label,
       style: {
         fontFamily: "Arial, sans-serif",
-        fontSize: 22,
+        fontSize: label.length > 2 ? 15 : 22,
         fontWeight: "bold",
         fill: textColor,
       },
