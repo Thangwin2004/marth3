@@ -28,7 +28,7 @@ export const Config = {
    * All tile types available in the game.
    * We limit it to 6 colors for a standard playable 8x8 board.
    */
-  tileColors: ["duck", "turtle", "husky", "daulan", "heothy", "penguine"],
+  tileColors: ["duck", "turtle", "husky", "daulan", "laclac", "echxanh"],
 
   /**
    * Asset mappings: alias → file path
@@ -39,8 +39,8 @@ export const Config = {
     turtle: "/assets/imagebldp/004_avatar_turtle.png",
     husky: "/assets/imagebldp/008_avatar_husky.png",
     daulan: "/assets/imagebldp/015_avatar_dauLan.png",
-    heothy: "/assets/imagebldp/024_avatar_heothy.png",
-    penguine: "/assets/imagebldp/027_avatar_penguine.png",
+    laclac: "/assets/imagebldp/001_avatar_laclac.png",
+    echxanh: "/assets/imagebldp/010_avatar_echxanh1.png",
   },
 
   /**

@@ -331,8 +331,8 @@ export class Board {
     } else {
       // Màn hình bình thường hoặc màn hình dọc: HUD nằm ở trên cùng
       maxBoardWidth = canvasWidth - 24;
-      maxBoardHeight = canvasHeight - 195; // Increased space for top HUD and bottom tutorial text
-      topOffset = 135; // Lowered top offset to clear overlay buttons (Profile/Fullscreen)
+      maxBoardHeight = canvasHeight - 145; // Increased board vertical space to make icons larger
+      topOffset = 115; // Adjusted top offset to center the board better and avoid overlapping top elements
     }
 
     const scaleX = maxBoardWidth / boardWidth;

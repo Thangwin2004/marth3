@@ -54,6 +54,19 @@ const ALL_AVATAR_FILES = [
   "044_avatar_poolpanda2.png",
 ];
 
+function killTweensRecursive(obj) {
+  if (!obj) return;
+  gsap.killTweensOf(obj);
+  if (obj.scale) gsap.killTweensOf(obj.scale);
+  if (obj.position) gsap.killTweensOf(obj.position);
+  if (obj.pivot) gsap.killTweensOf(obj.pivot);
+  if (obj.skew) gsap.killTweensOf(obj.skew);
+  if (obj.children) {
+    const children = [...obj.children];
+    children.forEach(killTweensRecursive);
+  }
+}
+
 export class MainMenuScene {
   constructor(data = {}) {
     this.container = new Container();
@@ -261,16 +274,30 @@ export class MainMenuScene {
 
     // Button 1: Start Game
     this.menuButtons.push(
-      this.createMenuButton("🎮 BẮT ĐẦU", 0, btnStartY, 0x4fc3f7, 180, async () => {
-        await sceneManager.switchTo(GameScene);
-      }),
+      this.createMenuButton(
+        "🎮 BẮT ĐẦU",
+        0,
+        btnStartY,
+        0x4fc3f7,
+        240,
+        async () => {
+          await sceneManager.switchTo(GameScene);
+        },
+      ),
     );
 
     // Button 2: Leaderboard
     this.menuButtons.push(
-      this.createMenuButton("🏆 BẢNG VÀNG", 0, btnStartY + 70, 0xffb300, 180, () => {
-        this.showLeaderboard();
-      }),
+      this.createMenuButton(
+        "🏆 BẢNG VÀNG",
+        0,
+        btnStartY + 80,
+        0xffb300,
+        240,
+        () => {
+          this.showLeaderboard();
+        },
+      ),
     );
 
     // Button 3: Reset Data
@@ -278,9 +305,9 @@ export class MainMenuScene {
       this.createMenuButton(
         "🗑️ XÓA DỮ LIỆU",
         0,
-        btnStartY + 140,
+        btnStartY + 160,
         0x8b0000,
-        180,
+        240,
         async () => {
           saveManager.reset();
           // Reload main menu
@@ -293,9 +320,9 @@ export class MainMenuScene {
     this.googleLoginBtn = this.createMenuButton(
       "GOOGLE_ICON:ĐĂNG NHẬP GOOGLE",
       0,
-      btnStartY + 210,
+      btnStartY + 240,
       0x4285f4,
-      180,
+      240,
       () => {
         this.showGoogleLoginModal();
       },
@@ -323,14 +350,14 @@ export class MainMenuScene {
     this.container.addChild(this.musicBtn);
 
     const musicBg = new Graphics();
-    musicBg.circle(0, 0, 22);
+    musicBg.circle(0, 0, 26);
     musicBg.fill({ color: 0xffffff, alpha: 0.15 });
     musicBg.stroke({ color: 0xffffff, width: 2, alpha: 0.5 });
     this.musicBtn.addChild(musicBg);
 
     this.musicIcon = new Text({
       text: soundManager.musicEnabled ? "🎵" : "🔇",
-      style: { fontFamily: "Arial", fontSize: 18, fill: "#ffffff" },
+      style: { fontFamily: "Arial", fontSize: 24, fill: "#ffffff" },
     });
     this.musicIcon.anchor.set(0.5);
     this.musicBtn.addChild(this.musicIcon);
@@ -444,8 +471,8 @@ export class MainMenuScene {
 
     // 1.5. Music Button (aligned horizontally with the top-right HTML fullscreen button)
     if (this.musicBtn) {
-      this.musicBtn.x = width - 85;
-      this.musicBtn.y = 38;
+      this.musicBtn.x = width - 90;
+      this.musicBtn.y = 42;
     }
 
     const scale = Math.min(1.0, width / 450, height / 650);
@@ -466,7 +493,7 @@ export class MainMenuScene {
 
     // 4. Menu Buttons
     const buttonStartPercent = height > width ? 0.52 : 0.56;
-    const buttonSpacing = 68;
+    const buttonSpacing = 78;
     if (this.menuButtons) {
       let visibleIdx = 0;
       this.menuButtons.forEach((btn) => {
@@ -519,7 +546,7 @@ export class MainMenuScene {
 
     // Generate rounded rect texture for bg
     const tempBg = new Graphics();
-    tempBg.roundRect(0, 0, width, 48, 12);
+    tempBg.roundRect(0, 0, width, 56, 14);
     tempBg.fill({ color: 0xffffff });
     const bgTexture = App.app.renderer.generateTexture({ target: tempBg });
     tempBg.destroy();
@@ -534,7 +561,7 @@ export class MainMenuScene {
 
     // Generate rounded rect texture for shine
     const tempShine = new Graphics();
-    tempShine.roundRect(0, 0, width, 24, 12);
+    tempShine.roundRect(0, 0, width, 28, 14);
     tempShine.fill({ color: 0xffffff });
     const shineTexture = App.app.renderer.generateTexture({
       target: tempShine,
@@ -543,12 +570,14 @@ export class MainMenuScene {
 
     const shine = new Sprite(shineTexture);
     shine.anchor.set(0.5);
-    shine.y = -12;
+    shine.y = -14;
     shine.alpha = 0.08;
     btn.addChild(shine);
 
     if (label.startsWith("GOOGLE_ICON")) {
-      const displayText = label.includes(":") ? label.split(":")[1] : "ĐĂNG NHẬP GOOGLE";
+      const displayText = label.includes(":")
+        ? label.split(":")[1]
+        : "ĐĂNG NHẬP GOOGLE";
 
       const text = new Text({
         text: displayText,
@@ -569,8 +598,8 @@ export class MainMenuScene {
         .then((texture) => {
           icon.texture = texture;
           icon.anchor.set(0.5);
-          icon.width = 18;
-          icon.height = 18;
+          icon.width = 24;
+          icon.height = 24;
 
           // Align icon and text horizontally
           const gap = 8;
@@ -582,17 +611,52 @@ export class MainMenuScene {
           console.error("Failed to load google_logo.png:", err);
         });
     } else {
-      const text = new Text({
-        text: label,
-        style: {
-          fontFamily: "Arial",
-          fontSize: 15,
-          fontWeight: "bold",
-          fill: "#ffffff",
-        },
-      });
-      text.anchor.set(0.5);
-      btn.addChild(text);
+      const spaceIdx = label.indexOf(" ");
+      if (spaceIdx !== -1 && label.charCodeAt(0) > 127) {
+        const emoji = label.substring(0, spaceIdx);
+        const textStr = label.substring(spaceIdx + 1);
+
+        const emojiText = new Text({
+          text: emoji,
+          style: {
+            fontFamily: "Arial",
+            fontSize: 26,
+            fill: "#ffffff",
+          },
+        });
+        emojiText.anchor.set(0.5);
+        btn.addChild(emojiText);
+
+        const text = new Text({
+          text: textStr,
+          style: {
+            fontFamily: "Arial",
+            fontSize: 15,
+            fontWeight: "bold",
+            fill: "#ffffff",
+          },
+        });
+        text.anchor.set(0.5);
+        btn.addChild(text);
+
+        // Align emoji and text horizontally
+        const gap = 8;
+        const totalW = emojiText.width + gap + text.width;
+        emojiText.x = -totalW / 2 + emojiText.width / 2;
+        text.x = totalW / 2 - text.width / 2;
+      } else {
+        const text = new Text({
+          text: label,
+          style: {
+            fontFamily: "Arial",
+            fontSize: 15,
+            fontWeight: "bold",
+            fill: "#ffffff",
+          },
+        });
+        text.anchor.set(0.5);
+        btn.addChild(text);
+      }
     }
 
     bg.on("pointerover", () => {
@@ -777,7 +841,7 @@ export class MainMenuScene {
     this.leaderboardModal.addChild(closeBtn);
 
     const btnBg = new Graphics();
-    btnBg.circle(0, 0, 20);
+    btnBg.circle(0, 0, 26);
     btnBg.fill({ color: 0x324b8b });
     btnBg.alpha = 0.9;
     btnBg.eventMode = "static";
@@ -788,7 +852,7 @@ export class MainMenuScene {
       text: "❌",
       style: {
         fontFamily: "Arial",
-        fontSize: 16,
+        fontSize: 22,
         fontWeight: "bold",
         fill: "#ffffff",
       },
@@ -802,6 +866,7 @@ export class MainMenuScene {
         alpha: 0,
         duration: 0.25,
         onComplete: () => {
+          killTweensRecursive(popup);
           popup.destroy({ children: true });
           this.leaderboardPopup = null;
           this.leaderboardOverlay = null;
@@ -847,13 +912,6 @@ export class MainMenuScene {
       App.app.ticker.remove(this.tickerFn);
     }
 
-    const killTweensRecursive = (obj) => {
-      gsap.killTweensOf(obj);
-      if (obj.scale) gsap.killTweensOf(obj.scale);
-      if (obj.children) {
-        obj.children.forEach(killTweensRecursive);
-      }
-    };
     killTweensRecursive(this.container);
 
     this.particles.forEach((p) => {

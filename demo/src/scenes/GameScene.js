@@ -1,4 +1,14 @@
-import { Container, Text, Graphics, Texture, Sprite, Assets } from "pixi.js";
+import {
+  Container,
+  Text,
+  Graphics,
+  Texture,
+  Sprite,
+  Assets,
+  BlurFilter,
+  FillGradient,
+  GraphicsContext,
+} from "pixi.js";
 import { Board } from "../game/Board.js";
 import { CombinationManager } from "../game/CombinationManager.js";
 import { App } from "../system/App.js";
@@ -6,6 +16,142 @@ import { saveManager } from "../system/SaveManager.js";
 import { sceneManager } from "../system/SceneManager.js";
 import { soundManager } from "../system/SoundManager.js";
 import gsap from "gsap";
+
+function gameAlert(message) {
+  return new Promise((resolve) => {
+    if (!document.getElementById("game-alert-styles")) {
+      const style = document.createElement("style");
+      style.id = "game-alert-styles";
+      style.textContent = `
+        .game-alert-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100dvw;
+          height: 100dvh;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 100000;
+          opacity: 0;
+          transition: opacity 0.25s ease;
+        }
+        .game-alert-card {
+          background: linear-gradient(135deg, #121a2e 0%, #080c16 100%);
+          border: 2px solid #d4af37;
+          box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.6);
+          border-radius: 16px;
+          padding: 24px;
+          width: 85%;
+          max-width: 340px;
+          text-align: center;
+          transform: scale(0.85);
+          transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .game-alert-text {
+          color: #fdf5e6;
+          font-size: 16px;
+          line-height: 1.6;
+          margin: 0 0 24px 0;
+          font-weight: 500;
+          text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        }
+        .game-alert-button {
+          background: linear-gradient(90deg, #d4af37 0%, #b89326 100%);
+          color: #121a2e;
+          border: 1px solid #ffea88;
+          border-radius: 24px;
+          padding: 10px 32px;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+          transition: transform 0.15s, box-shadow 0.15s;
+          outline: none;
+        }
+        .game-alert-button:hover {
+          transform: translateY(-2px) scale(1.05);
+          box-shadow: 0 6px 15px rgba(212, 175, 55, 0.5);
+        }
+        .game-alert-button:active {
+          transform: translateY(1px);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const existing = document.getElementById("game-alert-overlay-id");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "game-alert-overlay-id";
+    overlay.className = "game-alert-overlay";
+
+    const card = document.createElement("div");
+    card.className = "game-alert-card";
+
+    const text = document.createElement("p");
+    text.className = "game-alert-text";
+    text.innerText = message;
+
+    const button = document.createElement("button");
+    button.className = "game-alert-button";
+    button.innerText = "ĐỒNG Ý";
+
+    card.appendChild(text);
+    card.appendChild(button);
+    overlay.appendChild(card);
+
+    const container = document.getElementById("app") || document.body;
+    container.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.transform = "scale(1)";
+    });
+
+    const closeAlert = () => {
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => {
+        overlay.remove();
+        resolve();
+      }, 250);
+    };
+
+    button.addEventListener("click", closeAlert);
+  });
+}
+
+export const AdManager = {
+  showRewardedVideo: async () => {
+    console.log("[AdManager] Requesting Rewarded Video Ad...");
+    await gameAlert(
+      "📺 Đang tải quảng cáo... Vui lòng xem hết để nhận phần thưởng!",
+    );
+    return new Promise((resolve) => {
+      setTimeout(async () => {
+        await gameAlert(
+          "🎉 Cảm ơn bạn đã xem quảng cáo! Phần thưởng đã được mở khóa.",
+        );
+        resolve(true);
+      }, 2000);
+    });
+  },
+  showInterstitial: async () => {
+    console.log("[AdManager] Showing Interstitial Ad...");
+    await gameAlert("📺 Đang hiển thị quảng cáo giữa màn hình...");
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(true);
+      }, 1000);
+    });
+  },
+};
 
 const ALL_AVATAR_FILES = [
   "001_avatar_laclac.png",
@@ -53,6 +199,19 @@ const ALL_AVATAR_FILES = [
   "043_avatar_cat_lick2.png",
   "044_avatar_poolpanda2.png",
 ];
+
+function killTweensRecursive(obj) {
+  if (!obj) return;
+  gsap.killTweensOf(obj);
+  if (obj.scale) gsap.killTweensOf(obj.scale);
+  if (obj.position) gsap.killTweensOf(obj.position);
+  if (obj.pivot) gsap.killTweensOf(obj.pivot);
+  if (obj.skew) gsap.killTweensOf(obj.skew);
+  if (obj.children) {
+    const children = [...obj.children];
+    children.forEach(killTweensRecursive);
+  }
+}
 
 export class GameScene {
   constructor(data = {}) {
@@ -189,6 +348,7 @@ export class GameScene {
     this.moves = 30;
     this.comboCount = 0;
     this.isGameOver = false;
+    this.hasContinued = false;
 
     // === REMOVE INITIAL MATCHES ===
     this.removeStartMatches();
@@ -395,14 +555,14 @@ export class GameScene {
     this.uiContainer.addChild(this.musicBtn);
 
     const musicBg = new Graphics();
-    musicBg.circle(0, 0, 20);
+    musicBg.circle(0, 0, 26);
     musicBg.fill({ color: 0xffffff, alpha: 0.15 });
     musicBg.stroke({ color: 0xffffff, width: 1.5, alpha: 0.5 });
     this.musicBtn.addChild(musicBg);
 
     this.musicIcon = new Text({
       text: soundManager.musicEnabled ? "🎵" : "🔇",
-      style: { fontFamily: "Arial", fontSize: 16, fill: "#ffffff" },
+      style: { fontFamily: "Arial", fontSize: 24, fill: "#ffffff" },
     });
     this.musicIcon.anchor.set(0.5);
     this.musicBtn.addChild(this.musicIcon);
@@ -433,14 +593,14 @@ export class GameScene {
     this.uiContainer.addChild(this.homeBtn);
 
     const homeBg = new Graphics();
-    homeBg.circle(0, 0, 20);
+    homeBg.circle(0, 0, 26);
     homeBg.fill({ color: 0xffffff, alpha: 0.15 });
     homeBg.stroke({ color: 0xffffff, width: 1.5, alpha: 0.5 });
     this.homeBtn.addChild(homeBg);
 
     const homeIcon = new Text({
       text: "🏠",
-      style: { fontFamily: "Arial", fontSize: 16, fill: "#ffffff" },
+      style: { fontFamily: "Arial", fontSize: 24, fill: "#ffffff" },
     });
     homeIcon.anchor.set(0.5);
     this.homeBtn.addChild(homeIcon);
@@ -1696,7 +1856,10 @@ export class GameScene {
         alpha: 0,
         duration: 0.7 + Math.random() * 0.3,
         ease: "power2.out",
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          killTweensRecursive(p);
+          p.destroy();
+        },
       });
 
       gsap.to(p.scale, {
@@ -1843,6 +2006,7 @@ export class GameScene {
         ease: "sine.out",
         onComplete: () => {
           if (smoke && !smoke.destroyed) {
+            killTweensRecursive(smoke);
             smoke.destroy();
           }
           checkCleanup();
@@ -1900,6 +2064,7 @@ export class GameScene {
         duration: 0.35,
         ease: "power1.out",
         onComplete: () => {
+          killTweensRecursive(p);
           p.destroy();
           completed++;
           if (completed === 4) {
@@ -1916,6 +2081,7 @@ export class GameScene {
               duration: 0.2,
               ease: "sine.out",
               onComplete: () => {
+                killTweensRecursive(vfxContainer);
                 vfxContainer.destroy();
               },
             });
@@ -1973,6 +2139,7 @@ export class GameScene {
           }
         },
         onComplete: () => {
+          killTweensRecursive(p);
           p.destroy();
           completed++;
           if (completed === dotCount) {
@@ -1989,6 +2156,7 @@ export class GameScene {
               duration: 0.25,
               ease: "sine.out",
               onComplete: () => {
+                killTweensRecursive(vfxContainer);
                 vfxContainer.destroy();
               },
             });
@@ -2023,6 +2191,7 @@ export class GameScene {
       duration: 0.35,
       ease: "power2.in",
       onComplete: () => {
+        killTweensRecursive(ring);
         ring.destroy();
 
         // 2. Radial gold spark blast (8 rays)
@@ -2053,9 +2222,11 @@ export class GameScene {
             duration: 0.25,
             ease: "sine.out",
             onComplete: () => {
+              killTweensRecursive(spark);
               spark.destroy();
               raysCompleted++;
               if (raysCompleted === rays) {
+                killTweensRecursive(vfxContainer);
                 vfxContainer.destroy();
               }
             },
@@ -2118,11 +2289,15 @@ export class GameScene {
         alpha: 0,
         duration: 0.9 + Math.random() * 0.5,
         ease: "power1.out",
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          killTweensRecursive(p);
+          p.destroy();
+        },
       });
     }
 
     gsap.delayedCall(1.6, () => {
+      killTweensRecursive(leafContainer);
       leafContainer.destroy();
     });
   }
@@ -2145,7 +2320,10 @@ export class GameScene {
       gsap.to(trail, {
         alpha: 0,
         duration: 1.0,
-        onComplete: () => trail.destroy(),
+        onComplete: () => {
+          killTweensRecursive(trail);
+          trail.destroy();
+        },
       });
 
       // Spawn 4 beautiful leaves at target flying towards the Rainbow Gem
@@ -2185,7 +2363,10 @@ export class GameScene {
           duration: 0.9 + Math.random() * 0.4,
           delay: delay,
           ease: "power1.inOut",
-          onComplete: () => p.destroy(),
+          onComplete: () => {
+            killTweensRecursive(p);
+            p.destroy();
+          },
         });
       }
 
@@ -2193,6 +2374,7 @@ export class GameScene {
     });
 
     gsap.delayedCall(1.8, () => {
+      killTweensRecursive(blastContainer);
       blastContainer.destroy({ children: true });
     });
   }
@@ -2240,7 +2422,10 @@ export class GameScene {
       alpha: 0,
       duration: 0.5,
       ease: "power2.out",
-      onComplete: () => flash.destroy(),
+      onComplete: () => {
+        killTweensRecursive(flash);
+        flash.destroy();
+      },
     });
 
     // Spawn 80 green bamboo leaves blowing along the lines
@@ -2285,7 +2470,10 @@ export class GameScene {
         alpha: 0,
         duration: 1.0 + Math.random() * 0.6,
         ease: "power2.out",
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          killTweensRecursive(p);
+          p.destroy();
+        },
       });
     }
 
@@ -2294,6 +2482,7 @@ export class GameScene {
     gsap.delayedCall(0.12, () => this.spawnRipple(x, y, 0xffffff));
 
     gsap.delayedCall(1.8, () => {
+      killTweensRecursive(leafContainer);
       leafContainer.destroy();
     });
   }
@@ -2324,7 +2513,10 @@ export class GameScene {
       alpha: 0,
       duration: 0.75,
       ease: "power2.out",
-      onComplete: () => shockwave.destroy(),
+      onComplete: () => {
+        killTweensRecursive(shockwave);
+        shockwave.destroy();
+      },
     });
 
     // Spawn 100 colorful firefly sparks shooting out in all directions
@@ -2353,9 +2545,17 @@ export class GameScene {
         alpha: 0,
         duration: 0.8 + Math.random() * 0.4,
         ease: "power3.out",
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          killTweensRecursive(p);
+          p.destroy();
+        },
       });
     }
+
+    gsap.delayedCall(1.5, () => {
+      killTweensRecursive(vfxContainer);
+      vfxContainer.destroy({ children: true });
+    });
   }
 
   /**
@@ -2403,7 +2603,10 @@ export class GameScene {
       rotation: Math.PI * 0.75,
       duration: 0.85,
       ease: "sine.out",
-      onComplete: () => drumFace.destroy(),
+      onComplete: () => {
+        killTweensRecursive(drumFace);
+        drumFace.destroy();
+      },
     });
 
     // 2. Spawn golden Chim Lạc birds spiraling out
@@ -2469,8 +2672,144 @@ export class GameScene {
 
     // Cleanup container
     gsap.delayedCall(1.6, () => {
+      killTweensRecursive(vfxContainer);
       vfxContainer.destroy();
     });
+  }
+
+  spawnFireworkBurst(x, y, count = 25) {
+    const colors = [
+      0xffd600, // Vàng kim sáng
+      0xff3d00, // Đỏ cam rực rỡ
+      0xffffff, // Trắng lấp lánh
+      0xff007f, // Hồng sen
+      0x00e5ff, // Xanh điện tử
+      0x4caf50, // Xanh lá bamboo
+    ];
+
+    // 1. Central flash
+    const flash = new Graphics()
+      .circle(0, 0, 35)
+      .fill({ color: 0xffffff, alpha: 0.8 });
+    flash.position.set(x, y);
+    this.container.addChild(flash);
+    const flashScaleTween = gsap.to(flash.scale, {
+      x: 2.0,
+      y: 2.0,
+      duration: 0.25,
+      ease: "power2.out",
+    });
+    gsap.to(flash, {
+      alpha: 0,
+      duration: 0.25,
+      ease: "power2.inOut",
+      onComplete: () => {
+        killTweensRecursive(flash);
+        flash.destroy();
+      },
+    });
+
+    // 2. Expanding shockwave ring
+    const ringColor = colors[Math.floor(Math.random() * colors.length)];
+    const ring = new Graphics()
+      .circle(0, 0, 20)
+      .stroke({ width: 2.5, color: ringColor });
+    ring.position.set(x, y);
+    this.container.addChild(ring);
+    const ringScaleTween = gsap.to(ring.scale, {
+      x: 3.5,
+      y: 3.5,
+      duration: 0.8,
+      ease: "power1.out",
+    });
+    gsap.to(ring, {
+      alpha: 0,
+      duration: 0.8,
+      ease: "power1.out",
+      onComplete: () => {
+        killTweensRecursive(ring);
+        ring.destroy();
+      },
+    });
+
+    // 3. Spawn radial particles (Sparks, Twinkling Stars, and Bamboo Leaves!)
+    for (let i = 0; i < count; i++) {
+      const p = new Graphics();
+      const rand = Math.random();
+      const color = colors[Math.floor(Math.random() * colors.length)];
+
+      let type = "spark";
+      if (rand > 0.7) {
+        type = "star";
+      } else if (rand > 0.9) {
+        type = "leaf";
+      }
+
+      if (type === "spark") {
+        // Tapered needle
+        p.moveTo(-10, 0)
+          .lineTo(0, -1.5)
+          .lineTo(10, 0)
+          .lineTo(0, 1.5)
+          .closePath()
+          .fill({ color: color });
+      } else if (type === "star") {
+        // Twinkling 4-point star
+        p.moveTo(0, -8)
+          .quadraticCurveTo(0, 0, 8, 0)
+          .quadraticCurveTo(0, 0, 0, 8)
+          .quadraticCurveTo(0, 0, -8, 0)
+          .quadraticCurveTo(0, 0, 0, -8)
+          .closePath()
+          .fill({ color: color });
+      } else {
+        // Bamboo leaf
+        p.moveTo(0, -8)
+          .quadraticCurveTo(2.5, 0, 0, 8)
+          .quadraticCurveTo(-2.5, 0, 0, -8)
+          .closePath()
+          .fill({ color: 0x2e7d32 })
+          .stroke({ width: 0.6, color: 0xaeed9e });
+      }
+
+      p.position.set(x, y);
+      p.zIndex = 95;
+      this.container.addChild(p);
+
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.25;
+      const speed = 120 + Math.random() * 150;
+      const targetX = x + Math.cos(angle) * speed;
+      const targetY = y + Math.sin(angle) * speed + 60; // Gravity pull
+
+      // Rotate spark along velocity
+      if (type === "spark") {
+        p.rotation = angle;
+      } else {
+        p.rotation = Math.random() * Math.PI * 2;
+        if (type === "star") {
+          gsap.to(p, {
+            alpha: 0.3,
+            duration: 0.15,
+            repeat: 5,
+            yoyo: true,
+            ease: "sine.inOut",
+          });
+        }
+      }
+
+      // Physics/Friction scale down & fade out (combined to prevent race conditions on destroy!)
+      gsap.to(p, {
+        x: targetX,
+        y: targetY,
+        alpha: 0,
+        duration: 0.8 + Math.random() * 0.4,
+        ease: "power2.out",
+        onComplete: () => {
+          killTweensRecursive(p);
+          p.destroy();
+        },
+      });
+    }
   }
 
   // ============================================================
@@ -2529,55 +2868,252 @@ export class GameScene {
       ease: "none",
     });
 
+    // Premium modal background (Themed in Vietnamese style!)
     const modalBg = new Graphics();
-    modalBg.roundRect(-240, -180, 480, 360, 24);
-    modalBg.fill({ color: 0x121a2e, alpha: 0.95 });
-    modalBg.stroke({ color: rank ? 0xffdd57 : 0x4fc3f7, width: 4 });
+    modalBg.roundRect(-240, -195, 480, 410, 24);
+    modalBg.fill({ color: 0x120103, alpha: 0.95 }); // Deep maroon/black lacquer background
+    modalBg.stroke({ color: rank ? 0xffea00 : 0xd4af37, width: 4.5 });
     this.gameOverModal.addChild(modalBg);
 
-    // Game Over Text
-    const titleText = new Text({
+    // 1. Glowing neon & floating title
+    const titleContainer = new Container();
+    titleContainer.position.set(0, -145);
+    this.gameOverModal.addChild(titleContainer);
+
+    const titleGrad = new FillGradient({
+      end: { x: 0, y: 44 },
+      colorStops: [
+        { offset: 0, color: 0xffea00 },
+        { offset: 1, color: 0xff3300 },
+      ],
+    });
+
+    const glowText = new Text({
       text: "TRÒ CHƠI KẾT THÚC",
       style: {
-        fontFamily: "Arial, sans-serif",
-        fontSize: 44,
-        fontWeight: "bold",
-        fill: "#ff5252",
-        dropShadow: { color: "#000000", blur: 6, distance: 3 },
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 34,
+        fill: 0xffea00,
+        fontWeight: "900",
+        stroke: { width: 8, color: 0xffea00 },
       },
     });
-    titleText.anchor.set(0.5);
-    titleText.y = -110;
-    this.gameOverModal.addChild(titleText);
+    glowText.anchor.set(0.5);
+    titleContainer.addChild(glowText);
 
-    // Score Label
+    const glowFilter = new BlurFilter();
+    glowFilter.blur = 5;
+    glowText.filters = [glowFilter];
+
+    const victoryText = new Text({
+      text: "TRÒ CHƠI KẾT THÚC",
+      style: {
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 34,
+        fill: titleGrad,
+        fontWeight: "900",
+        stroke: { width: 5, color: 0x360207 },
+        dropShadow: { color: 0x000000, blur: 4, distance: 3 },
+      },
+    });
+    victoryText.anchor.set(0.5);
+    titleContainer.addChild(victoryText);
+
+    // Title animations
+    gsap.to(glowText, {
+      alpha: 0.35,
+      duration: 1.2,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+    });
+
+    gsap.to(titleContainer, {
+      y: "-=6",
+      duration: 1.5,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+    });
+
+    // 2. Central Vietnamese Emblem Badge (rotating trống đồng and detailed chim lạc birds!)
+    const badgeContainer = new Container();
+    badgeContainer.position.set(0, -35);
+    this.gameOverModal.addChild(badgeContainer);
+
+    const lacBirdCtx = new GraphicsContext()
+      // --- Base Silhouette ---
+      .moveTo(35, -4)
+      .lineTo(10, -2)
+      .quadraticCurveTo(12, -7, 8, -8)
+      .quadraticCurveTo(-2, -16, -20, -14)
+      .quadraticCurveTo(-22, -13, -20, -12)
+      .quadraticCurveTo(-4, -10, 4, -5)
+      .quadraticCurveTo(-4, 2, -12, 8)
+      .quadraticCurveTo(-25, 14, -40, 10)
+      .quadraticCurveTo(-55, 15, -68, 22)
+      .quadraticCurveTo(-54, 11, -44, 5)
+      .quadraticCurveTo(-58, 12, -70, 14)
+      .quadraticCurveTo(-48, 5, -38, 2)
+      .lineTo(-32, -3)
+      .quadraticCurveTo(-18, -4, -4, -3)
+      .lineTo(10, -4.5)
+      .lineTo(35, -4)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.25 })
+      .stroke({ width: 1.5, color: 0xd4af37 })
+
+      // --- Wings with Traditional Comb Feathers ---
+      .moveTo(-22, 0)
+      .bezierCurveTo(-15, -20, -5, -36, 10, -45)
+      .bezierCurveTo(-2, -30, -8, -18, -12, -10)
+      .quadraticCurveTo(-16, -18, -20, 0)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.3 })
+      .stroke({ width: 1.5, color: 0xd4af37 })
+
+      .moveTo(0, -20)
+      .lineTo(4, -32)
+      .moveTo(-4, -16)
+      .lineTo(-1, -26)
+      .moveTo(-8, -12)
+      .lineTo(-5, -20)
+      .moveTo(-12, -8)
+      .lineTo(-9, -14)
+      .stroke({ width: 1.2, color: 0xd4af37 })
+
+      .moveTo(-24, 5)
+      .bezierCurveTo(-30, 16, -36, 26, -42, 30)
+      .quadraticCurveTo(-32, 18, -27, 10)
+      .quadraticCurveTo(-29, 12, -24, 5)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.3 })
+      .stroke({ width: 1.2, color: 0xd4af37 })
+
+      .moveTo(-28, 12)
+      .lineTo(-34, 21)
+      .moveTo(-26, 9)
+      .lineTo(-31, 16)
+      .stroke({ width: 1.0, color: 0xd4af37 })
+
+      // --- Internal Dong Son Carving Details ---
+      .moveTo(11, -3.2)
+      .lineTo(32, -4)
+      .stroke({ width: 1.0, color: 0xd4af37, alpha: 0.7 })
+
+      .circle(7, -5, 2.2)
+      .fill({ color: 0xffea00 })
+      .stroke({ width: 0.8, color: 0x3e2723 })
+      .circle(7, -5, 0.8)
+      .fill({ color: 0x000000 })
+
+      .circle(-18, 5, 2.8)
+      .stroke({ width: 1.0, color: 0xd4af37 })
+      .circle(-18, 5, 1.2)
+      .fill({ color: 0xffea00 })
+
+      .circle(-28, 4, 2.2)
+      .stroke({ width: 1.0, color: 0xd4af37 })
+      .circle(-28, 4, 0.8)
+      .fill({ color: 0xffea00 })
+
+      .moveTo(-35, 6)
+      .quadraticCurveTo(-48, 15, -58, 18)
+      .stroke({ width: 1.2, color: 0xd4af37 })
+      .moveTo(-32, 7)
+      .quadraticCurveTo(-45, 17, -55, 20)
+      .stroke({ width: 1.2, color: 0xd4af37 });
+
+    const leftBird = new Graphics(lacBirdCtx);
+    leftBird.position.set(-82, -5);
+    leftBird.scale.set(-1.1, 1.1); // Mirror left
+    badgeContainer.addChild(leftBird);
+
+    const rightBird = new Graphics(lacBirdCtx);
+    rightBird.position.set(82, -5);
+    rightBird.scale.set(1.1);
+    badgeContainer.addChild(rightBird);
+
+    // Rotating Drum (trống đồng, radius 42)
+    const drum = new Graphics()
+      .circle(0, 0, 42)
+      .fill(
+        new FillGradient({
+          start: { x: -42, y: -42 },
+          end: { x: 42, y: 42 },
+          colorStops: [
+            { offset: 0, color: 0xaa7c11 },
+            { offset: 0.5, color: 0x8a6d20 },
+            { offset: 1, color: 0x4a3b10 },
+          ],
+        }),
+      )
+      .stroke({ width: 2.2, color: 0xffea00 })
+      .circle(0, 0, 35)
+      .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.6 })
+      .circle(0, 0, 28)
+      .stroke({ width: 1, color: 0xd4af37, alpha: 0.5 })
+      .circle(0, 0, 20)
+      .stroke({ width: 0.8, color: 0xd4af37, alpha: 0.4 })
+      .star(0, 0, 12, 12, 5)
+      .fill({ color: 0xffea00 })
+      .stroke({ width: 1, color: 0xb89326 });
+    badgeContainer.addChild(drum);
+
+    gsap.to(drum, {
+      rotation: Math.PI * 2,
+      duration: 16,
+      repeat: -1,
+      ease: "none",
+    });
+
+    // Record Ribbon (relocated down)
+    if (rank) {
+      const ribbon = new Graphics()
+        .roundRect(-55, 30, 110, 18, 4)
+        .fill({ color: 0xd32f2f })
+        .stroke({ width: 1, color: 0xffea00 });
+      const ribbonText = new Text({
+        text: "KỶ LỤC MỚI!",
+        style: {
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 8.5,
+          fill: "#ffffff",
+          fontWeight: "bold",
+        },
+      });
+      ribbonText.anchor.set(0.5);
+      ribbonText.position.set(0, 39);
+      badgeContainer.addChild(ribbon, ribbonText);
+    }
+
+    // 3. Stats Labels (Relocated below the badge)
     const scoreLabel = new Text({
       text: `ĐIỂM SỐ: ${this.score}`,
       style: {
-        fontFamily: "Arial, sans-serif",
-        fontSize: 32,
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 30,
         fontWeight: "bold",
         fill: "#ffffff",
       },
     });
     scoreLabel.anchor.set(0.5);
-    scoreLabel.y = -40;
+    scoreLabel.y = 48;
     this.gameOverModal.addChild(scoreLabel);
 
-    // Rank Display
     if (rank) {
       const rankLabel = new Text({
         text: `🏆 KỶ LỤC MỚI! HẠNG #${rank} 🏆`,
         style: {
-          fontFamily: "Arial, sans-serif",
-          fontSize: 22,
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 20,
           fontWeight: "bold",
           fill: "#ffdd57",
           dropShadow: { color: "#000000", blur: 4, distance: 2 },
         },
       });
       rankLabel.anchor.set(0.5);
-      rankLabel.y = 10;
+      rankLabel.y = 88;
       this.gameOverModal.addChild(rankLabel);
 
       // Subtle scale pulsing on rank text
@@ -2594,46 +3130,144 @@ export class GameScene {
       const normalLabel = new Text({
         text: "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!",
         style: {
-          fontFamily: "Arial, sans-serif",
-          fontSize: 16,
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 15,
           fill: "#aaaaaa",
         },
       });
       normalLabel.anchor.set(0.5);
-      normalLabel.y = 10;
+      normalLabel.y = 88;
       this.gameOverModal.addChild(normalLabel);
     }
+
+    // 4. Action Buttons (Shifted down slightly)
+    this.createModalButton(
+      this.gameOverModal,
+      this.hasContinued ? "⏱️ ĐÃ DÙNG" : "📺 HỒI SINH (+5 Lượt)",
+      -110,
+      132,
+      this.hasContinued ? 0x555555 : 0xffaa00,
+      async () => {
+        if (this.hasContinued) return;
+        const success = await AdManager.showRewardedVideo();
+        if (success) {
+          if (this.gameOverIntervalId) {
+            clearInterval(this.gameOverIntervalId);
+            this.gameOverIntervalId = null;
+          }
+          this.hasContinued = true;
+          this.moves = 5;
+          this.isGameOver = false;
+          this.disabled = false;
+          gsap.to(this.gameOverScreen, {
+            alpha: 0,
+            duration: 0.3,
+            onComplete: () => {
+              killTweensRecursive(this.gameOverScreen);
+              this.gameOverScreen.destroy({ children: true });
+              this.gameOverScreen = null;
+              soundManager.stopBGM();
+              soundManager.playBGM();
+            },
+          });
+        }
+      },
+      this.hasContinued ? 0x888888 : 0x121a2e,
+      200,
+    );
+
+    // Double Reward button
+    let hasDoubled = false;
+    this.createModalButton(
+      this.gameOverModal,
+      "📺 X2 ĐIỂM",
+      110,
+      132,
+      0xffea00,
+      async () => {
+        if (hasDoubled) return;
+        const success = await AdManager.showRewardedVideo();
+        if (success) {
+          hasDoubled = true;
+          this.score = this.score * 2;
+          scoreLabel.text = `ĐIỂM SỐ: ${this.score}`;
+          await gameAlert("🎉 Điểm số của bạn đã được x2!");
+        }
+      },
+      0x121a2e,
+      200,
+    );
 
     // PLAY AGAIN Button
     this.createModalButton(
       this.gameOverModal,
       "🔄 CHƠI LẠI",
-      -95,
-      80,
+      -110,
+      180,
       0x4caf50,
       async () => {
+        if (this.gameOverIntervalId) {
+          clearInterval(this.gameOverIntervalId);
+          this.gameOverIntervalId = null;
+        }
+        window.defeatCount_marth3 = (window.defeatCount_marth3 || 0) + 1;
+        if (window.defeatCount_marth3 >= 3) {
+          window.defeatCount_marth3 = 0;
+          await AdManager.showInterstitial();
+        }
         await sceneManager.switchTo(GameScene);
       },
       0xffffff,
-      170,
+      200,
     );
 
     // MAIN MENU Button
     this.createModalButton(
       this.gameOverModal,
       "🏠 TRANG CHỦ",
-      95,
-      80,
+      110,
+      180,
       0xe0e0e0,
       async () => {
+        if (this.gameOverIntervalId) {
+          clearInterval(this.gameOverIntervalId);
+          this.gameOverIntervalId = null;
+        }
         const { MainMenuScene } = await import("./MainMenuScene.js");
         await sceneManager.switchTo(MainMenuScene);
       },
       0x333333,
-      170,
+      200,
     );
 
-    // Apply responsive layout immediately to compute target scale
+    // 5. Spawn Confetti Fireworks Loop
+    this.gameOverIntervalId = setInterval(() => {
+      if (!this.isGameOver || !this.gameOverScreen) {
+        clearInterval(this.gameOverIntervalId);
+        this.gameOverIntervalId = null;
+        return;
+      }
+      this.spawnFireworkBurst(
+        Math.random() * App.app.screen.width,
+        Math.random() * App.app.screen.height * 0.65,
+        16,
+      );
+    }, 850);
+
+    // Initial big explosions
+    for (let i = 0; i < 4; i++) {
+      gsap.delayedCall(i * 0.3, () => {
+        if (this.isGameOver && this.gameOverScreen) {
+          this.spawnFireworkBurst(
+            App.app.screen.width / 2 + (Math.random() - 0.5) * 320,
+            App.app.screen.height / 2 - 80 + (Math.random() - 0.5) * 240,
+            28,
+          );
+        }
+      });
+    }
+
+    // Apply responsive layout immediately
     this.resize();
 
     const targetScale = this.gameOverModal.scale.x;
@@ -2743,6 +3377,7 @@ export class GameScene {
         alpha: 0,
         duration: 0.3,
         onComplete: () => {
+          killTweensRecursive(this.deadlockOverlayContainer);
           this.deadlockOverlayContainer.destroy({ children: true });
           this.deadlockOverlayContainer = null;
           this.deadlockOverlayBg = null;
@@ -2763,7 +3398,7 @@ export class GameScene {
     color,
     onClick,
     textColor = 0xffffff,
-    btnWidth = 180,
+    btnWidth = 240,
   ) {
     const btn = new Container();
     btn.x = x;
@@ -2771,27 +3406,61 @@ export class GameScene {
     parent.addChild(btn);
 
     const width = btnWidth;
-    const height = 48;
+    const height = 56;
 
     const bg = new Graphics();
-    bg.roundRect(-width / 2, -height / 2, width, height, 12);
+    bg.roundRect(-width / 2, -height / 2, width, height, 14);
     bg.fill({ color });
     bg.alpha = 0.9;
     bg.eventMode = "static";
     bg.cursor = "pointer";
     btn.addChild(bg);
 
-    const text = new Text({
-      text: label,
-      style: {
-        fontFamily: "Arial, sans-serif",
-        fontSize: label.length > 2 ? 15 : 22,
-        fontWeight: "bold",
-        fill: textColor,
-      },
-    });
-    text.anchor.set(0.5);
-    btn.addChild(text);
+    const spaceIdx = label.indexOf(" ");
+    if (spaceIdx !== -1 && label.charCodeAt(0) > 127) {
+      const emoji = label.substring(0, spaceIdx);
+      const textStr = label.substring(spaceIdx + 1);
+
+      const emojiText = new Text({
+        text: emoji,
+        style: {
+          fontFamily: "Arial, sans-serif",
+          fontSize: 26,
+          fill: textColor,
+        },
+      });
+      emojiText.anchor.set(0.5);
+      btn.addChild(emojiText);
+
+      const text = new Text({
+        text: textStr,
+        style: {
+          fontFamily: "Arial, sans-serif",
+          fontSize: 15,
+          fontWeight: "bold",
+          fill: textColor,
+        },
+      });
+      text.anchor.set(0.5);
+      btn.addChild(text);
+
+      const gap = 8;
+      const totalW = emojiText.width + gap + text.width;
+      emojiText.x = -totalW / 2 + emojiText.width / 2;
+      text.x = totalW / 2 - text.width / 2;
+    } else {
+      const text = new Text({
+        text: label,
+        style: {
+          fontFamily: "Arial, sans-serif",
+          fontSize: label.length > 2 ? 15 : 22,
+          fontWeight: "bold",
+          fill: textColor,
+        },
+      });
+      text.anchor.set(0.5);
+      btn.addChild(text);
+    }
 
     bg.on("pointerover", () => {
       gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
@@ -2915,14 +3584,14 @@ export class GameScene {
 
     // 4.5. Position Music Button in Gameplay
     if (this.musicBtn) {
-      this.musicBtn.x = width - 36;
-      this.musicBtn.y = height - 36;
+      this.musicBtn.x = width - 42;
+      this.musicBtn.y = height - 42;
     }
 
     // 4.6. Position Home Button in Gameplay
     if (this.homeBtn) {
-      this.homeBtn.x = 36;
-      this.homeBtn.y = height - 36;
+      this.homeBtn.x = 42;
+      this.homeBtn.y = height - 42;
     }
 
     // 5. Position Combo Text
@@ -3018,6 +3687,11 @@ export class GameScene {
   }
 
   destroy() {
+    if (this.gameOverIntervalId) {
+      clearInterval(this.gameOverIntervalId);
+      this.gameOverIntervalId = null;
+    }
+
     // Show the user profile widget again when exiting GameScene
     const profileWidget = document.getElementById("user-profile");
     if (profileWidget) {
@@ -3027,15 +3701,13 @@ export class GameScene {
       }
     }
 
-    // Kill all GSAP animations inside this scene
-    gsap.killTweensOf(this.container);
-    gsap.killTweensOf(this.comboText);
-    gsap.killTweensOf(this.comboText.scale);
+    // Recursively kill all GSAP animations inside this scene graph
+    killTweensRecursive(this.container);
     if (this.board && this.board.container) {
-      gsap.killTweensOf(this.board.container);
+      killTweensRecursive(this.board.container);
     }
     if (this.ambientParticles) {
-      this.ambientParticles.forEach((p) => gsap.killTweensOf(p));
+      this.ambientParticles.forEach((p) => killTweensRecursive(p));
     }
 
     // Clean up board
