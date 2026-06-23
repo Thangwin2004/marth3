@@ -864,16 +864,43 @@ export class MainMenuScene {
   }
 
   initDOMOverlays() {
-    // 1. Fullscreen Button
+    // 1. Fullscreen Button (iOS and cross-browser safe)
     const fsBtn = document.getElementById("fullscreen-btn");
     if (fsBtn) {
       fsBtn.onclick = () => {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch((err) => {
-            console.error("Error attempting to enable fullscreen:", err);
-          });
+        const docEl = document.documentElement;
+        const isFS = !!(
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement
+        );
+
+        if (!isFS) {
+          if (docEl.requestFullscreen) {
+            docEl.requestFullscreen().catch((err) => {
+              console.error("Error attempting to enable fullscreen:", err);
+            });
+          } else if (docEl.webkitRequestFullscreen) {
+            docEl.webkitRequestFullscreen();
+          } else if (docEl.mozRequestFullScreen) {
+            docEl.mozRequestFullScreen();
+          } else if (docEl.msRequestFullscreen) {
+            docEl.msRequestFullscreen();
+          } else {
+            console.warn("Fullscreen API not supported on this device/browser.");
+            alert("Thiết bị hoặc trình duyệt của bạn không hỗ trợ chế độ toàn màn hình.");
+          }
         } else {
-          document.exitFullscreen();
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+          } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+          }
         }
       };
     }
