@@ -869,17 +869,42 @@ export class MainMenuScene {
     if (fsBtn) {
       fsBtn.onclick = () => {
         const docEl = document.documentElement;
-        const isFS = !!(
+        const appEl = document.getElementById("app");
+        const isNativeFS = !!(
           document.fullscreenElement ||
           document.webkitFullscreenElement ||
           document.mozFullScreenElement ||
           document.msFullscreenElement
         );
+        const isPseudoFS =
+          appEl && appEl.classList.contains("pseudo-fullscreen");
 
-        if (!isFS) {
+        const enterPseudo = () => {
+          if (appEl) {
+            appEl.classList.add("pseudo-fullscreen");
+            setTimeout(() => {
+              window.dispatchEvent(new window.Event("resize"));
+            }, 100);
+          }
+        };
+
+        const exitPseudo = () => {
+          if (appEl) {
+            appEl.classList.remove("pseudo-fullscreen");
+            setTimeout(() => {
+              window.dispatchEvent(new window.Event("resize"));
+            }, 100);
+          }
+        };
+
+        if (!isNativeFS && !isPseudoFS) {
           if (docEl.requestFullscreen) {
             docEl.requestFullscreen().catch((err) => {
-              console.error("Error attempting to enable fullscreen:", err);
+              console.error(
+                "Error attempting to enable native fullscreen, falling back to pseudo:",
+                err,
+              );
+              enterPseudo();
             });
           } else if (docEl.webkitRequestFullscreen) {
             docEl.webkitRequestFullscreen();
@@ -888,22 +913,49 @@ export class MainMenuScene {
           } else if (docEl.msRequestFullscreen) {
             docEl.msRequestFullscreen();
           } else {
-            console.warn("Fullscreen API not supported on this device/browser.");
-            alert("Thiết bị hoặc trình duyệt của bạn không hỗ trợ chế độ toàn màn hình.");
+            enterPseudo();
           }
         } else {
-          if (document.exitFullscreen) {
-            document.exitFullscreen();
-          } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-          } else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-          } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
+          if (isNativeFS) {
+            if (document.exitFullscreen) {
+              document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+              document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+              document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+              document.msExitFullscreen();
+            }
+          }
+          if (isPseudoFS) {
+            exitPseudo();
           }
         }
       };
     }
+
+    // Clean up pseudo fullscreen if native fullscreen changes
+    const onFullscreenChange = () => {
+      const isNativeFS = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
+      if (isNativeFS) {
+        const appEl = document.getElementById("app");
+        if (appEl && appEl.classList.contains("pseudo-fullscreen")) {
+          appEl.classList.remove("pseudo-fullscreen");
+          setTimeout(() => {
+            window.dispatchEvent(new window.Event("resize"));
+          }, 100);
+        }
+      }
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+    document.addEventListener("mozfullscreenchange", onFullscreenChange);
+    document.addEventListener("MSFullscreenChange", onFullscreenChange);
 
     // 2. Google Modal Account Items
     const modal = document.getElementById("google-login-modal");

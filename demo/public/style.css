@@ -266,3 +266,16 @@ body {
   background: rgba(26, 115, 232, 0.04);
 }
 
+/* Pseudo Fullscreen fallback for mobile Safari/Chrome */
+.pseudo-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  background: #000000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
