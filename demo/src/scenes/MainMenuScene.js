@@ -910,6 +910,7 @@ export class MainMenuScene {
         if (window.google && window.google.accounts) {
           window.google.accounts.id.initialize({
             client_id:
+              import.meta.env.VITE_GOOGLE_CLIENT_ID ||
               "55776077309-8pco7q4b260ghldp.apps.googleusercontent.com",
             callback: (response) => {
               try {

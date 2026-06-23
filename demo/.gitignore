@@ -26,3 +26,7 @@ dist-ssr
 # Game assets backups
 /public/assets/imagebldp_original
 
+# Environment files
+.env
+.env.local
+.env.*.local
