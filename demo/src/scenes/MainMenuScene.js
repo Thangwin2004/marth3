@@ -207,15 +207,24 @@ export class MainMenuScene {
       });
 
     // Main title
+    const titleGrad = new FillGradient({
+      end: { x: 0, y: 48 },
+      colorStops: [
+        { color: 0xffea00, offset: 0 },
+        { color: 0xd4af37, offset: 0.5 },
+        { color: 0xaa7c11, offset: 1 },
+      ],
+    });
+
     const title = new Text({
       text: "Bộ Lạc CRUSH",
       style: {
-        fontFamily: "Arial",
+        fontFamily: "Outfit, Arial, sans-serif",
         fontSize: 48,
         fontWeight: "bold",
-        fill: "#ffffff",
-        stroke: { color: "#000000", width: 8 },
-        dropShadow: { color: "#000000", blur: 6, distance: 3, alpha: 0.8 },
+        fill: titleGrad,
+        stroke: { color: "#360207", width: 6 },
+        dropShadow: { color: "#2b050a", blur: 6, distance: 3, alpha: 0.85 },
       },
     });
     title.anchor.set(0.5);
@@ -224,12 +233,12 @@ export class MainMenuScene {
     const subtitle = new Text({
       text: "DỄ THƯƠNG MATCH-3",
       style: {
-        fontFamily: "Arial",
-        fontSize: 22,
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 14,
         fontWeight: "bold",
-        fill: "#ffb300", // golden color to match animal theme
-        stroke: { color: "#000000", width: 5 },
-        letterSpacing: 6,
+        fill: "#ffecb3",
+        stroke: { color: "#000000", width: 4 },
+        letterSpacing: 4,
         dropShadow: { color: "#000000", blur: 4, distance: 2, alpha: 0.8 },
       },
     });
@@ -257,7 +266,7 @@ export class MainMenuScene {
           ? `🏆 KỶ LỤC ĐIỂM: ${topScore}`
           : `🎯 Hãy thiết lập kỷ lục điểm số ngay hôm nay!`,
       style: {
-        fontFamily: "Arial",
+        fontFamily: "Outfit, Arial, sans-serif",
         fontSize: 18,
         fontWeight: "bold",
         fill: "#ffdd57",
@@ -269,71 +278,38 @@ export class MainMenuScene {
     this.container.addChild(this.infoText);
 
     // === MENU BUTTONS ===
-    this.menuButtons = [];
-    const btnStartY = 370;
+    this.playBtn = this.createPlayButton(async () => {
+      await sceneManager.switchTo(GameScene);
+    });
+    this.container.addChild(this.playBtn);
 
-    // Button 1: Start Game
-    this.menuButtons.push(
-      this.createMenuButton(
-        "🎮 BẮT ĐẦU",
-        0,
-        btnStartY,
-        0x4fc3f7,
-        240,
-        async () => {
-          await sceneManager.switchTo(GameScene);
-        },
-      ),
-    );
+    this.achievementsBtn = this.createCircularButton("🏆", 0, 0, () => {
+      this.showLeaderboard();
+    });
+    this.container.addChild(this.achievementsBtn);
 
-    // Button 2: Leaderboard
-    this.menuButtons.push(
-      this.createMenuButton(
-        "🏆 BẢNG VÀNG",
-        0,
-        btnStartY + 80,
-        0xffb300,
-        240,
-        () => {
-          this.showLeaderboard();
-        },
-      ),
-    );
+    this.settingsBtn = this.createCircularButton("⚙️", 0, 0, () => {
+      this.showSettingsModal(false);
+    });
+    this.container.addChild(this.settingsBtn);
 
-    // Button 3: Reset Data
-    this.menuButtons.push(
-      this.createMenuButton(
-        "🗑️ XÓA DỮ LIỆU",
-        0,
-        btnStartY + 160,
-        0x8b0000,
-        240,
-        async () => {
-          saveManager.reset();
-          // Reload main menu
-          await sceneManager.switchTo(MainMenuScene);
-        },
-      ),
-    );
+    this.resetBtn = this.createCircularButton("🗑️", 0, 0, async () => {
+      saveManager.reset();
+      // Reload main menu
+      await sceneManager.switchTo(MainMenuScene);
+    });
+    this.container.addChild(this.resetBtn);
 
-    // Button 4: Google Login
-    this.googleLoginBtn = this.createMenuButton(
-      "GOOGLE_ICON:ĐĂNG NHẬP GOOGLE",
-      0,
-      btnStartY + 240,
-      0x4285f4,
-      240,
-      () => {
-        this.showGoogleLoginModal();
-      },
-    );
-    this.menuButtons.push(this.googleLoginBtn);
+    this.googleLoginBtn = this.createCircularButton("👤", 0, 0, () => {
+      this.showGoogleLoginModal();
+    });
+    this.container.addChild(this.googleLoginBtn);
 
     // === BOTTOM INFO ===
     this.versionText = new Text({
       text: "💎 Pure Match-3 v1.0 | PixiJS v8 | 6 Loại Thú | Bàn Cờ 8x8",
       style: {
-        fontFamily: "Arial",
+        fontFamily: "Outfit, Arial, sans-serif",
         fontSize: 12,
         fontWeight: "bold",
         fill: "#ffffff",
@@ -342,20 +318,6 @@ export class MainMenuScene {
     });
     this.versionText.anchor.set(0.5);
     this.container.addChild(this.versionText);
-
-    // === MUSIC TOGGLE BUTTON ===
-    this.musicBtn = this.createCircularButton(
-      soundManager.musicEnabled ? "🔊" : "🔇",
-      0,
-      0,
-      () => {
-        const enabled = soundManager.toggleMusic();
-        if (this.musicBtn && this.musicBtn.label) {
-          this.musicBtn.label.text = enabled ? "🔊" : "🔇";
-        }
-      },
-    );
-    this.container.addChild(this.musicBtn);
 
     // === ANIMAL SCROLLING BANNER (PARADE) ===
     this.paradeContainer = new Container();
@@ -464,12 +426,6 @@ export class MainMenuScene {
       this.bg.height = height;
     }
 
-    // 1.5. Music Button (aligned horizontally with the top-right HTML fullscreen button)
-    if (this.musicBtn) {
-      this.musicBtn.x = width - 90;
-      this.musicBtn.y = 42;
-    }
-
     const scale = Math.min(1.0, width / 450, height / 650);
 
     // 2. Title Container
@@ -486,21 +442,42 @@ export class MainMenuScene {
       this.infoText.style.fontSize = Math.max(12, Math.min(18, 18 * scale));
     }
 
-    // 4. Menu Buttons
-    const buttonStartPercent = height > width ? 0.52 : 0.56;
-    const buttonSpacing = 78;
-    if (this.menuButtons) {
-      let visibleIdx = 0;
-      this.menuButtons.forEach((btn) => {
-        if (btn.visible) {
-          btn.x = width / 2;
-          btn.scale.set(scale);
-          btn.y =
-            height * buttonStartPercent + visibleIdx * buttonSpacing * scale;
-          visibleIdx++;
-        }
-      });
+    // 4. Play Button & Circular buttons below it (Memory Card style layout)
+    const playY = height * 0.53;
+    const playW = Math.max(200, Math.min(260, 260 * scale));
+    const playH = Math.max(50, Math.min(68, 68 * scale));
+
+    if (this.playBtn) {
+      this.playBtn.position.set(width / 2, playY);
+      this.playBtn.updateStyle(playW, playH);
+      this.playBtn.scale.set(scale);
     }
+
+    const circY = playY + 115 * scale;
+    const circR = Math.max(20, Math.min(26, 26 * scale));
+    const circGap = 20 * scale;
+
+    const visibleCircs = [];
+    if (this.googleLoginBtn && this.googleLoginBtn.visible) {
+      visibleCircs.push(this.googleLoginBtn);
+    }
+    if (this.achievementsBtn) {
+      visibleCircs.push(this.achievementsBtn);
+    }
+    if (this.settingsBtn) {
+      visibleCircs.push(this.settingsBtn);
+    }
+    if (this.resetBtn) {
+      visibleCircs.push(this.resetBtn);
+    }
+
+    const totalCircs = visibleCircs.length;
+    const startX = width / 2 - ((totalCircs - 1) * (circR * 2 + circGap)) / 2;
+    visibleCircs.forEach((btn, idx) => {
+      btn.position.set(startX + idx * (circR * 2 + circGap), circY);
+      btn.updateStyle(circR);
+      btn.scale.set(scale);
+    });
 
     // 5. Version text
     if (this.versionText) {
@@ -529,6 +506,24 @@ export class MainMenuScene {
             ? Math.min(1.0, (width - 40) / 520)
             : 1.0;
         this.leaderboardModal.scale.set(modalScale);
+      }
+    }
+
+    // 8. Settings Popup Resizing
+    if (this.settingsPopup) {
+      if (this.settingsOverlayBg) {
+        this.settingsOverlayBg.clear();
+        this.settingsOverlayBg.rect(0, 0, width, height);
+        this.settingsOverlayBg.fill({ color: 0x000000, alpha: 0.65 });
+      }
+      if (this.settingsModal) {
+        this.settingsModal.x = width / 2;
+        this.settingsModal.y = height / 2;
+        const modalScale =
+          width < 600 || height > width
+            ? Math.min(1.0, (width - 40) / 380)
+            : 1.0;
+        this.settingsModal.scale.set(modalScale);
       }
     }
   }
@@ -810,11 +805,130 @@ export class MainMenuScene {
     return btn;
   }
 
+  createPlayButton(onClick) {
+    const btn = new Container();
+    btn.eventMode = "static";
+    btn.cursor = "pointer";
+
+    const content = new Container();
+    btn.addChild(content);
+
+    const shadow = new Graphics();
+    const bg3d = new Graphics();
+    const bg = new Graphics();
+    const highlight = new Graphics();
+    const icon = new Graphics();
+
+    content.addChild(shadow, bg3d, bg, highlight, icon);
+
+    btn.w = 76;
+    btn.h = 76;
+
+    btn.updateStyle = (w, h) => {
+      // Force square shape based on height to match the cartoon play icon
+      const size = Math.round(h * 1.35);
+      btn.w = size;
+      btn.h = size;
+
+      // 1. Soft 3D drop shadow (translucent black)
+      shadow
+        .clear()
+        .roundRect(-size / 2, -size / 2 + 6, size, size, 16)
+        .fill({ color: 0x000000, alpha: 0.45 });
+
+      // 2. 3D Extrusion base (deep luxurious lacquer burgundy)
+      bg3d.clear()
+        .roundRect(-size / 2, -size / 2 + 4, size, size, 16)
+        .fill({ color: 0x4a000a })
+        .stroke({ width: 1, color: 0x240003 });
+
+      // 3. Main button body - premium smooth gradient (light crimson to deep crimson lacquer)
+      const btnGrad = new FillGradient({
+        start: { x: 0, y: -size / 2 },
+        end: { x: 0, y: size / 2 },
+        colorStops: [
+          { offset: 0, color: 0xff3b4e },
+          { offset: 0.4, color: 0xd32f2f },
+          { offset: 1, color: 0x6e0912 },
+        ],
+      });
+
+      const goldGrad = new FillGradient({
+        start: { x: -size / 2, y: -size / 2 },
+        end: { x: size / 2, y: size / 2 },
+        colorStops: [
+          { offset: 0, color: 0xffea00 },
+          { offset: 0.5, color: 0xb89326 },
+          { offset: 1, color: 0xffea00 },
+        ],
+      });
+
+      bg.clear()
+        .roundRect(-size / 2, -size / 2, size, size, 16)
+        .fill(btnGrad)
+        .stroke({ width: 2, fill: goldGrad });
+
+      // 4. Glossy highlight sheen on top
+      highlight
+        .clear()
+        .roundRect(-size / 2 + 4, -size / 2 + 3, size - 8, size * 0.35, 12)
+        .fill({ color: 0xffffff, alpha: 0.18 });
+
+      // 5. Play icon (triangle pointing right in gold with a nice 3D drop shadow)
+      const triW = size * 0.35;
+      const triH = size * 0.38;
+      icon
+        .clear()
+        // Shadow of the triangle
+        .poly([
+          -triW * 0.4 + 1,
+          -triH / 2 + 1.5,
+          triW * 0.6 + 1,
+          1.5,
+          -triW * 0.4 + 1,
+          triH / 2 + 1.5,
+        ])
+        .fill({ color: 0x000000, alpha: 0.5 })
+        // Main triangle in gold
+        .poly([-triW * 0.4, -triH / 2, triW * 0.6, 0, -triW * 0.4, triH / 2])
+        .fill(goldGrad)
+        .stroke({ width: 1.2, color: 0x3d0006 });
+    };
+
+    btn.updateStyle(btn.w, btn.h);
+
+    btn.on("pointerover", () => {
+      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+      soundManager.playClick();
+    });
+
+    btn.on("pointerout", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+    });
+
+    btn.on("pointerdown", () => {
+      gsap.to(content, { y: 2, duration: 0.05 });
+    });
+
+    btn.on("pointerup", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
+      onClick();
+    });
+
+    btn.on("pointerupoutside", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
+    });
+
+    return btn;
+  }
+
   /**
    * Show high score leaderboard modal.
    */
   showLeaderboard() {
     if (this.leaderboardPopup) return;
+
+    soundManager.playClick();
 
     const popup = new Container();
     popup.zIndex = 200;
@@ -823,12 +937,7 @@ export class MainMenuScene {
 
     // Dark modal overlay to capture clicks
     this.leaderboardOverlay = new Graphics();
-    this.leaderboardOverlay.rect(
-      0,
-      0,
-      App.app.screen.width,
-      App.app.screen.height,
-    );
+    this.leaderboardOverlay.rect(0, 0, App.app.screen.width, App.app.screen.height);
     this.leaderboardOverlay.fill({ color: 0x000000, alpha: 0.75 });
     this.leaderboardOverlay.eventMode = "static";
     popup.addChild(this.leaderboardOverlay);
@@ -838,26 +947,31 @@ export class MainMenuScene {
     this.leaderboardModal.y = App.app.screen.height / 2;
     popup.addChild(this.leaderboardModal);
 
+    const cardW = 460;
+    const cardH = 410;
+
     // Modal bg
     const modalBg = new Graphics();
-    modalBg.roundRect(-240, -200, 480, 400, 24);
-    modalBg.fill({ color: 0x121a2e, alpha: 0.96 });
-    modalBg.stroke({ color: 0xffb300, width: 3, alpha: 0.95 });
+    modalBg.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24);
+    modalBg.fill({ color: 0x150103, alpha: 0.95 });
+    modalBg.stroke({ color: 0xd4af37, width: 3.5 });
     this.leaderboardModal.addChild(modalBg);
 
     // Header Title
     const titleText = new Text({
-      text: "🏆 BẢNG THÀNH TÍCH",
-      style: {
-        fontFamily: "Arial",
-        fontSize: 32,
+      text: "🏆 BẢNG VÀNG THÀNH TÍCH",
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 22,
+        fill: 0xffea00,
         fontWeight: "bold",
-        fill: "#ffdd57",
-        dropShadow: { color: "#000000", blur: 6, distance: 3 },
-      },
+        letterSpacing: 1.5,
+        align: "center",
+        dropShadow: { color: 0x000000, blur: 4, distance: 2 },
+      }),
     });
     titleText.anchor.set(0.5);
-    titleText.y = -140;
+    titleText.y = -cardH / 2 + 32;
     this.leaderboardModal.addChild(titleText);
 
     // Active User Profile Display
@@ -872,19 +986,71 @@ export class MainMenuScene {
     }
     const userTextStr = currentUser
       ? `Tài khoản: ${currentUser.name} (Google)`
-      : `Tài khoản: Khách (Điểm lưu thiết bị)`;
+      : `Tài khoản: Khách (Lưu trên thiết bị)`;
     const userText = new Text({
       text: userTextStr,
-      style: {
-        fontFamily: "Arial",
-        fontSize: 13,
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 12,
         fontWeight: "bold",
         fill: currentUser ? "#ffea00" : "#aaaaaa",
-      },
+      }),
     });
     userText.anchor.set(0.5);
-    userText.y = -105;
+    userText.y = -cardH / 2 + 65;
     this.leaderboardModal.addChild(userText);
+
+    // Columns Header row
+    const headerY = -100;
+    const colRankX = -140;
+    const colScoreX = 0;
+    const colDateX = 140;
+
+    const rankHeader = new Text({
+      text: "HẠNG",
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 14,
+        fontWeight: "bold",
+        fill: 0xffea00,
+      }),
+    });
+    rankHeader.anchor.set(0.5);
+    rankHeader.position.set(colRankX, headerY);
+    this.leaderboardModal.addChild(rankHeader);
+
+    const scoreHeader = new Text({
+      text: "ĐIỂM SỐ",
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 14,
+        fontWeight: "bold",
+        fill: 0xffea00,
+      }),
+    });
+    scoreHeader.anchor.set(0.5);
+    scoreHeader.position.set(colScoreX, headerY);
+    this.leaderboardModal.addChild(scoreHeader);
+
+    const dateHeader = new Text({
+      text: "NGÀY ĐẠT",
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 14,
+        fontWeight: "bold",
+        fill: 0xffea00,
+      }),
+    });
+    dateHeader.anchor.set(0.5);
+    dateHeader.position.set(colDateX, headerY);
+    this.leaderboardModal.addChild(dateHeader);
+
+    // Divider line below headers
+    const headerDivider = new Graphics()
+      .moveTo(-200, headerY + 14)
+      .lineTo(200, headerY + 14)
+      .stroke({ color: 0xd4af37, width: 1.5, alpha: 0.6 });
+    this.leaderboardModal.addChild(headerDivider);
 
     // Fetch top scores
     const list = saveManager.getLeaderboard();
@@ -892,101 +1058,103 @@ export class MainMenuScene {
     if (list.length === 0) {
       const emptyText = new Text({
         text: "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀",
-        style: {
-          fontFamily: "Arial",
-          fontSize: 18,
+        style: new TextStyle({
+          fontFamily: "Outfit, Arial, sans-serif",
+          fontSize: 15,
           fill: "#aaaaaa",
           align: "center",
-          lineHeight: 28,
-        },
+          lineHeight: 22,
+        }),
       });
       emptyText.anchor.set(0.5);
-      emptyText.y = -10;
+      emptyText.y = 10;
       this.leaderboardModal.addChild(emptyText);
     } else {
       // Draw list items
-      const startY = -80;
-      const rowHeight = 42;
+      const startY = -65;
+      const rowHeight = 38;
 
       list.forEach((entry, idx) => {
         const rowY = startY + idx * rowHeight;
-        const rankIcons = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
-        const rankIcon = rankIcons[idx] || "";
+        const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+        const rankIcon = medals[idx] || `${idx + 1}`;
 
-        // Rank and Score
-        const scoreText = new Text({
-          text: `${rankIcon}  HẠNG ${idx + 1}:   ${entry.score}`,
-          style: {
-            fontFamily: "Arial",
-            fontSize: 20,
+        // Row background highlight for top 3
+        if (idx < 3) {
+          const rowBg = new Graphics()
+            .roundRect(-210, rowY - rowHeight / 2 + 2, 420, rowHeight - 4, 8)
+            .fill({ color: 0x4a000a, alpha: idx === 0 ? 0.35 : idx === 1 ? 0.25 : 0.15 });
+          this.leaderboardModal.addChild(rowBg);
+        }
+
+        // Rank Column
+        const rankText = new Text({
+          text: `${rankIcon}  HẠNG ${idx + 1}`,
+          style: new TextStyle({
+            fontFamily: "Outfit, Arial, sans-serif",
+            fontSize: 14,
             fontWeight: "bold",
-            fill:
-              idx === 0
-                ? "#ffdd57"
-                : idx === 1
-                  ? "#e0e0e0"
-                  : idx === 2
-                    ? "#cd7f32"
-                    : "#ffffff",
-          },
+            fill: idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "#ffffff",
+          }),
         });
-        scoreText.anchor.set(0, 0.5);
-        scoreText.x = -190;
-        scoreText.y = rowY;
+        rankText.anchor.set(0.5);
+        rankText.position.set(colRankX, rowY);
+        this.leaderboardModal.addChild(rankText);
+
+        // Score Column
+        const scoreText = new Text({
+          text: entry.score.toLocaleString(),
+          style: new TextStyle({
+            fontFamily: "Outfit, Arial, sans-serif",
+            fontSize: 14,
+            fontWeight: "bold",
+            fill: idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "#ffffff",
+          }),
+        });
+        scoreText.anchor.set(0.5);
+        scoreText.position.set(colScoreX, rowY);
         this.leaderboardModal.addChild(scoreText);
 
-        // Date stamp
+        // Date Column
         const dateText = new Text({
           text: entry.date,
-          style: {
-            fontFamily: "Arial",
-            fontSize: 14,
-            fill: "#8892b0",
-          },
+          style: new TextStyle({
+            fontFamily: "Outfit, Arial, sans-serif",
+            fontSize: 12,
+            fill: "#aaaaaa",
+          }),
         });
-        dateText.anchor.set(1, 0.5);
-        dateText.x = 190;
-        dateText.y = rowY;
+        dateText.anchor.set(0.5);
+        dateText.position.set(colDateX, rowY);
         this.leaderboardModal.addChild(dateText);
-
-        // Divider line (except for last row)
-        if (idx < list.length - 1) {
-          const divider = new Graphics();
-          divider.moveTo(-190, rowY + rowHeight / 2);
-          divider.lineTo(190, rowY + rowHeight / 2);
-          divider.stroke({ color: 0x324b8b, width: 1, alpha: 0.3 });
-          this.leaderboardModal.addChild(divider);
-        }
       });
     }
 
-    // CLOSE Button
-    const closeBtn = new Container();
-    closeBtn.x = 0;
-    closeBtn.y = 145;
-    this.leaderboardModal.addChild(closeBtn);
+    // Pinned Best Record Banner at the bottom
+    const bestScore = list.length > 0 ? list[0].score : 0;
+    const bannerBg = new Graphics()
+      .roundRect(-180, 110, 360, 32, 8)
+      .fill({ color: 0x4a000a, alpha: 0.85 })
+      .stroke({ color: 0xd4af37, width: 1 });
+    this.leaderboardModal.addChild(bannerBg);
 
-    const btnBg = new Graphics();
-    btnBg.circle(0, 0, 26);
-    btnBg.fill({ color: 0x324b8b });
-    btnBg.alpha = 0.9;
-    btnBg.eventMode = "static";
-    btnBg.cursor = "pointer";
-    closeBtn.addChild(btnBg);
-
-    const btnText = new Text({
-      text: "❌",
-      style: {
-        fontFamily: "Arial",
-        fontSize: 22,
+    const bestScoreText = new Text({
+      text: `🏆 KỶ LỤC CỦA BẠN: ${bestScore.toLocaleString()} ĐIỂM`,
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 13,
         fontWeight: "bold",
-        fill: "#ffffff",
-      },
+        fill: 0xffea00,
+        dropShadow: { color: 0x000000, blur: 2, distance: 1 }
+      }),
     });
-    btnText.anchor.set(0.5);
-    closeBtn.addChild(btnText);
+    bestScoreText.anchor.set(0.5);
+    bestScoreText.position.set(0, 126);
+    this.leaderboardModal.addChild(bestScoreText);
 
+    // CLOSE Button (Red & Gold Lacquer circular 3D close button)
     const closePopup = () => {
+      soundManager.playClick();
       gsap.to(this.leaderboardModal.scale, { x: 0.7, y: 0.7, duration: 0.25 });
       gsap.to(popup, {
         alpha: 0,
@@ -1001,19 +1169,13 @@ export class MainMenuScene {
       });
     };
 
-    btnBg.on("pointerover", () => {
-      gsap.to(closeBtn.scale, { x: 1.1, y: 1.1, duration: 0.15 });
-      btnBg.alpha = 1.0;
-      soundManager.playClick();
-    });
-    btnBg.on("pointerout", () => {
-      gsap.to(closeBtn.scale, { x: 1, y: 1, duration: 0.15 });
-      btnBg.alpha = 0.9;
-    });
-    btnBg.on("pointerdown", () => {
-      soundManager.playClick();
-      closePopup();
-    });
+    const closeBtn = this.createCircularButton(
+      "❌",
+      0,
+      165,
+      closePopup
+    );
+    this.leaderboardModal.addChild(closeBtn);
 
     // Apply responsive layout immediately to compute target scale
     this.resize();
@@ -1025,6 +1187,225 @@ export class MainMenuScene {
     popup.alpha = 0;
     gsap.to(popup, { alpha: 1, duration: 0.3 });
     gsap.to(this.leaderboardModal.scale, {
+      x: targetScale,
+      y: targetScale,
+      duration: 0.35,
+      ease: "back.out(1.8)",
+    });
+  }
+
+  showSettingsModal(isIngame = false) {
+    if (this.settingsPopup) return;
+
+    soundManager.playClick();
+
+    const popup = new Container();
+    popup.zIndex = 150;
+    this.container.addChild(popup);
+    this.settingsPopup = popup;
+
+    this.settingsOverlayBg = new Graphics();
+    this.settingsOverlayBg.rect(0, 0, App.app.screen.width, App.app.screen.height);
+    this.settingsOverlayBg.fill({ color: 0x000000, alpha: 0.65 });
+    this.settingsOverlayBg.eventMode = "static";
+    popup.addChild(this.settingsOverlayBg);
+
+    this.settingsModal = new Container();
+    this.settingsModal.x = App.app.screen.width / 2;
+    this.settingsModal.y = App.app.screen.height / 2;
+    popup.addChild(this.settingsModal);
+
+    const cardW = 340;
+    const cardH = 260;
+
+    // Shadow
+    const cardShadow = new Graphics()
+      .roundRect(-cardW / 2 + 5, -cardH / 2 + 5, cardW, cardH, 16)
+      .fill({ color: 0x000000, alpha: 0.35 });
+    this.settingsModal.addChild(cardShadow);
+
+    // Card Bg
+    const cardBg = new Graphics()
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 16)
+      .fill({ color: 0x150103, alpha: 0.92 })
+      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.85 });
+    this.settingsModal.addChild(cardBg);
+
+    // Title
+    const titleText = new Text({
+      text: "CÀI ĐẶT GAME",
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 20,
+        fill: 0xffea00,
+        fontWeight: "bold",
+        letterSpacing: 1.8,
+        align: "center",
+        dropShadow: { color: 0x000000, blur: 4, distance: 2 },
+      }),
+    });
+    titleText.anchor.set(0.5);
+    titleText.position.set(0, -cardH / 2 + 32);
+    this.settingsModal.addChild(titleText);
+
+    // Circular close btn (✕) in top right
+    const closeBtn = new Container();
+    closeBtn.eventMode = "static";
+    closeBtn.cursor = "pointer";
+    closeBtn.position.set(cardW / 2 - 22, -cardH / 2 + 22);
+
+    const closeBg = new Graphics()
+      .circle(0, 0, 13)
+      .fill({ color: 0x1b0103, alpha: 0.8 })
+      .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.8 });
+    closeBtn.addChild(closeBg);
+
+    const closeText = new Text({
+      text: "✕",
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 12,
+        fill: "#ffffff",
+        fontWeight: "bold",
+      }),
+    });
+    closeText.anchor.set(0.5);
+    closeBtn.addChild(closeText);
+
+    const closePopup = () => {
+      soundManager.playClick();
+      gsap.to(this.settingsModal.scale, { x: 0.7, y: 0.7, duration: 0.2 });
+      gsap.to(popup, {
+        alpha: 0,
+        duration: 0.2,
+        onComplete: () => {
+          killTweensRecursive(popup);
+          popup.destroy({ children: true });
+          this.settingsPopup = null;
+          this.settingsOverlayBg = null;
+          this.settingsModal = null;
+        },
+      });
+    };
+
+    closeBtn.on("pointertap", closePopup);
+    closeBtn.on("pointerover", () => {
+      gsap.to(closeBtn.scale, { x: 1.15, y: 1.15, duration: 0.15 });
+      closeBg.stroke({ width: 1.5, color: 0xffea00 });
+    });
+    closeBtn.on("pointerout", () => {
+      gsap.to(closeBtn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+      closeBg.stroke({ width: 1.2, color: 0xd4af37, alpha: 0.8 });
+    });
+    this.settingsModal.addChild(closeBtn);
+
+    // Reusable Toggle Row Builder
+    const createToggleRow = (labelText, yPos, initialMuteState, onToggle) => {
+      const row = new Container();
+      row.position.set(0, yPos);
+
+      // Left label
+      const label = new Text({
+        text: labelText,
+        style: new TextStyle({
+          fontFamily: "Outfit, Arial, sans-serif",
+          fontSize: 15,
+          fill: "#ffffff",
+          fontWeight: "bold",
+          letterSpacing: 0.8,
+        }),
+      });
+      label.anchor.set(0, 0.5);
+      label.position.set(-95, 0);
+      row.addChild(label);
+
+      // Right slider track
+      const trackW = 52;
+      const trackH = 26;
+      const track = new Container();
+      track.eventMode = "static";
+      track.cursor = "pointer";
+      track.position.set(65, 0);
+      row.addChild(track);
+
+      const trackBg = new Graphics();
+      track.addChild(trackBg);
+
+      const knob = new Graphics()
+        .circle(0, 0, 10)
+        .fill({ color: 0xffffff })
+        .stroke({ width: 1, color: 0xdddddd });
+      knob.position.set(0, 0);
+      track.addChild(knob);
+
+      const drawTrack = (isMuted) => {
+        trackBg
+          .clear()
+          .roundRect(-trackW / 2, -trackH / 2, trackW, trackH, trackH / 2)
+          .fill({ color: isMuted ? 0x4f4f4f : 0x2ecc71 })
+          .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.7 });
+      };
+
+      // Initialize
+      drawTrack(initialMuteState);
+      knob.x = initialMuteState ? -trackW / 2 + 12 : trackW / 2 - 12;
+
+      const handleToggle = () => {
+        soundManager.playClick();
+        const isMuted = onToggle();
+        drawTrack(isMuted);
+        const targetKnobX = isMuted ? -trackW / 2 + 12 : trackW / 2 - 12;
+        gsap.to(knob, {
+          x: targetKnobX,
+          duration: 0.2,
+          ease: "power2.out",
+        });
+      };
+
+      track.on("pointertap", handleToggle);
+      label.eventMode = "static";
+      label.cursor = "pointer";
+      label.on("pointertap", handleToggle);
+
+      return row;
+    };
+
+    // Add Music and SFX rows
+    const musicRowY = -25;
+    const sfxRowY = 15;
+
+    const musicRow = createToggleRow(
+      "🎵 NHẠC NÈN",
+      musicRowY,
+      !soundManager.musicEnabled,
+      () => {
+        soundManager.toggleMusic();
+        return !soundManager.musicEnabled;
+      }
+    );
+    const sfxRow = createToggleRow(
+      "🔊 HIỆU ỨNG",
+      sfxRowY,
+      !soundManager.enabled,
+      () => {
+        soundManager.enabled = !soundManager.enabled;
+        return !soundManager.enabled;
+      }
+    );
+
+    this.settingsModal.addChild(musicRow);
+    this.settingsModal.addChild(sfxRow);
+
+    // Apply responsive layout immediately to compute target scale
+    this.resize();
+
+    const targetScale = this.settingsModal.scale.x;
+    this.settingsModal.scale.set(targetScale * 0.7);
+
+    // Entrance animation
+    popup.alpha = 0;
+    gsap.to(popup, { alpha: 1, duration: 0.3 });
+    gsap.to(this.settingsModal.scale, {
       x: targetScale,
       y: targetScale,
       duration: 0.35,
