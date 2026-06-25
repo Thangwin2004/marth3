@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture, Text, Assets } from "pixi.js";
+import { Container, Graphics, Sprite, Texture, Text, Assets, TextStyle, FillGradient } from "pixi.js";
 import gsap from "gsap";
 import { Config } from "../config.js";
 import { App } from "../system/App.js";
@@ -344,74 +344,69 @@ export class MainMenuScene {
     this.container.addChild(this.versionText);
 
     // === MUSIC TOGGLE BUTTON ===
-    this.musicBtn = new Container();
-    this.musicBtn.eventMode = "static";
-    this.musicBtn.cursor = "pointer";
+    this.musicBtn = this.createCircularButton(
+      soundManager.musicEnabled ? "🔊" : "🔇",
+      0,
+      0,
+      () => {
+        const enabled = soundManager.toggleMusic();
+        if (this.musicBtn && this.musicBtn.label) {
+          this.musicBtn.label.text = enabled ? "🔊" : "🔇";
+        }
+      },
+    );
     this.container.addChild(this.musicBtn);
-
-    const musicBg = new Graphics();
-    musicBg.circle(0, 0, 26);
-    musicBg.fill({ color: 0xffffff, alpha: 0.15 });
-    musicBg.stroke({ color: 0xffffff, width: 2, alpha: 0.5 });
-    this.musicBtn.addChild(musicBg);
-
-    this.musicIcon = new Text({
-      text: soundManager.musicEnabled ? "🎵" : "🔇",
-      style: { fontFamily: "Arial", fontSize: 24, fill: "#ffffff" },
-    });
-    this.musicIcon.anchor.set(0.5);
-    this.musicBtn.addChild(this.musicIcon);
-
-    this.musicBtn.on("pointerover", () => {
-      gsap.to(this.musicBtn.scale, { x: 1.1, y: 1.1, duration: 0.15 });
-      gsap.to(musicBg, { alpha: 0.35, duration: 0.15 });
-      soundManager.playClick();
-    });
-    this.musicBtn.on("pointerout", () => {
-      gsap.to(this.musicBtn.scale, { x: 1, y: 1, duration: 0.15 });
-      gsap.to(musicBg, { alpha: 0.15, duration: 0.15 });
-    });
-    this.musicBtn.on("pointerdown", () => {
-      soundManager.playClick();
-      const enabled = soundManager.toggleMusic();
-      this.musicIcon.text = enabled ? "🎵" : "🔇";
-      gsap
-        .timeline()
-        .to(musicBg, { alpha: 0.6, duration: 0.08 })
-        .to(musicBg, { alpha: 0.15, duration: 0.15 });
-    });
 
     // === ANIMAL SCROLLING BANNER (PARADE) ===
     this.paradeContainer = new Container();
     this.container.addChild(this.paradeContainer);
 
-    // Pick 16 random animal avatars for the scrolling bottom banner
-    const paradeFiles = [...ALL_AVATAR_FILES]
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 16);
-    const paradeSprites = [];
-    const spacing = 90;
-
-    const paradePromises = paradeFiles.map((file, idx) => {
-      const alias = `menu_parade_${idx}`;
+    // 1. Load all unique avatars once to prevent duplicate asset loading
+    const uniquePromises = ALL_AVATAR_FILES.map((file, idx) => {
+      const alias = `menu_avatar_unique_${idx}`;
       const src = `/assets/imagebldp/${file}`;
       return Assets.load({ alias, src });
     });
 
-    Promise.all(paradePromises).then(() => {
+    const paradeSprites = [];
+    const spacing = 64;
+
+    Promise.all(uniquePromises).then(() => {
       if (this.paradeContainer.destroyed) return;
 
-      paradeFiles.forEach((file, idx) => {
-        const alias = `menu_parade_${idx}`;
+      // 2. Generate 80 parade items (spans up to 5120px) to cover any monitor size
+      const numItems = 80;
+      for (let i = 0; i < numItems; i++) {
+        // Pick the avatar sequentially, repeating from 0 to 43
+        const avatarIdx = i % ALL_AVATAR_FILES.length;
+        const alias = `menu_avatar_unique_${avatarIdx}`;
+        
+        const itemContainer = new Container();
+        itemContainer.x = i * spacing;
+        this.paradeContainer.addChild(itemContainer);
+
+        // Styled Frame under the sprite to make it stand out
+        const frame = new Graphics()
+          .roundRect(-30, -30, 60, 60, 10)
+          .fill({ color: 0x120103, alpha: 0.9 })
+          .stroke({ color: 0xffea00, width: 2 });
+        itemContainer.addChild(frame);
+
+        // Mask for rounded corners on the sprite
+        const mask = new Graphics()
+          .roundRect(-28, -28, 56, 56, 8)
+          .fill({ color: 0xffffff });
+        itemContainer.addChild(mask);
+
         const sprite = Sprite.from(alias);
         sprite.anchor.set(0.5);
-        sprite.width = 44;
-        sprite.height = 44;
-        // Place them spaced out horizontally
-        sprite.x = idx * spacing;
-        this.paradeContainer.addChild(sprite);
-        paradeSprites.push(sprite);
-      });
+        sprite.width = 56;
+        sprite.height = 56;
+        sprite.mask = mask;
+        itemContainer.addChild(sprite);
+
+        paradeSprites.push(itemContainer);
+      }
 
       // Smooth horizontal scrolling ticker
       this.tickerFn = () => {
@@ -510,13 +505,13 @@ export class MainMenuScene {
     // 5. Version text
     if (this.versionText) {
       this.versionText.x = width / 2;
-      this.versionText.y = height - 25;
+      this.versionText.y = height - 20;
       this.versionText.style.fontSize = Math.max(9, Math.min(12, 12 * scale));
     }
 
     // 6. Parade bottom banner
     if (this.paradeContainer) {
-      this.paradeContainer.y = height - 70;
+      this.paradeContainer.y = height - 85;
     }
 
     // 7. Leaderboard Popup Resizing
@@ -544,35 +539,62 @@ export class MainMenuScene {
     btn.y = y;
     this.container.addChild(btn);
 
-    // Generate rounded rect texture for bg
-    const tempBg = new Graphics();
-    tempBg.roundRect(0, 0, width, 56, 14);
-    tempBg.fill({ color: 0xffffff });
-    const bgTexture = App.app.renderer.generateTexture({ target: tempBg });
-    tempBg.destroy();
+    btn.eventMode = "static";
+    btn.cursor = "pointer";
 
-    const bg = new Sprite(bgTexture);
-    bg.anchor.set(0.5);
-    bg.tint = color;
-    bg.alpha = 0.85;
-    bg.eventMode = "static";
-    bg.cursor = "pointer";
-    btn.addChild(bg);
+    // Sub-container for contents to apply tactile press offset without interfering with parent position
+    const content = new Container();
+    btn.addChild(content);
 
-    // Generate rounded rect texture for shine
-    const tempShine = new Graphics();
-    tempShine.roundRect(0, 0, width, 28, 14);
-    tempShine.fill({ color: 0xffffff });
-    const shineTexture = App.app.renderer.generateTexture({
-      target: tempShine,
+    const shadow = new Graphics();
+    const bg3d = new Graphics();
+    const bg = new Graphics();
+    const highlight = new Graphics();
+
+    content.addChild(shadow);
+    content.addChild(bg3d);
+    content.addChild(bg);
+    content.addChild(highlight);
+
+    const btnGrad = new FillGradient({
+      start: { x: 0, y: -28 },
+      end: { x: 0, y: 28 },
+      colorStops: [
+        { offset: 0, color: 0xff3b4e },
+        { offset: 0.4, color: 0xd32f2f },
+        { offset: 1, color: 0x6e0912 },
+      ],
     });
-    tempShine.destroy();
 
-    const shine = new Sprite(shineTexture);
-    shine.anchor.set(0.5);
-    shine.y = -14;
-    shine.alpha = 0.08;
-    btn.addChild(shine);
+    const goldGrad = new FillGradient({
+      start: { x: -width / 2, y: -28 },
+      end: { x: width / 2, y: 28 },
+      colorStops: [
+        { offset: 0, color: 0xffea00 },
+        { offset: 0.5, color: 0xb89326 },
+        { offset: 1, color: 0xffea00 },
+      ],
+    });
+
+    // 1. Soft 3D drop shadow
+    shadow.roundRect(-width / 2, -28 + 6, width, 56, 14).fill({ color: 0x000000, alpha: 0.45 });
+
+    // 2. 3D Extrusion base
+    bg3d.roundRect(-width / 2, -28 + 4, width, 56, 14)
+      .fill({ color: 0x4a000a })
+      .stroke({ width: 1, color: 0x240003 });
+
+    // 3. Main face
+    bg.roundRect(-width / 2, -28, width, 56, 14)
+      .fill(btnGrad)
+      .stroke({ width: 2, fill: goldGrad });
+
+    // 4. Glossy highlight sheen on top
+    highlight.roundRect(-width / 2 + 4, -28 + 3, width - 8, 16, 10)
+      .fill({ color: 0xffffff, alpha: 0.18 });
+
+    // Add Label / Icon
+    let textObj = null;
 
     if (label.startsWith("GOOGLE_ICON")) {
       const displayText = label.includes(":")
@@ -581,18 +603,20 @@ export class MainMenuScene {
 
       const text = new Text({
         text: displayText,
-        style: {
-          fontFamily: "Arial",
+        style: new TextStyle({
+          fontFamily: "Outfit, Arial, sans-serif",
           fontSize: 14,
           fontWeight: "bold",
           fill: "#ffffff",
-        },
+          dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+        }),
       });
       text.anchor.set(0.5);
-      btn.addChild(text);
+      content.addChild(text);
+      textObj = text;
 
       const icon = new Sprite();
-      btn.addChild(icon);
+      content.addChild(icon);
       btn.icon = icon;
       Assets.load("/google_logo.png")
         .then((texture) => {
@@ -601,8 +625,7 @@ export class MainMenuScene {
           icon.width = 24;
           icon.height = 24;
 
-          // Align icon and text horizontally
-          const gap = 8;
+          const gap = 12;
           const totalW = icon.width + gap + text.width;
           icon.x = -totalW / 2 + icon.width / 2;
           text.x = totalW / 2 - text.width / 2;
@@ -618,59 +641,71 @@ export class MainMenuScene {
 
         const emojiText = new Text({
           text: emoji,
-          style: {
-            fontFamily: "Arial",
+          style: new TextStyle({
+            fontFamily: "Outfit, Arial, sans-serif",
             fontSize: 26,
             fill: "#ffffff",
-          },
+          }),
         });
         emojiText.anchor.set(0.5);
-        btn.addChild(emojiText);
+        content.addChild(emojiText);
 
         const text = new Text({
           text: textStr,
-          style: {
-            fontFamily: "Arial",
-            fontSize: 15,
+          style: new TextStyle({
+            fontFamily: "Outfit, Arial, sans-serif",
+            fontSize: 14,
             fontWeight: "bold",
             fill: "#ffffff",
-          },
+            dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+          }),
         });
         text.anchor.set(0.5);
-        btn.addChild(text);
+        content.addChild(text);
+        textObj = text;
 
-        // Align emoji and text horizontally
-        const gap = 8;
+        const gap = 12;
         const totalW = emojiText.width + gap + text.width;
         emojiText.x = -totalW / 2 + emojiText.width / 2;
         text.x = totalW / 2 - text.width / 2;
       } else {
         const text = new Text({
           text: label,
-          style: {
-            fontFamily: "Arial",
+          style: new TextStyle({
+            fontFamily: "Outfit, Arial, sans-serif",
             fontSize: 15,
             fontWeight: "bold",
             fill: "#ffffff",
-          },
+            dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+          }),
         });
         text.anchor.set(0.5);
-        btn.addChild(text);
+        content.addChild(text);
+        textObj = text;
       }
     }
 
-    bg.on("pointerover", () => {
-      gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
-      gsap.to(bg, { alpha: 1, duration: 0.15 });
+    // Interactivity
+    btn.on("pointerover", () => {
+      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+      bg.stroke({ width: 2.5, color: 0xffea00 });
+      if (textObj) textObj.style.fill = "#ffea00";
       soundManager.playClick();
     });
-    bg.on("pointerout", () => {
-      gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 });
-      gsap.to(bg, { alpha: 0.85, duration: 0.15 });
+    btn.on("pointerout", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+      bg.stroke({ width: 2, fill: goldGrad });
+      if (textObj) textObj.style.fill = "#ffffff";
     });
-    bg.on("pointerdown", () => {
-      soundManager.playClick();
+    btn.on("pointerdown", () => {
+      gsap.to(content, { y: 2, duration: 0.05 });
+    });
+    btn.on("pointerup", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
       onClick();
+    });
+    btn.on("pointerupoutside", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
     });
 
     // Entrance animation
@@ -681,6 +716,97 @@ export class MainMenuScene {
       delay: 0.4,
       ease: "power2.out",
     });
+    return btn;
+  }
+
+  createCircularButton(emojiText, x, y, onClick) {
+    const btn = new Container();
+    btn.x = x;
+    btn.y = y;
+
+    btn.eventMode = "static";
+    btn.cursor = "pointer";
+
+    const content = new Container();
+    btn.addChild(content);
+
+    const shadow = new Graphics();
+    const bg = new Graphics();
+    const highlight = new Graphics();
+
+    content.addChild(shadow);
+    content.addChild(bg);
+    content.addChild(highlight);
+
+    const r = 26;
+
+    // 1. Soft 3D drop shadow
+    shadow.circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
+
+    // 2. 3D Extrusion base
+    bg.circle(0, 3, r).fill({ color: 0x4a000a }).stroke({ width: 1, color: 0x240003 });
+
+    // 3. Main button body - premium smooth gradient
+    const btnGrad = new FillGradient({
+      start: { x: 0, y: -r },
+      end: { x: 0, y: r },
+      colorStops: [
+        { offset: 0, color: 0xff3b4e },
+        { offset: 0.4, color: 0xd32f2f },
+        { offset: 1, color: 0x6e0912 },
+      ],
+    });
+
+    const goldGrad = new FillGradient({
+      start: { x: -r, y: -r },
+      end: { x: r, y: r },
+      colorStops: [
+        { offset: 0, color: 0xffea00 },
+        { offset: 0.5, color: 0xb89326 },
+        { offset: 1, color: 0xffea00 },
+      ],
+    });
+
+    bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
+
+    // 4. Glossy highlight sheen
+    highlight.ellipse(0, -r * 0.4, r * 0.7, r * 0.35).fill({ color: 0xffffff, alpha: 0.18 });
+
+    const label = new Text({
+      text: emojiText,
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 22,
+        fill: "#ffffff",
+        dropShadow: { color: 0x000000, blur: 2, distance: 1.5 },
+      }),
+    });
+    label.anchor.set(0.5);
+    content.addChild(label);
+    btn.label = label;
+
+    btn.on("pointerover", () => {
+      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+      soundManager.playClick();
+    });
+
+    btn.on("pointerout", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+    });
+
+    btn.on("pointerdown", () => {
+      gsap.to(content, { y: 2, duration: 0.05 });
+    });
+
+    btn.on("pointerup", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
+      onClick();
+    });
+
+    btn.on("pointerupoutside", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
+    });
+
     return btn;
   }
 

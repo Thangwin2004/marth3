@@ -534,7 +534,6 @@ export class GameScene {
     this.comboText.visible = false;
     this.uiContainer.addChild(this.comboText);
 
-    // === TUTORIAL / INSTRUCTION TEXT ===
     this.tutorialText = new Text({
       text: "👉 Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
       style: {
@@ -549,76 +548,30 @@ export class GameScene {
     this.uiContainer.addChild(this.tutorialText);
 
     // === MUSIC TOGGLE BUTTON ===
-    this.musicBtn = new Container();
-    this.musicBtn.eventMode = "static";
-    this.musicBtn.cursor = "pointer";
+    this.musicBtn = this.createCircularButton(
+      soundManager.musicEnabled ? "🔊" : "🔇",
+      0,
+      0,
+      () => {
+        const enabled = soundManager.toggleMusic();
+        if (this.musicBtn && this.musicBtn.label) {
+          this.musicBtn.label.text = enabled ? "🔊" : "🔇";
+        }
+      },
+    );
     this.uiContainer.addChild(this.musicBtn);
 
-    const musicBg = new Graphics();
-    musicBg.circle(0, 0, 26);
-    musicBg.fill({ color: 0xffffff, alpha: 0.15 });
-    musicBg.stroke({ color: 0xffffff, width: 1.5, alpha: 0.5 });
-    this.musicBtn.addChild(musicBg);
-
-    this.musicIcon = new Text({
-      text: soundManager.musicEnabled ? "🎵" : "🔇",
-      style: { fontFamily: "Arial", fontSize: 24, fill: "#ffffff" },
-    });
-    this.musicIcon.anchor.set(0.5);
-    this.musicBtn.addChild(this.musicIcon);
-
-    this.musicBtn.on("pointerover", () => {
-      gsap.to(this.musicBtn.scale, { x: 1.1, y: 1.1, duration: 0.15 });
-      gsap.to(musicBg, { alpha: 0.35, duration: 0.15 });
-      soundManager.playClick();
-    });
-    this.musicBtn.on("pointerout", () => {
-      gsap.to(this.musicBtn.scale, { x: 1, y: 1, duration: 0.15 });
-      gsap.to(musicBg, { alpha: 0.15, duration: 0.15 });
-    });
-    this.musicBtn.on("pointerdown", () => {
-      soundManager.playClick();
-      const enabled = soundManager.toggleMusic();
-      this.musicIcon.text = enabled ? "🎵" : "🔇";
-      gsap
-        .timeline()
-        .to(musicBg, { alpha: 0.6, duration: 0.08 })
-        .to(musicBg, { alpha: 0.15, duration: 0.15 });
-    });
-
     // === HOME BUTTON ===
-    this.homeBtn = new Container();
-    this.homeBtn.eventMode = "static";
-    this.homeBtn.cursor = "pointer";
+    this.homeBtn = this.createCircularButton(
+      "🏠",
+      0,
+      0,
+      async () => {
+        const { MainMenuScene } = await import("./MainMenuScene.js");
+        await sceneManager.switchTo(MainMenuScene);
+      },
+    );
     this.uiContainer.addChild(this.homeBtn);
-
-    const homeBg = new Graphics();
-    homeBg.circle(0, 0, 26);
-    homeBg.fill({ color: 0xffffff, alpha: 0.15 });
-    homeBg.stroke({ color: 0xffffff, width: 1.5, alpha: 0.5 });
-    this.homeBtn.addChild(homeBg);
-
-    const homeIcon = new Text({
-      text: "🏠",
-      style: { fontFamily: "Arial", fontSize: 24, fill: "#ffffff" },
-    });
-    homeIcon.anchor.set(0.5);
-    this.homeBtn.addChild(homeIcon);
-
-    this.homeBtn.on("pointerover", () => {
-      gsap.to(this.homeBtn.scale, { x: 1.1, y: 1.1, duration: 0.15 });
-      gsap.to(homeBg, { alpha: 0.35, duration: 0.15 });
-      soundManager.playClick();
-    });
-    this.homeBtn.on("pointerout", () => {
-      gsap.to(this.homeBtn.scale, { x: 1, y: 1, duration: 0.15 });
-      gsap.to(homeBg, { alpha: 0.15, duration: 0.15 });
-    });
-    this.homeBtn.on("pointerdown", async () => {
-      soundManager.playClick();
-      const { MainMenuScene } = await import("./MainMenuScene.js");
-      await sceneManager.switchTo(MainMenuScene);
-    });
   }
 
   /**
@@ -2870,14 +2823,14 @@ export class GameScene {
 
     // Premium modal background (Themed in Vietnamese style!)
     const modalBg = new Graphics();
-    modalBg.roundRect(-240, -195, 480, 410, 24);
+    modalBg.roundRect(-240, -225, 480, 450, 24);
     modalBg.fill({ color: 0x120103, alpha: 0.95 }); // Deep maroon/black lacquer background
     modalBg.stroke({ color: rank ? 0xffea00 : 0xd4af37, width: 4.5 });
     this.gameOverModal.addChild(modalBg);
 
     // 1. Glowing neon & floating title
     const titleContainer = new Container();
-    titleContainer.position.set(0, -145);
+    titleContainer.position.set(0, -170);
     this.gameOverModal.addChild(titleContainer);
 
     const titleGrad = new FillGradient({
@@ -2938,7 +2891,7 @@ export class GameScene {
 
     // 2. Central Vietnamese Emblem Badge (rotating trống đồng and detailed chim lạc birds!)
     const badgeContainer = new Container();
-    badgeContainer.position.set(0, -35);
+    badgeContainer.position.set(0, -55);
     this.gameOverModal.addChild(badgeContainer);
 
     const lacBirdCtx = new GraphicsContext()
@@ -3098,7 +3051,7 @@ export class GameScene {
       },
     });
     scoreLabel.anchor.set(0.5);
-    scoreLabel.y = 48;
+    scoreLabel.y = 25;
     this.gameOverModal.addChild(scoreLabel);
 
     if (rank) {
@@ -3113,7 +3066,7 @@ export class GameScene {
         },
       });
       rankLabel.anchor.set(0.5);
-      rankLabel.y = 88;
+      rankLabel.y = 65;
       this.gameOverModal.addChild(rankLabel);
 
       // Subtle scale pulsing on rank text
@@ -3136,7 +3089,7 @@ export class GameScene {
         },
       });
       normalLabel.anchor.set(0.5);
-      normalLabel.y = 88;
+      normalLabel.y = 65;
       this.gameOverModal.addChild(normalLabel);
     }
 
@@ -3145,7 +3098,7 @@ export class GameScene {
       this.gameOverModal,
       this.hasContinued ? "⏱️ ĐÃ DÙNG" : "📺 HỒI SINH (+5 Lượt)",
       -110,
-      132,
+      115,
       this.hasContinued ? 0x555555 : 0xffaa00,
       async () => {
         if (this.hasContinued) return;
@@ -3182,7 +3135,7 @@ export class GameScene {
       this.gameOverModal,
       "📺 X2 ĐIỂM",
       110,
-      132,
+      115,
       0xffea00,
       async () => {
         if (hasDoubled) return;
@@ -3405,16 +3358,64 @@ export class GameScene {
     btn.y = y;
     parent.addChild(btn);
 
-    const width = btnWidth;
-    const height = 56;
+    btn.eventMode = "static";
+    btn.cursor = "pointer";
 
+    // Sub-container for contents to apply tactile press offset without interfering with parent position
+    const content = new Container();
+    btn.addChild(content);
+
+    const shadow = new Graphics();
+    const bg3d = new Graphics();
     const bg = new Graphics();
-    bg.roundRect(-width / 2, -height / 2, width, height, 14);
-    bg.fill({ color });
-    bg.alpha = 0.9;
-    bg.eventMode = "static";
-    bg.cursor = "pointer";
-    btn.addChild(bg);
+    const highlight = new Graphics();
+
+    content.addChild(shadow);
+    content.addChild(bg3d);
+    content.addChild(bg);
+    content.addChild(highlight);
+
+    const width = btnWidth;
+
+    const btnGrad = new FillGradient({
+      start: { x: 0, y: -28 },
+      end: { x: 0, y: 28 },
+      colorStops: [
+        { offset: 0, color: 0xff3b4e },
+        { offset: 0.4, color: 0xd32f2f },
+        { offset: 1, color: 0x6e0912 },
+      ],
+    });
+
+    const goldGrad = new FillGradient({
+      start: { x: -width / 2, y: -28 },
+      end: { x: width / 2, y: 28 },
+      colorStops: [
+        { offset: 0, color: 0xffea00 },
+        { offset: 0.5, color: 0xb89326 },
+        { offset: 1, color: 0xffea00 },
+      ],
+    });
+
+    // 1. Soft 3D drop shadow
+    shadow.roundRect(-width / 2, -28 + 6, width, 56, 14).fill({ color: 0x000000, alpha: 0.45 });
+
+    // 2. 3D Extrusion base
+    bg3d.roundRect(-width / 2, -28 + 4, width, 56, 14)
+      .fill({ color: 0x4a000a })
+      .stroke({ width: 1, color: 0x240003 });
+
+    // 3. Main face
+    bg.roundRect(-width / 2, -28, width, 56, 14)
+      .fill(btnGrad)
+      .stroke({ width: 2, fill: goldGrad });
+
+    // 4. Glossy highlight sheen on top
+    highlight.roundRect(-width / 2 + 4, -28 + 3, width - 8, 16, 10)
+      .fill({ color: 0xffffff, alpha: 0.18 });
+
+    // Add Label / Icon
+    let textObj = null;
 
     const spaceIdx = label.indexOf(" ");
     if (spaceIdx !== -1 && label.charCodeAt(0) > 127) {
@@ -3423,56 +3424,162 @@ export class GameScene {
 
       const emojiText = new Text({
         text: emoji,
-        style: {
-          fontFamily: "Arial, sans-serif",
+        style: new TextStyle({
+          fontFamily: "Outfit, Arial, sans-serif",
           fontSize: 26,
           fill: textColor,
-        },
+        }),
       });
       emojiText.anchor.set(0.5);
-      btn.addChild(emojiText);
+      content.addChild(emojiText);
 
       const text = new Text({
         text: textStr,
-        style: {
-          fontFamily: "Arial, sans-serif",
-          fontSize: 15,
+        style: new TextStyle({
+          fontFamily: "Outfit, Arial, sans-serif",
+          fontSize: 14,
           fontWeight: "bold",
           fill: textColor,
-        },
+          dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+        }),
       });
       text.anchor.set(0.5);
-      btn.addChild(text);
+      content.addChild(text);
+      textObj = text;
 
-      const gap = 8;
+      const gap = 12;
       const totalW = emojiText.width + gap + text.width;
       emojiText.x = -totalW / 2 + emojiText.width / 2;
       text.x = totalW / 2 - text.width / 2;
     } else {
       const text = new Text({
         text: label,
-        style: {
-          fontFamily: "Arial, sans-serif",
+        style: new TextStyle({
+          fontFamily: "Outfit, Arial, sans-serif",
           fontSize: label.length > 2 ? 15 : 22,
           fontWeight: "bold",
           fill: textColor,
-        },
+          dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+        }),
       });
       text.anchor.set(0.5);
-      btn.addChild(text);
+      content.addChild(text);
+      textObj = text;
     }
 
-    bg.on("pointerover", () => {
-      gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
-      bg.alpha = 1.0;
+    // Interactivity
+    btn.on("pointerover", () => {
+      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+      bg.stroke({ width: 2.5, color: 0xffea00 });
+      if (textObj) textObj.style.fill = "#ffea00";
+      soundManager.playClick();
     });
-    bg.on("pointerout", () => {
-      gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 });
-      bg.alpha = 0.9;
+    btn.on("pointerout", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+      bg.stroke({ width: 2, fill: goldGrad });
+      if (textObj) textObj.style.fill = "#ffffff";
     });
-    bg.on("pointerdown", () => {
+    btn.on("pointerdown", () => {
+      gsap.to(content, { y: 2, duration: 0.05 });
+    });
+    btn.on("pointerup", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
       onClick();
     });
+    btn.on("pointerupoutside", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
+    });
+  }
+
+  createCircularButton(emojiText, x, y, onClick) {
+    const btn = new Container();
+    btn.x = x;
+    btn.y = y;
+
+    btn.eventMode = "static";
+    btn.cursor = "pointer";
+
+    const content = new Container();
+    btn.addChild(content);
+
+    const shadow = new Graphics();
+    const bg = new Graphics();
+    const highlight = new Graphics();
+
+    content.addChild(shadow);
+    content.addChild(bg);
+    content.addChild(highlight);
+
+    const r = 26;
+
+    // 1. Soft 3D drop shadow
+    shadow.circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
+
+    // 2. 3D Extrusion base
+    bg.circle(0, 3, r).fill({ color: 0x4a000a }).stroke({ width: 1, color: 0x240003 });
+
+    // 3. Main button body - premium smooth gradient
+    const btnGrad = new FillGradient({
+      start: { x: 0, y: -r },
+      end: { x: 0, y: r },
+      colorStops: [
+        { offset: 0, color: 0xff3b4e },
+        { offset: 0.4, color: 0xd32f2f },
+        { offset: 1, color: 0x6e0912 },
+      ],
+    });
+
+    const goldGrad = new FillGradient({
+      start: { x: -r, y: -r },
+      end: { x: r, y: r },
+      colorStops: [
+        { offset: 0, color: 0xffea00 },
+        { offset: 0.5, color: 0xb89326 },
+        { offset: 1, color: 0xffea00 },
+      ],
+    });
+
+    bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
+
+    // 4. Glossy highlight sheen
+    highlight.ellipse(0, -r * 0.4, r * 0.7, r * 0.35).fill({ color: 0xffffff, alpha: 0.18 });
+
+    const label = new Text({
+      text: emojiText,
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 22,
+        fill: "#ffffff",
+        dropShadow: { color: 0x000000, blur: 2, distance: 1.5 },
+      }),
+    });
+    label.anchor.set(0.5);
+    content.addChild(label);
+    btn.label = label;
+
+    btn.on("pointerover", () => {
+      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+      soundManager.playClick();
+    });
+
+    btn.on("pointerout", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+    });
+
+    btn.on("pointerdown", () => {
+      gsap.to(content, { y: 2, duration: 0.05 });
+    });
+
+    btn.on("pointerup", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
+      onClick();
+    });
+
+    btn.on("pointerupoutside", () => {
+      gsap.to(content, { y: 0, duration: 0.1 });
+    });
+
+    return btn;
   }
 
   resize() {
