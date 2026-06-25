@@ -8,6 +8,7 @@ import {
   BlurFilter,
   FillGradient,
   GraphicsContext,
+  TextStyle,
 } from "pixi.js";
 import { Board } from "../game/Board.js";
 import { CombinationManager } from "../game/CombinationManager.js";
@@ -547,31 +548,16 @@ export class GameScene {
     this.tutorialText.anchor.set(0.5);
     this.uiContainer.addChild(this.tutorialText);
 
-    // === MUSIC TOGGLE BUTTON ===
-    this.musicBtn = this.createCircularButton(
-      soundManager.musicEnabled ? "🔊" : "🔇",
+    // === SETTINGS BUTTON ===
+    this.settingsBtn = this.createCircularButton(
+      "⚙️",
       0,
       0,
       () => {
-        const enabled = soundManager.toggleMusic();
-        if (this.musicBtn && this.musicBtn.label) {
-          this.musicBtn.label.text = enabled ? "🔊" : "🔇";
-        }
+        this.showSettingsModal(true);
       },
     );
-    this.uiContainer.addChild(this.musicBtn);
-
-    // === HOME BUTTON ===
-    this.homeBtn = this.createCircularButton(
-      "🏠",
-      0,
-      0,
-      async () => {
-        const { MainMenuScene } = await import("./MainMenuScene.js");
-        await sceneManager.switchTo(MainMenuScene);
-      },
-    );
-    this.uiContainer.addChild(this.homeBtn);
+    this.uiContainer.addChild(this.settingsBtn);
   }
 
   /**
@@ -3125,7 +3111,7 @@ export class GameScene {
           });
         }
       },
-      this.hasContinued ? 0x888888 : 0x121a2e,
+      this.hasContinued ? 0x888888 : 0x3d1c02,
       200,
     );
 
@@ -3147,7 +3133,7 @@ export class GameScene {
           await gameAlert("🎉 Điểm số của bạn đã được x2!");
         }
       },
-      0x121a2e,
+      0x3d1c02,
       200,
     );
 
@@ -3189,7 +3175,7 @@ export class GameScene {
         const { MainMenuScene } = await import("./MainMenuScene.js");
         await sceneManager.switchTo(MainMenuScene);
       },
-      0x333333,
+      0x1c2833,
       200,
     );
 
@@ -3352,6 +3338,7 @@ export class GameScene {
     onClick,
     textColor = 0xffffff,
     btnWidth = 240,
+    btnHeight = 56,
   ) {
     const btn = new Container();
     btn.x = x;
@@ -3376,20 +3363,59 @@ export class GameScene {
     content.addChild(highlight);
 
     const width = btnWidth;
+    const hh = btnHeight / 2;
+
+    let btnColorStops = [
+      { offset: 0, color: 0xff3b4e },
+      { offset: 0.4, color: 0xd32f2f },
+      { offset: 1, color: 0x6e0912 },
+    ];
+    let extrusionColor = 0x4a000a;
+    let borderExtrusionColor = 0x240003;
+
+    if (color === 0x4caf50) { // Green
+      btnColorStops = [
+        { offset: 0, color: 0x2ecc71 },
+        { offset: 0.4, color: 0x27ae60 },
+        { offset: 1, color: 0x1e824c },
+      ];
+      extrusionColor = 0x145a32;
+      borderExtrusionColor = 0x0b301a;
+    } else if (color === 0xffaa00 || color === 0xffea00) { // Gold/Yellow
+      btnColorStops = [
+        { offset: 0, color: 0xffeb3b },
+        { offset: 0.4, color: 0xfbc02d },
+        { offset: 1, color: 0xf57f17 },
+      ];
+      extrusionColor = 0x7e5109;
+      borderExtrusionColor = 0x422a05;
+    } else if (color === 0xe0e0e0 || color === 0xffffff) { // Grey/White
+      btnColorStops = [
+        { offset: 0, color: 0xfdfefe },
+        { offset: 0.4, color: 0xbdc3c7 },
+        { offset: 1, color: 0x7f8c8d },
+      ];
+      extrusionColor = 0x424949;
+      borderExtrusionColor = 0x212424;
+    } else if (color === 0x1b0103 || color === 0x121a2e || color === 0x555555 || color === 0x888888) { // Dark/Grey
+      btnColorStops = [
+        { offset: 0, color: 0x484848 },
+        { offset: 0.4, color: 0x2c2c2c },
+        { offset: 1, color: 0x151515 },
+      ];
+      extrusionColor = 0x1a1a1a;
+      borderExtrusionColor = 0x0d0d0d;
+    }
 
     const btnGrad = new FillGradient({
-      start: { x: 0, y: -28 },
-      end: { x: 0, y: 28 },
-      colorStops: [
-        { offset: 0, color: 0xff3b4e },
-        { offset: 0.4, color: 0xd32f2f },
-        { offset: 1, color: 0x6e0912 },
-      ],
+      start: { x: 0, y: -hh },
+      end: { x: 0, y: hh },
+      colorStops: btnColorStops,
     });
 
     const goldGrad = new FillGradient({
-      start: { x: -width / 2, y: -28 },
-      end: { x: width / 2, y: 28 },
+      start: { x: -width / 2, y: -hh },
+      end: { x: width / 2, y: hh },
       colorStops: [
         { offset: 0, color: 0xffea00 },
         { offset: 0.5, color: 0xb89326 },
@@ -3397,21 +3423,27 @@ export class GameScene {
       ],
     });
 
+    const isSmall = width < 150;
+    const radius = isSmall ? 10 : 14;
+    const offset3d = isSmall ? 3 : 4;
+    const shadowOffset = isSmall ? 4 : 6;
+
     // 1. Soft 3D drop shadow
-    shadow.roundRect(-width / 2, -28 + 6, width, 56, 14).fill({ color: 0x000000, alpha: 0.45 });
+    shadow.roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius).fill({ color: 0x000000, alpha: 0.45 });
 
     // 2. 3D Extrusion base
-    bg3d.roundRect(-width / 2, -28 + 4, width, 56, 14)
-      .fill({ color: 0x4a000a })
-      .stroke({ width: 1, color: 0x240003 });
+    bg3d.roundRect(-width / 2, -hh + offset3d, width, btnHeight, radius)
+      .fill({ color: extrusionColor })
+      .stroke({ width: 1, color: borderExtrusionColor });
 
     // 3. Main face
-    bg.roundRect(-width / 2, -28, width, 56, 14)
+    bg.roundRect(-width / 2, -hh, width, btnHeight, radius)
       .fill(btnGrad)
       .stroke({ width: 2, fill: goldGrad });
 
     // 4. Glossy highlight sheen on top
-    highlight.roundRect(-width / 2 + 4, -28 + 3, width - 8, 16, 10)
+    const sheenH = isSmall ? 11 : 16;
+    highlight.roundRect(-width / 2 + 4, -hh + 2, width - 8, sheenH, isSmall ? 8 : 10)
       .fill({ color: 0xffffff, alpha: 0.18 });
 
     // Add Label / Icon
@@ -3422,11 +3454,14 @@ export class GameScene {
       const emoji = label.substring(0, spaceIdx);
       const textStr = label.substring(spaceIdx + 1);
 
+      const emojiSize = isSmall ? 16 : 26;
+      const textSize = isSmall ? 11 : 14;
+
       const emojiText = new Text({
         text: emoji,
         style: new TextStyle({
           fontFamily: "Outfit, Arial, sans-serif",
-          fontSize: 26,
+          fontSize: emojiSize,
           fill: textColor,
         }),
       });
@@ -3437,7 +3472,7 @@ export class GameScene {
         text: textStr,
         style: new TextStyle({
           fontFamily: "Outfit, Arial, sans-serif",
-          fontSize: 14,
+          fontSize: textSize,
           fontWeight: "bold",
           fill: textColor,
           dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
@@ -3447,16 +3482,17 @@ export class GameScene {
       content.addChild(text);
       textObj = text;
 
-      const gap = 12;
+      const gap = isSmall ? 6 : 12;
       const totalW = emojiText.width + gap + text.width;
       emojiText.x = -totalW / 2 + emojiText.width / 2;
       text.x = totalW / 2 - text.width / 2;
     } else {
+      const textSize = isSmall ? 11 : (label.length > 2 ? 15 : 22);
       const text = new Text({
         text: label,
         style: new TextStyle({
           fontFamily: "Outfit, Arial, sans-serif",
-          fontSize: label.length > 2 ? 15 : 22,
+          fontSize: textSize,
           fontWeight: "bold",
           fill: textColor,
           dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
@@ -3689,16 +3725,10 @@ export class GameScene {
       this.movesText.y = this.movesPanel.y + panelHeight / 2;
     }
 
-    // 4.5. Position Music Button in Gameplay
-    if (this.musicBtn) {
-      this.musicBtn.x = width - 42;
-      this.musicBtn.y = height - 42;
-    }
-
-    // 4.6. Position Home Button in Gameplay
-    if (this.homeBtn) {
-      this.homeBtn.x = 42;
-      this.homeBtn.y = height - 42;
+    // 4.5. Position Settings Button in Gameplay
+    if (this.settingsBtn) {
+      this.settingsBtn.x = width - 42;
+      this.settingsBtn.y = height - 42;
     }
 
     // 5. Position Combo Text
@@ -3783,11 +3813,262 @@ export class GameScene {
         this.deadlockModal.scale.set(modalScale);
       }
     }
+
+    // 8. Settings Popup Resizing
+    if (this.settingsPopup) {
+      if (this.settingsOverlayBg) {
+        this.settingsOverlayBg.clear();
+        this.settingsOverlayBg.rect(0, 0, width, height);
+        this.settingsOverlayBg.fill({ color: 0x000000, alpha: 0.65 });
+      }
+      if (this.settingsModal) {
+        this.settingsModal.x = width / 2;
+        this.settingsModal.y = height / 2;
+        const modalScale =
+          width < 600 || height > width
+            ? Math.min(1.0, (width - 40) / 380)
+            : 1.0;
+        this.settingsModal.scale.set(modalScale);
+      }
+    }
   }
 
   // ============================================================
   //  CLEANUP
   // ============================================================
+
+  showSettingsModal(isIngame = true) {
+    if (this.settingsPopup) return;
+
+    soundManager.playClick();
+
+    // Pause game logic by disabling interactions
+    this.disabled = true;
+
+    const popup = new Container();
+    popup.zIndex = 150;
+    this.container.addChild(popup);
+    this.settingsPopup = popup;
+
+    this.settingsOverlayBg = new Graphics();
+    this.settingsOverlayBg.rect(0, 0, App.app.screen.width, App.app.screen.height);
+    this.settingsOverlayBg.fill({ color: 0x000000, alpha: 0.65 });
+    this.settingsOverlayBg.eventMode = "static";
+    popup.addChild(this.settingsOverlayBg);
+
+    this.settingsModal = new Container();
+    this.settingsModal.x = App.app.screen.width / 2;
+    this.settingsModal.y = App.app.screen.height / 2;
+    popup.addChild(this.settingsModal);
+
+    const cardW = 340;
+    const cardH = 310; // larger height for ingame controls
+
+    // Shadow
+    const cardShadow = new Graphics()
+      .roundRect(-cardW / 2 + 5, -cardH / 2 + 5, cardW, cardH, 16)
+      .fill({ color: 0x000000, alpha: 0.35 });
+    this.settingsModal.addChild(cardShadow);
+
+    // Card Bg
+    const cardBg = new Graphics()
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 16)
+      .fill({ color: 0x150103, alpha: 0.92 })
+      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.85 });
+    this.settingsModal.addChild(cardBg);
+
+    // Title
+    const titleText = new Text({
+      text: "CÀI ĐẶT GAME",
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 20,
+        fill: 0xffea00,
+        fontWeight: "bold",
+        letterSpacing: 1.8,
+        align: "center",
+        dropShadow: { color: 0x000000, blur: 4, distance: 2 },
+      }),
+    });
+    titleText.anchor.set(0.5);
+    titleText.position.set(0, -cardH / 2 + 32);
+    this.settingsModal.addChild(titleText);
+
+    // Reusable Toggle Row Builder
+    const createToggleRow = (labelText, yPos, initialMuteState, onToggle) => {
+      const row = new Container();
+      row.position.set(0, yPos);
+
+      // Left label (enlarged)
+      const label = new Text({
+        text: labelText,
+        style: new TextStyle({
+          fontFamily: "Outfit, Arial, sans-serif",
+          fontSize: 18,
+          fill: "#ffffff",
+          fontWeight: "bold",
+          letterSpacing: 0.8,
+        }),
+      });
+      label.anchor.set(0, 0.5);
+      label.position.set(-110, 0);
+      row.addChild(label);
+
+      // Right slider track (enlarged)
+      const trackW = 60;
+      const trackH = 30;
+      const track = new Container();
+      track.eventMode = "static";
+      track.cursor = "pointer";
+      track.position.set(70, 0);
+      row.addChild(track);
+
+      const trackBg = new Graphics();
+      track.addChild(trackBg);
+
+      const knob = new Graphics()
+        .circle(0, 0, 12)
+        .fill({ color: 0xffffff })
+        .stroke({ width: 1, color: 0xdddddd });
+      knob.position.set(0, 0);
+      track.addChild(knob);
+
+      const drawTrack = (isMuted) => {
+        trackBg
+          .clear()
+          .roundRect(-trackW / 2, -trackH / 2, trackW, trackH, trackH / 2)
+          .fill({ color: isMuted ? 0x4f4f4f : 0x2ecc71 })
+          .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.7 });
+      };
+
+      // Initialize
+      drawTrack(initialMuteState);
+      knob.x = initialMuteState ? -trackW / 2 + 14 : trackW / 2 - 14;
+
+      const handleToggle = () => {
+        soundManager.playClick();
+        const isMuted = onToggle();
+        drawTrack(isMuted);
+        const targetKnobX = isMuted ? -trackW / 2 + 14 : trackW / 2 - 14;
+        gsap.to(knob, {
+          x: targetKnobX,
+          duration: 0.2,
+          ease: "power2.out",
+        });
+      };
+
+      track.on("pointertap", handleToggle);
+      label.eventMode = "static";
+      label.cursor = "pointer";
+      label.on("pointertap", handleToggle);
+
+      return row;
+    };
+
+    // Add Music and SFX rows (higher up for ingame layout)
+    const musicRowY = -65;
+    const sfxRowY = -20;
+
+    const musicRow = createToggleRow(
+      "🎵 NHẠC NÈN",
+      musicRowY,
+      !soundManager.musicEnabled,
+      () => {
+        soundManager.toggleMusic();
+        return !soundManager.musicEnabled;
+      }
+    );
+    const sfxRow = createToggleRow(
+      "🔊 HIỆU ỨNG",
+      sfxRowY,
+      !soundManager.enabled,
+      () => {
+        soundManager.enabled = !soundManager.enabled;
+        return !soundManager.enabled;
+      }
+    );
+
+    this.settingsModal.addChild(musicRow);
+    this.settingsModal.addChild(sfxRow);
+
+    const closePopup = () => {
+      soundManager.playClick();
+      gsap.to(this.settingsModal.scale, { x: 0.7, y: 0.7, duration: 0.2 });
+      gsap.to(popup, {
+        alpha: 0,
+        duration: 0.2,
+        onComplete: () => {
+          killTweensRecursive(popup);
+          popup.destroy({ children: true });
+          this.settingsPopup = null;
+          this.settingsOverlayBg = null;
+          this.settingsModal = null;
+          this.disabled = false; // resume game interactions
+        },
+      });
+    };
+
+    // Side-by-side Home & Replay buttons at y = 35
+    this.createModalButton(
+      this.settingsModal,
+      "🏡 TRANG CHỦ",
+      -65,
+      35,
+      0x1b0103,
+      async () => {
+        closePopup();
+        const { MainMenuScene } = await import("./MainMenuScene.js");
+        await sceneManager.switchTo(MainMenuScene);
+      },
+      0xffffff,
+      120,
+      38
+    );
+
+    this.createModalButton(
+      this.settingsModal,
+      "🔄 CHƠI LẠI",
+      65,
+      35,
+      0x1b0103,
+      async () => {
+        closePopup();
+        await sceneManager.switchTo(GameScene);
+      },
+      0xffffff,
+      120,
+      38
+    );
+
+    // Centered Continue button at y = 95
+    this.createModalButton(
+      this.settingsModal,
+      "▶️ TIẾP TỤC",
+      0,
+      95,
+      0x5c0612,
+      closePopup,
+      0xffffff,
+      250,
+      38
+    );
+
+    // Apply responsive layout immediately to compute target scale
+    this.resize();
+
+    const targetScale = this.settingsModal.scale.x;
+    this.settingsModal.scale.set(targetScale * 0.7);
+
+    // Entrance animation
+    popup.alpha = 0;
+    gsap.to(popup, { alpha: 1, duration: 0.3 });
+    gsap.to(this.settingsModal.scale, {
+      x: targetScale,
+      y: targetScale,
+      duration: 0.35,
+      ease: "back.out(1.8)",
+    });
+  }
 
   delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -3802,10 +4083,7 @@ export class GameScene {
     // Show the user profile widget again when exiting GameScene
     const profileWidget = document.getElementById("user-profile");
     if (profileWidget) {
-      const savedUser = localStorage.getItem("google_user");
-      if (savedUser) {
-        profileWidget.style.display = "flex";
-      }
+      profileWidget.style.display = "none";
     }
 
     // Recursively kill all GSAP animations inside this scene graph

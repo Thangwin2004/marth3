@@ -71,6 +71,7 @@ body {
 
 /* User Profile Widget on top-left */
 .user-profile-widget {
+  display: none !important;
   position: absolute;
   top: 16px;
   left: 16px;
