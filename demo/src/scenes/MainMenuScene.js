@@ -281,29 +281,14 @@ export class MainMenuScene {
     this.playBtn = this.createPlayButton(async () => {
       await sceneManager.switchTo(GameScene);
     });
-    this.container.addChild(this.playBtn);
 
     this.achievementsBtn = this.createCircularButton("🏆", 0, 0, () => {
       this.showLeaderboard();
     });
-    this.container.addChild(this.achievementsBtn);
 
     this.settingsBtn = this.createCircularButton("⚙️", 0, 0, () => {
       this.showSettingsModal(false);
     });
-    this.container.addChild(this.settingsBtn);
-
-    this.resetBtn = this.createCircularButton("🗑️", 0, 0, async () => {
-      saveManager.reset();
-      // Reload main menu
-      await sceneManager.switchTo(MainMenuScene);
-    });
-    this.container.addChild(this.resetBtn);
-
-    this.googleLoginBtn = this.createCircularButton("👤", 0, 0, () => {
-      this.showGoogleLoginModal();
-    });
-    this.container.addChild(this.googleLoginBtn);
 
     // === BOTTOM INFO ===
     this.versionText = new Text({
@@ -458,17 +443,11 @@ export class MainMenuScene {
     const circGap = 20 * scale;
 
     const visibleCircs = [];
-    if (this.googleLoginBtn && this.googleLoginBtn.visible) {
-      visibleCircs.push(this.googleLoginBtn);
-    }
     if (this.achievementsBtn) {
       visibleCircs.push(this.achievementsBtn);
     }
     if (this.settingsBtn) {
       visibleCircs.push(this.settingsBtn);
-    }
-    if (this.resetBtn) {
-      visibleCircs.push(this.resetBtn);
     }
 
     const totalCircs = visibleCircs.length;
@@ -503,7 +482,7 @@ export class MainMenuScene {
         this.leaderboardModal.y = height / 2;
         const modalScale =
           width < 600 || height > width
-            ? Math.min(1.0, (width - 40) / 520)
+            ? Math.min(1.0, (width - 20) / 500)
             : 1.0;
         this.leaderboardModal.scale.set(modalScale);
       }
@@ -528,11 +507,11 @@ export class MainMenuScene {
     }
   }
 
-  createMenuButton(label, x, y, color, width = 220, onClick) {
+  createMenuButton(label, x, y, color, width = 220, onClick, parent = this.container, btnHeight = 56) {
     const btn = new Container();
     btn.x = x;
     btn.y = y;
-    this.container.addChild(btn);
+    parent.addChild(btn);
 
     btn.eventMode = "static";
     btn.cursor = "pointer";
@@ -551,9 +530,11 @@ export class MainMenuScene {
     content.addChild(bg);
     content.addChild(highlight);
 
+    const hh = btnHeight / 2;
+
     const btnGrad = new FillGradient({
-      start: { x: 0, y: -28 },
-      end: { x: 0, y: 28 },
+      start: { x: 0, y: -hh },
+      end: { x: 0, y: hh },
       colorStops: [
         { offset: 0, color: 0xff3b4e },
         { offset: 0.4, color: 0xd32f2f },
@@ -562,8 +543,8 @@ export class MainMenuScene {
     });
 
     const goldGrad = new FillGradient({
-      start: { x: -width / 2, y: -28 },
-      end: { x: width / 2, y: 28 },
+      start: { x: -width / 2, y: -hh },
+      end: { x: width / 2, y: hh },
       colorStops: [
         { offset: 0, color: 0xffea00 },
         { offset: 0.5, color: 0xb89326 },
@@ -571,21 +552,27 @@ export class MainMenuScene {
       ],
     });
 
+    const isSmall = width < 150;
+    const radius = isSmall ? 10 : 14;
+    const offset3d = isSmall ? 3 : 4;
+    const shadowOffset = isSmall ? 4 : 6;
+
     // 1. Soft 3D drop shadow
-    shadow.roundRect(-width / 2, -28 + 6, width, 56, 14).fill({ color: 0x000000, alpha: 0.45 });
+    shadow.roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius).fill({ color: 0x000000, alpha: 0.45 });
 
     // 2. 3D Extrusion base
-    bg3d.roundRect(-width / 2, -28 + 4, width, 56, 14)
+    bg3d.roundRect(-width / 2, -hh + offset3d, width, btnHeight, radius)
       .fill({ color: 0x4a000a })
       .stroke({ width: 1, color: 0x240003 });
 
     // 3. Main face
-    bg.roundRect(-width / 2, -28, width, 56, 14)
+    bg.roundRect(-width / 2, -hh, width, btnHeight, radius)
       .fill(btnGrad)
       .stroke({ width: 2, fill: goldGrad });
 
     // 4. Glossy highlight sheen on top
-    highlight.roundRect(-width / 2 + 4, -28 + 3, width - 8, 16, 10)
+    const sheenH = isSmall ? 11 : 16;
+    highlight.roundRect(-width / 2 + 4, -hh + 2, width - 8, sheenH, isSmall ? 8 : 10)
       .fill({ color: 0xffffff, alpha: 0.18 });
 
     // Add Label / Icon
@@ -634,11 +621,14 @@ export class MainMenuScene {
         const emoji = label.substring(0, spaceIdx);
         const textStr = label.substring(spaceIdx + 1);
 
+        const emojiSize = isSmall ? 16 : 26;
+        const textSize = isSmall ? 11 : 14;
+
         const emojiText = new Text({
           text: emoji,
           style: new TextStyle({
             fontFamily: "Outfit, Arial, sans-serif",
-            fontSize: 26,
+            fontSize: emojiSize,
             fill: "#ffffff",
           }),
         });
@@ -649,7 +639,7 @@ export class MainMenuScene {
           text: textStr,
           style: new TextStyle({
             fontFamily: "Outfit, Arial, sans-serif",
-            fontSize: 14,
+            fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
             dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
@@ -659,16 +649,17 @@ export class MainMenuScene {
         content.addChild(text);
         textObj = text;
 
-        const gap = 12;
+        const gap = isSmall ? 6 : 12;
         const totalW = emojiText.width + gap + text.width;
         emojiText.x = -totalW / 2 + emojiText.width / 2;
         text.x = totalW / 2 - text.width / 2;
       } else {
+        const textSize = isSmall ? 11 : (label.length > 2 ? 15 : 22);
         const text = new Text({
           text: label,
           style: new TextStyle({
             fontFamily: "Outfit, Arial, sans-serif",
-            fontSize: 15,
+            fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
             dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
@@ -714,10 +705,11 @@ export class MainMenuScene {
     return btn;
   }
 
-  createCircularButton(emojiText, x, y, onClick) {
+  createCircularButton(emojiText, x, y, onClick, parent = this.container) {
     const btn = new Container();
     btn.x = x;
     btn.y = y;
+    parent.addChild(btn);
 
     btn.eventMode = "static";
     btn.cursor = "pointer";
@@ -733,40 +725,6 @@ export class MainMenuScene {
     content.addChild(bg);
     content.addChild(highlight);
 
-    const r = 26;
-
-    // 1. Soft 3D drop shadow
-    shadow.circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
-
-    // 2. 3D Extrusion base
-    bg.circle(0, 3, r).fill({ color: 0x4a000a }).stroke({ width: 1, color: 0x240003 });
-
-    // 3. Main button body - premium smooth gradient
-    const btnGrad = new FillGradient({
-      start: { x: 0, y: -r },
-      end: { x: 0, y: r },
-      colorStops: [
-        { offset: 0, color: 0xff3b4e },
-        { offset: 0.4, color: 0xd32f2f },
-        { offset: 1, color: 0x6e0912 },
-      ],
-    });
-
-    const goldGrad = new FillGradient({
-      start: { x: -r, y: -r },
-      end: { x: r, y: r },
-      colorStops: [
-        { offset: 0, color: 0xffea00 },
-        { offset: 0.5, color: 0xb89326 },
-        { offset: 1, color: 0xffea00 },
-      ],
-    });
-
-    bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
-
-    // 4. Glossy highlight sheen
-    highlight.ellipse(0, -r * 0.4, r * 0.7, r * 0.35).fill({ color: 0xffffff, alpha: 0.18 });
-
     const label = new Text({
       text: emojiText,
       style: new TextStyle({
@@ -778,7 +736,49 @@ export class MainMenuScene {
     });
     label.anchor.set(0.5);
     content.addChild(label);
-    btn.label = label;
+
+    btn.r = 26;
+
+    btn.updateStyle = (r) => {
+      btn.r = r;
+
+      // 1. Soft 3D drop shadow
+      shadow.clear().circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
+
+      // 2. 3D Extrusion base
+      bg.clear().circle(0, 3, r).fill({ color: 0x4a000a }).stroke({ width: 1, color: 0x240003 });
+
+      // 3. Main button body - premium smooth gradient
+      const btnGrad = new FillGradient({
+        start: { x: 0, y: -r },
+        end: { x: 0, y: r },
+        colorStops: [
+          { offset: 0, color: 0xff3b4e },
+          { offset: 0.4, color: 0xd32f2f },
+          { offset: 1, color: 0x6e0912 },
+        ],
+      });
+
+      const goldGrad = new FillGradient({
+        start: { x: -r, y: -r },
+        end: { x: r, y: r },
+        colorStops: [
+          { offset: 0, color: 0xffea00 },
+          { offset: 0.5, color: 0xb89326 },
+          { offset: 1, color: 0xffea00 },
+        ],
+      });
+
+      bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
+
+      // 4. Glossy highlight sheen
+      highlight.clear().ellipse(0, -r * 0.4, r * 0.7, r * 0.35).fill({ color: 0xffffff, alpha: 0.18 });
+
+      // Adjust label font size
+      label.style.fontSize = Math.max(16, Math.min(22, 22 * (r / 26)));
+    };
+
+    btn.updateStyle(btn.r);
 
     btn.on("pointerover", () => {
       gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
@@ -805,8 +805,9 @@ export class MainMenuScene {
     return btn;
   }
 
-  createPlayButton(onClick) {
+  createPlayButton(onClick, parent = this.container) {
     const btn = new Container();
+    parent.addChild(btn);
     btn.eventMode = "static";
     btn.cursor = "pointer";
 
@@ -947,8 +948,8 @@ export class MainMenuScene {
     this.leaderboardModal.y = App.app.screen.height / 2;
     popup.addChild(this.leaderboardModal);
 
-    const cardW = 460;
-    const cardH = 410;
+    const cardW = 500;
+    const cardH = 500;
 
     // Modal bg
     const modalBg = new Graphics();
@@ -962,7 +963,7 @@ export class MainMenuScene {
       text: "🏆 BẢNG VÀNG THÀNH TÍCH",
       style: new TextStyle({
         fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 22,
+        fontSize: 26,
         fill: 0xffea00,
         fontWeight: "bold",
         letterSpacing: 1.5,
@@ -986,12 +987,12 @@ export class MainMenuScene {
     }
     const userTextStr = currentUser
       ? `Tài khoản: ${currentUser.name} (Google)`
-      : `Tài khoản: Khách (Lưu trên thiết bị)`;
+      : `Tài khoản: Khách (Điểm lưu thiết bị)`;
     const userText = new Text({
       text: userTextStr,
       style: new TextStyle({
         fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: "bold",
         fill: currentUser ? "#ffea00" : "#aaaaaa",
       }),
@@ -1001,16 +1002,15 @@ export class MainMenuScene {
     this.leaderboardModal.addChild(userText);
 
     // Columns Header row
-    const headerY = -100;
-    const colRankX = -140;
-    const colScoreX = 0;
-    const colDateX = 140;
+    const headerY = -120;
+    const colRankX = -120;
+    const colScoreX = 120;
 
     const rankHeader = new Text({
       text: "HẠNG",
       style: new TextStyle({
         fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 14,
+        fontSize: 22,
         fontWeight: "bold",
         fill: 0xffea00,
       }),
@@ -1020,10 +1020,10 @@ export class MainMenuScene {
     this.leaderboardModal.addChild(rankHeader);
 
     const scoreHeader = new Text({
-      text: "ĐIỂM SỐ",
+      text: "ĐIỂM",
       style: new TextStyle({
         fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 14,
+        fontSize: 22,
         fontWeight: "bold",
         fill: 0xffea00,
       }),
@@ -1032,23 +1032,10 @@ export class MainMenuScene {
     scoreHeader.position.set(colScoreX, headerY);
     this.leaderboardModal.addChild(scoreHeader);
 
-    const dateHeader = new Text({
-      text: "NGÀY ĐẠT",
-      style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 14,
-        fontWeight: "bold",
-        fill: 0xffea00,
-      }),
-    });
-    dateHeader.anchor.set(0.5);
-    dateHeader.position.set(colDateX, headerY);
-    this.leaderboardModal.addChild(dateHeader);
-
     // Divider line below headers
     const headerDivider = new Graphics()
-      .moveTo(-200, headerY + 14)
-      .lineTo(200, headerY + 14)
+      .moveTo(-225, headerY + 16)
+      .lineTo(225, headerY + 16)
       .stroke({ color: 0xd4af37, width: 1.5, alpha: 0.6 });
     this.leaderboardModal.addChild(headerDivider);
 
@@ -1060,7 +1047,7 @@ export class MainMenuScene {
         text: "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀",
         style: new TextStyle({
           fontFamily: "Outfit, Arial, sans-serif",
-          fontSize: 15,
+          fontSize: 16,
           fill: "#aaaaaa",
           align: "center",
           lineHeight: 22,
@@ -1071,28 +1058,31 @@ export class MainMenuScene {
       this.leaderboardModal.addChild(emptyText);
     } else {
       // Draw list items
-      const startY = -65;
-      const rowHeight = 38;
+      const startY = -70;
+      const rowHeight = 44;
 
       list.forEach((entry, idx) => {
         const rowY = startY + idx * rowHeight;
         const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
         const rankIcon = medals[idx] || `${idx + 1}`;
 
-        // Row background highlight for top 3
-        if (idx < 3) {
-          const rowBg = new Graphics()
-            .roundRect(-210, rowY - rowHeight / 2 + 2, 420, rowHeight - 4, 8)
-            .fill({ color: 0x4a000a, alpha: idx === 0 ? 0.35 : idx === 1 ? 0.25 : 0.15 });
-          this.leaderboardModal.addChild(rowBg);
-        }
+        // Row background highlight for top 3 or player highlighted
+        const rowBg = new Graphics()
+          .roundRect(-225, rowY - rowHeight / 2 + 3, 450, rowHeight - 6, 8)
+          .fill({ color: 0x4a000a, alpha: idx === 0 ? 0.35 : idx === 1 ? 0.25 : 0.15 })
+          .stroke({ color: 0xffea00, width: 1.5, alpha: idx === 0 ? 0.8 : 0.3 });
+        this.leaderboardModal.addChild(rowBg);
 
-        // Rank Column
+        let rankTextStr = rankIcon;
+        // Since all scores in this profile list belong to the active user, append silhouette
+        rankTextStr = `${rankTextStr} 👤`;
+
+        // Rank Column (Enlarged)
         const rankText = new Text({
-          text: `${rankIcon}  HẠNG ${idx + 1}`,
+          text: rankTextStr,
           style: new TextStyle({
             fontFamily: "Outfit, Arial, sans-serif",
-            fontSize: 14,
+            fontSize: 24,
             fontWeight: "bold",
             fill: idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "#ffffff",
           }),
@@ -1101,12 +1091,12 @@ export class MainMenuScene {
         rankText.position.set(colRankX, rowY);
         this.leaderboardModal.addChild(rankText);
 
-        // Score Column
+        // Score Column (Enlarged)
         const scoreText = new Text({
           text: entry.score.toLocaleString(),
           style: new TextStyle({
             fontFamily: "Outfit, Arial, sans-serif",
-            fontSize: 14,
+            fontSize: 24,
             fontWeight: "bold",
             fill: idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "#ffffff",
           }),
@@ -1114,45 +1104,47 @@ export class MainMenuScene {
         scoreText.anchor.set(0.5);
         scoreText.position.set(colScoreX, rowY);
         this.leaderboardModal.addChild(scoreText);
-
-        // Date Column
-        const dateText = new Text({
-          text: entry.date,
-          style: new TextStyle({
-            fontFamily: "Outfit, Arial, sans-serif",
-            fontSize: 12,
-            fill: "#aaaaaa",
-          }),
-        });
-        dateText.anchor.set(0.5);
-        dateText.position.set(colDateX, rowY);
-        this.leaderboardModal.addChild(dateText);
       });
     }
 
-    // Pinned Best Record Banner at the bottom
-    const bestScore = list.length > 0 ? list[0].score : 0;
-    const bannerBg = new Graphics()
-      .roundRect(-180, 110, 360, 32, 8)
-      .fill({ color: 0x4a000a, alpha: 0.85 })
-      .stroke({ color: 0xd4af37, width: 1 });
-    this.leaderboardModal.addChild(bannerBg);
+    if (list.length > 0) {
+      // Pinned Best Record Banner at the bottom (formatted exactly like Screenshot 1)
+      const footerBg = new Graphics()
+        .roundRect(-225, 138, 450, 44, 8)
+        .fill({ color: 0x4a000a, alpha: 0.9 })
+        .stroke({ color: 0xffea00, width: 1.5 });
+      this.leaderboardModal.addChild(footerBg);
 
-    const bestScoreText = new Text({
-      text: `🏆 KỶ LỤC CỦA BẠN: ${bestScore.toLocaleString()} ĐIỂM`,
-      style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 13,
-        fontWeight: "bold",
-        fill: 0xffea00,
-        dropShadow: { color: 0x000000, blur: 2, distance: 1 }
-      }),
-    });
-    bestScoreText.anchor.set(0.5);
-    bestScoreText.position.set(0, 126);
-    this.leaderboardModal.addChild(bestScoreText);
+      const bestScore = list[0].score;
 
-    // CLOSE Button (Red & Gold Lacquer circular 3D close button)
+      const footerRank = new Text({
+        text: "🥇",
+        style: new TextStyle({
+          fontFamily: "Outfit, Arial, sans-serif",
+          fontSize: 24,
+          fontWeight: "bold",
+          fill: 0xffea00,
+        }),
+      });
+      footerRank.anchor.set(0.5);
+      footerRank.position.set(colRankX, 160);
+      this.leaderboardModal.addChild(footerRank);
+
+      const footerScore = new Text({
+        text: bestScore.toLocaleString(),
+        style: new TextStyle({
+          fontFamily: "Outfit, Arial, sans-serif",
+          fontSize: 24,
+          fontWeight: "bold",
+          fill: 0xffea00,
+        }),
+      });
+      footerScore.anchor.set(0.5);
+      footerScore.position.set(colScoreX, 160);
+      this.leaderboardModal.addChild(footerScore);
+    }
+
+    // CLOSE Button (Red & Gold Lacquer rectangular QUAY LẠI button)
     const closePopup = () => {
       soundManager.playClick();
       gsap.to(this.leaderboardModal.scale, { x: 0.7, y: 0.7, duration: 0.25 });
@@ -1169,13 +1161,16 @@ export class MainMenuScene {
       });
     };
 
-    const closeBtn = this.createCircularButton(
-      "❌",
+    const closeBtn = this.createMenuButton(
+      "↩️ QUAY LẠI",
       0,
-      165,
-      closePopup
+      215,
+      0x5c0612,
+      180,
+      closePopup,
+      this.leaderboardModal,
+      38
     );
-    this.leaderboardModal.addChild(closeBtn);
 
     // Apply responsive layout immediately to compute target scale
     this.resize();
@@ -1304,35 +1299,35 @@ export class MainMenuScene {
       const row = new Container();
       row.position.set(0, yPos);
 
-      // Left label
+      // Left label (enlarged)
       const label = new Text({
         text: labelText,
         style: new TextStyle({
           fontFamily: "Outfit, Arial, sans-serif",
-          fontSize: 15,
+          fontSize: 18,
           fill: "#ffffff",
           fontWeight: "bold",
           letterSpacing: 0.8,
         }),
       });
       label.anchor.set(0, 0.5);
-      label.position.set(-95, 0);
+      label.position.set(-110, 0);
       row.addChild(label);
 
-      // Right slider track
-      const trackW = 52;
-      const trackH = 26;
+      // Right slider track (enlarged)
+      const trackW = 60;
+      const trackH = 30;
       const track = new Container();
       track.eventMode = "static";
       track.cursor = "pointer";
-      track.position.set(65, 0);
+      track.position.set(70, 0);
       row.addChild(track);
 
       const trackBg = new Graphics();
       track.addChild(trackBg);
 
       const knob = new Graphics()
-        .circle(0, 0, 10)
+        .circle(0, 0, 12)
         .fill({ color: 0xffffff })
         .stroke({ width: 1, color: 0xdddddd });
       knob.position.set(0, 0);
@@ -1348,13 +1343,13 @@ export class MainMenuScene {
 
       // Initialize
       drawTrack(initialMuteState);
-      knob.x = initialMuteState ? -trackW / 2 + 12 : trackW / 2 - 12;
+      knob.x = initialMuteState ? -trackW / 2 + 14 : trackW / 2 - 14;
 
       const handleToggle = () => {
         soundManager.playClick();
         const isMuted = onToggle();
         drawTrack(isMuted);
-        const targetKnobX = isMuted ? -trackW / 2 + 12 : trackW / 2 - 12;
+        const targetKnobX = isMuted ? -trackW / 2 + 14 : trackW / 2 - 14;
         gsap.to(knob, {
           x: targetKnobX,
           duration: 0.2,
@@ -1371,8 +1366,8 @@ export class MainMenuScene {
     };
 
     // Add Music and SFX rows
-    const musicRowY = -25;
-    const sfxRowY = 15;
+    const musicRowY = -45;
+    const sfxRowY = -5;
 
     const musicRow = createToggleRow(
       "🎵 NHẠC NÈN",
@@ -1395,6 +1390,53 @@ export class MainMenuScene {
 
     this.settingsModal.addChild(musicRow);
     this.settingsModal.addChild(sfxRow);
+
+    // Modern Outline Reset Data button (smaller and elegant)
+    const resetBtn = new Container();
+    resetBtn.eventMode = "static";
+    resetBtn.cursor = "pointer";
+    resetBtn.position.set(0, 50);
+
+    const resetW = 230;
+    const resetH = 38;
+
+    const resetBg = new Graphics()
+      .roundRect(-resetW / 2, -resetH / 2, resetW, resetH, resetH / 2)
+      .fill({ color: 0x1b0103, alpha: 0.5 })
+      .stroke({ width: 1.5, color: 0xd32f2f, alpha: 0.8 });
+    resetBtn.addChild(resetBg);
+
+    const resetText = new Text({
+      text: "🗑️ XÓA DỮ LIỆU THÀNH TÍCH",
+      style: new TextStyle({
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 13,
+        fill: "#fdf5e6",
+        fontWeight: "bold",
+        letterSpacing: 0.5,
+      }),
+    });
+    resetText.anchor.set(0.5);
+    resetBtn.addChild(resetText);
+
+    resetBtn.on("pointertap", async () => {
+      soundManager.playClick();
+      const confirmDelete = confirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu thành tích không?");
+      if (confirmDelete) {
+        saveManager.reset();
+        closePopup();
+        await sceneManager.switchTo(MainMenuScene);
+      }
+    });
+
+    resetBtn.on("pointerover", () => {
+      gsap.to(resetBtn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
+    });
+    resetBtn.on("pointerout", () => {
+      gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+    });
+
+    this.settingsModal.addChild(resetBtn);
 
     // Apply responsive layout immediately to compute target scale
     this.resize();
@@ -1677,23 +1719,8 @@ export class MainMenuScene {
     }
 
     const profileWidget = document.getElementById("user-profile");
-    const avatarImg = document.getElementById("user-avatar");
-    const nameSpan = document.getElementById("user-name");
-
-    if (currentUser) {
-      if (profileWidget) profileWidget.style.display = "flex";
-      if (avatarImg) avatarImg.src = currentUser.avatar;
-      if (nameSpan) nameSpan.textContent = currentUser.name;
-
-      if (this.googleLoginBtn) {
-        this.googleLoginBtn.visible = false;
-      }
-    } else {
-      if (profileWidget) profileWidget.style.display = "none";
-
-      if (this.googleLoginBtn) {
-        this.googleLoginBtn.visible = true;
-      }
+    if (profileWidget) {
+      profileWidget.style.display = "none";
     }
 
     // Update the highest score banner display
