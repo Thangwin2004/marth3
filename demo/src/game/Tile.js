@@ -37,7 +37,7 @@
  */
 
 import { App } from "../system/App.js";
-import { Graphics } from "pixi.js";
+import { Container, Graphics, Sprite, Texture } from "pixi.js";
 import gsap from "gsap";
 import { soundManager } from "../system/SoundManager.js";
 
@@ -73,26 +73,71 @@ export class Tile {
     // Overlay graphics for special states
     this.stateOverlay = null;
 
-    // === SPRITE ===
-    // Tạo sprite từ texture đã load (alias = tên màu)
-    this.sprite = App.sprite(this.color);
+    // === CONTAINER ===
+    // We make this.sprite a Container so it holds the card background, crop mask, and sprite
+    this.sprite = new Container();
+    // Fake anchor object so it doesn't crash on this.sprite.anchor.set(0.5)
+    this.sprite.anchor = {
+      set: () => {}
+    };
 
-    // anchor.set(0.5) → Điểm neo ở tâm sprite
-    // Để tile nằm chính giữa ô field
-    this.sprite.anchor.set(0.5);
+    // Getter for texture so it doesn't crash on external tile.sprite.texture calls
+    Object.defineProperty(this.sprite, "texture", {
+      get: () => this.imageSprite ? this.imageSprite.texture : null,
+      configurable: true
+    });
 
-    // Scale sprite theo kích thước ô của board
+    // 1. Card Background Graphics
+    this.cardBg = new Graphics();
+    this.sprite.addChild(this.cardBg);
+
+    // 2. Animal Image Sprite (100% colorful, bright, and clear)
+    this.imageSprite = App.sprite(this.color);
+    this.imageSprite.anchor.set(0.5);
+    this.sprite.addChild(this.imageSprite);
+
+    // 3. Crop Mask Graphics
+    this.cardMask = new Graphics();
+    this.sprite.addChild(this.cardMask);
+    this.imageSprite.mask = this.cardMask;
+
+    // Draw the card layout
+    this.drawCardLayout();
+
+    // Scale the image sprite
     this.resizeSprite();
+  }
+
+  drawCardLayout() {
+    const maskSize = 90; // Enlarged from 76 to 90 for zoomed-in character display
+    const maskRadius = 12;
+
+    this.cardBg.clear();
+    
+    // Soft drop shadow under the tile
+    this.cardBg.roundRect(-maskSize / 2, -maskSize / 2 + 3, maskSize, maskSize, maskRadius);
+    this.cardBg.fill({ color: 0x000000, alpha: 0.25 });
+
+    // Thin elegant white frame around the tile image
+    this.cardBg.roundRect(-maskSize / 2, -maskSize / 2, maskSize, maskSize, maskRadius);
+    this.cardBg.stroke({ color: 0xffffff, width: 2.2 });
+
+    // Crop Mask to isolate the animal character (full rounded rectangle)
+    this.cardMask.clear();
+    this.cardMask.roundRect(-maskSize / 2, -maskSize / 2, maskSize, maskSize, maskRadius);
+    this.cardMask.fill({ color: 0xffffff });
   }
 
   resizeSprite() {
     const targetSize = App.config.tileSize;
-    const texture = this.sprite.texture;
+    const texture = this.imageSprite.texture;
     const textureWidth = texture.orig.width;
     const textureHeight = texture.orig.height;
     const baseSize = Math.max(textureWidth, textureHeight);
-    const scale = (targetSize / baseSize) * 0.95;
-    this.sprite.scale.set(scale);
+    // Zoom in slightly (1.1x) to show mostly the character and crop the background, 
+    // but keep it small enough so the head/legs are not cut off by the mask.
+    const scale = (targetSize / baseSize) * 1.1;
+    this.imageSprite.scale.set(scale);
   }
 
   /**
@@ -139,11 +184,7 @@ export class Tile {
         ease: "back.out(1.4)",
         onComplete: () => {
           if (this.sprite && !this.sprite.destroyed) {
-            const targetSize = App.config.tileSize;
-            const texture = this.sprite.texture;
-            const baseScale =
-              (targetSize / Math.max(texture.orig.width, texture.orig.height)) *
-              0.95;
+            const baseScale = 1.0;
 
             gsap
               .timeline()
@@ -195,11 +236,7 @@ export class Tile {
         onComplete: () => {
           soundManager.playLand();
           if (this.sprite && !this.sprite.destroyed) {
-            const targetSize = App.config.tileSize;
-            const texture = this.sprite.texture;
-            const baseScale =
-              (targetSize / Math.max(texture.orig.width, texture.orig.height)) *
-              0.95;
+            const baseScale = 1.0; // Standard container baseline scale
 
             gsap
               .timeline()
@@ -301,32 +338,13 @@ export class Tile {
    * @param {string} newColor - New color name (e.g. 'fire', 'water')
    */
   changeColor(newColor) {
+    if (this.color === newColor) return;
     this.color = newColor;
-    this.corrupt = false;
-    this.poisoned = false;
-    this.isRune = false;
-    this.isRainbow = false;
-    this.isDrum = false;
-
-    // Save current sprite state
-    const oldX = this.sprite.x;
-    const oldY = this.sprite.y;
-    const parent = this.sprite.parent;
-    const zIndex = this.sprite.zIndex;
-
-    // Remove from parent before destroying (PixiJS v8 render group fix)
-    if (parent) parent.removeChild(this.sprite);
-    this.sprite.destroy();
-    this.sprite = App.sprite(newColor);
-    this.sprite.anchor.set(0.5);
+    if (this.imageSprite) {
+      this.imageSprite.texture = Texture.from(newColor);
+    }
+    this.drawCardLayout();
     this.resizeSprite();
-    this.sprite.x = oldX;
-    this.sprite.y = oldY;
-    this.sprite.zIndex = zIndex;
-    this.sprite.eventMode = "static";
-    this.sprite.cursor = "pointer";
-    if (parent) parent.addChild(this.sprite);
-
     this.updateStateOverlay();
   }
 

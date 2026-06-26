@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture, Text, Assets, TextStyle, FillGradient } from "pixi.js";
+import { Container, Graphics, Sprite, Texture, Text, Assets, TextStyle, FillGradient, Rectangle } from "pixi.js";
 import gsap from "gsap";
 import { Config } from "../config.js";
 import { App } from "../system/App.js";
@@ -6,6 +6,7 @@ import { sceneManager } from "../system/SceneManager.js";
 import { saveManager } from "../system/SaveManager.js";
 import { GameScene } from "./GameScene.js";
 import { soundManager } from "../system/SoundManager.js";
+import { Colorful3DCircleButton, Colorful3DButton, createVectorIcon as createVectorIconFromUI, mapEmojiToIconType } from "../system/UIComponents.js";
 
 const ALL_AVATAR_FILES = [
   "001_avatar_laclac.png",
@@ -65,6 +66,208 @@ function killTweensRecursive(obj) {
     const children = [...obj.children];
     children.forEach(killTweensRecursive);
   }
+}
+
+function getAvatarAlias(name) {
+  let spriteAlias = "menu_avatar_unique_0";
+  if (!name) return spriteAlias;
+
+  if (name.includes("Bơ Lạc")) spriteAlias = "menu_avatar_unique_0";
+  else if (name.includes("Đậu Phộng")) spriteAlias = "menu_avatar_unique_14";
+  else if (name.includes("Ếch Xanh")) spriteAlias = "menu_avatar_unique_9";
+  else if (name.includes("Gấu Trúc")) spriteAlias = "menu_avatar_unique_21";
+  else if (name.includes("Mèo Lười")) spriteAlias = "menu_avatar_unique_1";
+  else {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const avatarIdx = Math.abs(hash) % ALL_AVATAR_FILES.length;
+    spriteAlias = `menu_avatar_unique_${avatarIdx}`;
+  }
+  return spriteAlias;
+}
+
+function gameConfirm(message) {
+  return new Promise((resolve) => {
+    if (!document.getElementById("game-alert-styles")) {
+      const style = document.createElement("style");
+      style.id = "game-alert-styles";
+      style.textContent = `
+        .game-alert-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100dvw;
+          height: 100dvh;
+          background: rgba(0, 0, 0, 0.65);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 100000;
+          opacity: 0;
+          transition: opacity 0.25s ease;
+        }
+        .game-alert-card {
+          background: #fbfaf5;
+          border: 5px solid #5900b3;
+          box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
+          border-radius: 20px;
+          padding: 28px 24px;
+          width: 85%;
+          max-width: 340px;
+          text-align: center;
+          transform: scale(0.85);
+          transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .game-alert-text {
+          color: #360207;
+          font-size: 17px;
+          line-height: 1.6;
+          margin: 0 0 24px 0;
+          font-weight: 700;
+          text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .game-alert-buttons-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 20px;
+        }
+        .game-alert-img-btn {
+          height: 48px;
+          width: auto;
+          cursor: pointer;
+          transition: transform 0.1s ease, filter 0.1s ease;
+        }
+        .game-alert-img-btn:hover {
+          transform: scale(1.08);
+          filter: brightness(1.08);
+        }
+        .game-alert-img-btn:active {
+          transform: scale(0.96);
+          filter: brightness(0.92);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const existing = document.getElementById("game-alert-overlay-id");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "game-alert-overlay-id";
+    overlay.className = "game-alert-overlay";
+
+    const card = document.createElement("div");
+    card.className = "game-alert-card";
+
+    const text = document.createElement("p");
+    text.className = "game-alert-text";
+    text.innerText = message;
+
+    const btnContainer = document.createElement("div");
+    btnContainer.className = "game-alert-buttons-container";
+
+    const okButton = document.createElement("img");
+    okButton.className = "game-alert-img-btn";
+    okButton.src = "assets/yes_btn.png";
+    okButton.alt = "ĐỒNG Ý";
+
+    const cancelButton = document.createElement("img");
+    cancelButton.className = "game-alert-img-btn";
+    cancelButton.src = "assets/close_btn.png";
+    cancelButton.alt = "HỦY";
+
+    btnContainer.appendChild(okButton);
+    btnContainer.appendChild(cancelButton);
+    card.appendChild(text);
+    card.appendChild(btnContainer);
+    overlay.appendChild(card);
+
+    const container = document.getElementById("app") || document.body;
+    container.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.transform = "scale(1)";
+    });
+
+    const handleSelect = (choice) => {
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => {
+        overlay.remove();
+        resolve(choice);
+      }, 250);
+    };
+
+    okButton.addEventListener("click", () => handleSelect(true));
+    cancelButton.addEventListener("click", () => handleSelect(false));
+  });
+}
+
+const palettes = {
+  yellow: { top: 0xFFE500, bottom: 0xFF9900, shadow: 0x8A4500, stroke: 0xFFF8B3 },
+  green: { top: 0x7FFF00, bottom: 0x00CC00, shadow: 0x006600, stroke: 0xD4FFD4 },
+  pink: { top: 0xFF66B2, bottom: 0xCC0066, shadow: 0x800040, stroke: 0xFFE6F2 },
+  blue: { top: 0x33CCFF, bottom: 0x0088CC, shadow: 0x004466, stroke: 0xE6F9FF },
+  purple: { top: 0xB266FF, bottom: 0x5900B3, shadow: 0x330066, stroke: 0xF2E6FF },
+  red: { top: 0xF95E8B, bottom: 0xD93955, shadow: 0x92233F, stroke: 0xFFD4E2 }
+};
+
+const getColorStyle = (colorValue, label = "") => {
+  const lbl = String(label).toUpperCase();
+  if (lbl.includes("PLAY") || lbl.includes("CHƠI LẠI")) return "green";
+  if (lbl.includes("TIẾP TỤC")) return "yellow";
+  if (lbl.includes("QUAY LẠI") || lbl.includes("BACK")) return "blue";
+  if (lbl.includes("XÓA") || lbl.includes("RESET")) return "red";
+
+  if (colorValue === 0x5c0612 || colorValue === 0xd32f2f) return "red";
+  if (colorValue === 0x1b0103) return "blue";
+  if (colorValue === 0x4caf50 || colorValue === 0x2ecc71) return "green";
+  if (colorValue === 0xffaa00 || colorValue === 0xffea00) return "yellow";
+
+  return "purple";
+};
+
+function getIconTexture(emojiChar) {
+  const mapping = {
+    "🏠": "home_btn",
+    "🏡": "home_btn",
+    "⚙️": "settings_btn",
+    "✕": "close_btn",
+    "↩️": "back_btn",
+    "👤": "profile_btn",
+    "▶️": "play_btn",
+    "🏆": "trophy_btn",
+    "🔄": "replay_btn",
+    "🗑️": "delete_btn"
+  };
+
+  const charStr = String(emojiChar);
+  for (const key of Object.keys(mapping)) {
+    if (charStr.includes(key)) {
+      return Texture.from(mapping[key]);
+    }
+  }
+  return null;
+}
+
+function createVectorIcon(emojiChar, size = 24) {
+  const tex = getIconTexture(emojiChar);
+  if (tex) {
+    const sprite = new Sprite(tex);
+    sprite.anchor.set(0.5);
+    const finalSize = String(emojiChar).includes("🗑️") ? size * 1.55 : size;
+    sprite.width = finalSize;
+    sprite.height = finalSize;
+    return sprite;
+  }
+  return createVectorIconFromUI(emojiChar, size);
 }
 
 export class MainMenuScene {
@@ -278,7 +481,7 @@ export class MainMenuScene {
     this.container.addChild(this.infoText);
 
     // === MENU BUTTONS ===
-    this.playBtn = this.createPlayButton(async () => {
+    this.playBtn = this.createPlayNowButton(0, 0, async () => {
       await sceneManager.switchTo(GameScene);
     });
 
@@ -290,20 +493,6 @@ export class MainMenuScene {
       this.showSettingsModal(false);
     });
 
-    // === BOTTOM INFO ===
-    this.versionText = new Text({
-      text: "💎 Pure Match-3 v1.0 | PixiJS v8 | 6 Loại Thú | Bàn Cờ 8x8",
-      style: {
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 12,
-        fontWeight: "bold",
-        fill: "#ffffff",
-        stroke: { color: "#000000", width: 3 },
-      },
-    });
-    this.versionText.anchor.set(0.5);
-    this.container.addChild(this.versionText);
-
     // === ANIMAL SCROLLING BANNER (PARADE) ===
     this.paradeContainer = new Container();
     this.container.addChild(this.paradeContainer);
@@ -311,7 +500,7 @@ export class MainMenuScene {
     // 1. Load all unique avatars once to prevent duplicate asset loading
     const uniquePromises = ALL_AVATAR_FILES.map((file, idx) => {
       const alias = `menu_avatar_unique_${idx}`;
-      const src = `/assets/imagebldp/${file}`;
+      const src = `/assets/imagebldp_original/${file}`;
       return Assets.load({ alias, src });
     });
 
@@ -327,7 +516,7 @@ export class MainMenuScene {
         // Pick the avatar sequentially, repeating from 0 to 43
         const avatarIdx = i % ALL_AVATAR_FILES.length;
         const alias = `menu_avatar_unique_${avatarIdx}`;
-        
+
         const itemContainer = new Container();
         itemContainer.x = i * spacing;
         this.paradeContainer.addChild(itemContainer);
@@ -429,18 +618,17 @@ export class MainMenuScene {
 
     // 4. Play Button & Circular buttons below it (Memory Card style layout)
     const playY = height * 0.53;
-    const playW = Math.max(200, Math.min(260, 260 * scale));
-    const playH = Math.max(50, Math.min(68, 68 * scale));
+    const playH = Math.max(68, Math.min(84, 84 * scale));
 
     if (this.playBtn) {
       this.playBtn.position.set(width / 2, playY);
-      this.playBtn.updateStyle(playW, playH);
+      this.playBtn.updateStyle(playH / 2 / scale);
       this.playBtn.scale.set(scale);
     }
 
-    const circY = playY + 115 * scale;
-    const circR = Math.max(20, Math.min(26, 26 * scale));
-    const circGap = 20 * scale;
+    const circY = playY + 108 * scale;
+    const circR = Math.max(34, Math.min(42, 42 * scale));
+    const circGap = 28 * scale;
 
     const visibleCircs = [];
     if (this.achievementsBtn) {
@@ -454,16 +642,9 @@ export class MainMenuScene {
     const startX = width / 2 - ((totalCircs - 1) * (circR * 2 + circGap)) / 2;
     visibleCircs.forEach((btn, idx) => {
       btn.position.set(startX + idx * (circR * 2 + circGap), circY);
-      btn.updateStyle(circR);
+      btn.updateStyle(circR / scale);
       btn.scale.set(scale);
     });
-
-    // 5. Version text
-    if (this.versionText) {
-      this.versionText.x = width / 2;
-      this.versionText.y = height - 20;
-      this.versionText.style.fontSize = Math.max(9, Math.min(12, 12 * scale));
-    }
 
     // 6. Parade bottom banner
     if (this.paradeContainer) {
@@ -521,59 +702,40 @@ export class MainMenuScene {
     btn.addChild(content);
 
     const shadow = new Graphics();
-    const bg3d = new Graphics();
     const bg = new Graphics();
     const highlight = new Graphics();
 
     content.addChild(shadow);
-    content.addChild(bg3d);
     content.addChild(bg);
     content.addChild(highlight);
 
     const hh = btnHeight / 2;
+    const isSmall = width < 150;
+    const radius = hh; // Capsule corner radius
+    const shadowOffset = isSmall ? 4 : 5;
 
+    const colorStyle = getColorStyle(color, label);
+    const theme = palettes[colorStyle] || palettes.blue;
+
+    // 1. 3D Base Shadow
+    shadow.roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius).fill({ color: theme.shadow });
+
+    // 2. Main Face Background (gradient)
     const btnGrad = new FillGradient({
       start: { x: 0, y: -hh },
       end: { x: 0, y: hh },
       colorStops: [
-        { offset: 0, color: 0xff3b4e },
-        { offset: 0.4, color: 0xd32f2f },
-        { offset: 1, color: 0x6e0912 },
-      ],
+        { offset: 0, color: theme.top },
+        { offset: 1, color: theme.bottom }
+      ]
     });
-
-    const goldGrad = new FillGradient({
-      start: { x: -width / 2, y: -hh },
-      end: { x: width / 2, y: hh },
-      colorStops: [
-        { offset: 0, color: 0xffea00 },
-        { offset: 0.5, color: 0xb89326 },
-        { offset: 1, color: 0xffea00 },
-      ],
-    });
-
-    const isSmall = width < 150;
-    const radius = isSmall ? 10 : 14;
-    const offset3d = isSmall ? 3 : 4;
-    const shadowOffset = isSmall ? 4 : 6;
-
-    // 1. Soft 3D drop shadow
-    shadow.roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius).fill({ color: 0x000000, alpha: 0.45 });
-
-    // 2. 3D Extrusion base
-    bg3d.roundRect(-width / 2, -hh + offset3d, width, btnHeight, radius)
-      .fill({ color: 0x4a000a })
-      .stroke({ width: 1, color: 0x240003 });
-
-    // 3. Main face
     bg.roundRect(-width / 2, -hh, width, btnHeight, radius)
-      .fill(btnGrad)
-      .stroke({ width: 2, fill: goldGrad });
+      .fill({ fill: btnGrad })
+      .stroke({ width: 2.5, color: theme.stroke });
 
-    // 4. Glossy highlight sheen on top
-    const sheenH = isSmall ? 11 : 16;
-    highlight.roundRect(-width / 2 + 4, -hh + 2, width - 8, sheenH, isSmall ? 8 : 10)
-      .fill({ color: 0xffffff, alpha: 0.18 });
+    // 3. Glossy highlight sheen on top (ellipse highlight)
+    highlight.ellipse(0, -hh / 2, width * 0.42, btnHeight * 0.2)
+      .fill({ color: 0xffffff, alpha: 0.25 });
 
     // Add Label / Icon
     let textObj = null;
@@ -584,13 +746,14 @@ export class MainMenuScene {
         : "ĐĂNG NHẬP GOOGLE";
 
       const text = new Text({
-        text: displayText,
+        text: displayText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Outfit, Arial, sans-serif",
+          fontFamily: "Arial Black, Impact, sans-serif",
           fontSize: 14,
           fontWeight: "bold",
           fill: "#ffffff",
-          dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+          stroke: { color: 0x000000, width: 4.5, join: 'round' },
+          dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
         }),
       });
       text.anchor.set(0.5);
@@ -624,25 +787,18 @@ export class MainMenuScene {
         const emojiSize = isSmall ? 16 : 26;
         const textSize = isSmall ? 11 : 14;
 
-        const emojiText = new Text({
-          text: emoji,
-          style: new TextStyle({
-            fontFamily: "Outfit, Arial, sans-serif",
-            fontSize: emojiSize,
-            fill: "#ffffff",
-          }),
-        });
-        emojiText.anchor.set(0.5);
-        content.addChild(emojiText);
+        const emojiIcon = createVectorIcon(emoji, emojiSize);
+        content.addChild(emojiIcon);
 
         const text = new Text({
-          text: textStr,
+          text: textStr.toUpperCase(),
           style: new TextStyle({
-            fontFamily: "Outfit, Arial, sans-serif",
+            fontFamily: "Arial Black, Impact, sans-serif",
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
-            dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+            stroke: { color: 0x000000, width: 4.5, join: 'round' },
+            dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
           }),
         });
         text.anchor.set(0.5);
@@ -650,19 +806,20 @@ export class MainMenuScene {
         textObj = text;
 
         const gap = isSmall ? 6 : 12;
-        const totalW = emojiText.width + gap + text.width;
-        emojiText.x = -totalW / 2 + emojiText.width / 2;
+        const totalW = emojiIcon.width + gap + text.width;
+        emojiIcon.x = -totalW / 2 + emojiIcon.width / 2;
         text.x = totalW / 2 - text.width / 2;
       } else {
         const textSize = isSmall ? 11 : (label.length > 2 ? 15 : 22);
         const text = new Text({
-          text: label,
+          text: label.toUpperCase(),
           style: new TextStyle({
-            fontFamily: "Outfit, Arial, sans-serif",
+            fontFamily: "Arial Black, Impact, sans-serif",
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
-            dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+            stroke: { color: 0x000000, width: 4.5, join: 'round' },
+            dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
           }),
         });
         text.anchor.set(0.5);
@@ -673,18 +830,15 @@ export class MainMenuScene {
 
     // Interactivity
     btn.on("pointerover", () => {
-      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-      bg.stroke({ width: 2.5, color: 0xffea00 });
-      if (textObj) textObj.style.fill = "#ffea00";
+      gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
       soundManager.playClick();
     });
     btn.on("pointerout", () => {
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-      bg.stroke({ width: 2, fill: goldGrad });
-      if (textObj) textObj.style.fill = "#ffffff";
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
+      gsap.to(content, { y: 0, duration: 0.1 });
     });
     btn.on("pointerdown", () => {
-      gsap.to(content, { y: 2, duration: 0.05 });
+      gsap.to(content, { y: shadowOffset - 1, duration: 0.05 });
     });
     btn.on("pointerup", () => {
       gsap.to(content, { y: 0, duration: 0.1 });
@@ -705,7 +859,7 @@ export class MainMenuScene {
     return btn;
   }
 
-  createCircularButton(emojiText, x, y, onClick, parent = this.container) {
+  createPlayNowButton(x, y, onClick, parent = this.container) {
     const btn = new Container();
     btn.x = x;
     btn.y = y;
@@ -714,6 +868,7 @@ export class MainMenuScene {
     btn.eventMode = "static";
     btn.cursor = "pointer";
 
+    // Sub-container for contents to apply tactile press offset
     const content = new Container();
     btn.addChild(content);
 
@@ -725,72 +880,74 @@ export class MainMenuScene {
     content.addChild(bg);
     content.addChild(highlight);
 
+    // Vietnamese label "CHƠI NGAY"
     const label = new Text({
-      text: emojiText,
-      style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 22,
-        fill: "#ffffff",
-        dropShadow: { color: 0x000000, blur: 2, distance: 1.5 },
-      }),
+      text: "CHƠI NGAY",
+      style: {
+        fontFamily: "Arial Black, Impact, sans-serif",
+        fontSize: 18,
+        fill: 0xFFFFFF,
+        align: 'center',
+        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
+      }
     });
     label.anchor.set(0.5);
     content.addChild(label);
 
-    btn.r = 26;
+    let currentR = 30;
 
     btn.updateStyle = (r) => {
-      btn.r = r;
+      currentR = r;
+      const ratio = 3.2; // Match aspect ratio
+      const width = r * 2 * ratio;
+      const height = r * 2;
+      const radius = r;
 
-      // 1. Soft 3D drop shadow
-      shadow.clear().circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
+      // 1. Draw 3D Base Shadow (Combined bottom shadow and 3D base)
+      shadow.clear()
+        // Soft black drop shadow
+        .roundRect(-width / 2, -r + r * 0.22, width, height, radius)
+        .fill({ color: 0x000000, alpha: 0.45 })
+        // Dark green 3D base
+        .roundRect(-width / 2, -r + r * 0.15, width, height, radius)
+        .fill({ color: 0x087903 });
 
-      // 2. 3D Extrusion base
-      bg.clear().circle(0, 3, r).fill({ color: 0x4a000a }).stroke({ width: 1, color: 0x240003 });
-
-      // 3. Main button body - premium smooth gradient
+      // 2. Main Face Background (vibrant green gradient)
       const btnGrad = new FillGradient({
         start: { x: 0, y: -r },
         end: { x: 0, y: r },
         colorStops: [
-          { offset: 0, color: 0xff3b4e },
-          { offset: 0.4, color: 0xd32f2f },
-          { offset: 1, color: 0x6e0912 },
-        ],
+          { offset: 0, color: 0x95ED39 }, // Bright green
+          { offset: 1, color: 0x4EAC0C }  // Medium green
+        ]
       });
+      bg.clear()
+        .roundRect(-width / 2, -r, width, height, radius)
+        .fill({ fill: btnGrad })
+        .stroke({ width: Math.max(2.5, r * 0.15), color: 0xFFFFFF }); // Thick white border!
 
-      const goldGrad = new FillGradient({
-        start: { x: -r, y: -r },
-        end: { x: r, y: r },
-        colorStops: [
-          { offset: 0, color: 0xffea00 },
-          { offset: 0.5, color: 0xb89326 },
-          { offset: 1, color: 0xffea00 },
-        ],
-      });
+      // 3. Glossy highlight sheen on top (ellipse highlight)
+      highlight.clear()
+        .ellipse(0, -r / 2, width * 0.42, height * 0.2)
+        .fill({ color: 0xffffff, alpha: 0.25 });
 
-      bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
-
-      // 4. Glossy highlight sheen
-      highlight.clear().ellipse(0, -r * 0.4, r * 0.7, r * 0.35).fill({ color: 0xffffff, alpha: 0.18 });
-
-      // Adjust label font size
-      label.style.fontSize = Math.max(16, Math.min(22, 22 * (r / 26)));
+      label.style.fontSize = Math.max(14, r * 0.52);
+      label.y = -r * 0.08;
     };
 
-    btn.updateStyle(btn.r);
-
     btn.on("pointerover", () => {
-      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+      gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
       soundManager.playClick();
     });
 
     btn.on("pointerout", () => {
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
+      gsap.to(content, { y: 0, duration: 0.1 });
     });
 
     btn.on("pointerdown", () => {
-      gsap.to(content, { y: 2, duration: 0.05 });
+      gsap.to(content, { y: currentR * 0.12, duration: 0.05 });
     });
 
     btn.on("pointerup", () => {
@@ -800,127 +957,94 @@ export class MainMenuScene {
 
     btn.on("pointerupoutside", () => {
       gsap.to(content, { y: 0, duration: 0.1 });
+    });
+
+    // Entrance animation
+    btn.alpha = 0;
+    gsap.to(btn, {
+      alpha: 1,
+      duration: 0.5,
+      delay: 0.4,
+      ease: "power2.out",
     });
 
     return btn;
   }
 
-  createPlayButton(onClick, parent = this.container) {
-    const btn = new Container();
-    parent.addChild(btn);
-    btn.eventMode = "static";
-    btn.cursor = "pointer";
+  createCircularButton(emojiText, x, y, onClick, parent = this.container, customRadius = 26) {
+    const tex = getIconTexture(emojiText);
+    if (tex) {
+      const btn = new Container();
+      btn.x = x;
+      btn.y = y;
+      parent.addChild(btn);
 
-    const content = new Container();
-    btn.addChild(content);
+      btn.eventMode = "static";
+      btn.cursor = "pointer";
 
-    const shadow = new Graphics();
-    const bg3d = new Graphics();
-    const bg = new Graphics();
-    const highlight = new Graphics();
-    const icon = new Graphics();
+      const content = new Container();
+      btn.addChild(content);
 
-    content.addChild(shadow, bg3d, bg, highlight, icon);
+      const sprite = new Sprite(tex);
+      sprite.anchor.set(0.5);
+      const ratio = (tex.width && tex.height) ? (tex.width / tex.height) : 1;
+      if (ratio > 1.2 || ratio < 0.8) {
+        sprite.height = customRadius * 2;
+        sprite.width = customRadius * 2 * ratio;
+      } else {
+        sprite.width = customRadius * 2;
+        sprite.height = customRadius * 2;
+      }
+      content.addChild(sprite);
 
-    btn.w = 76;
-    btn.h = 76;
+      btn.r = customRadius;
+      btn.updateStyle = (r) => {
+        btn.r = r;
+        const currentRatio = (tex.width && tex.height) ? (tex.width / tex.height) : 1;
+        if (currentRatio > 1.2 || currentRatio < 0.8) {
+          sprite.height = r * 2;
+          sprite.width = r * 2 * currentRatio;
+        } else {
+          sprite.width = r * 2;
+          sprite.height = r * 2;
+        }
+      };
 
-    btn.updateStyle = (w, h) => {
-      // Force square shape based on height to match the cartoon play icon
-      const size = Math.round(h * 1.35);
-      btn.w = size;
-      btn.h = size;
-
-      // 1. Soft 3D drop shadow (translucent black)
-      shadow
-        .clear()
-        .roundRect(-size / 2, -size / 2 + 6, size, size, 16)
-        .fill({ color: 0x000000, alpha: 0.45 });
-
-      // 2. 3D Extrusion base (deep luxurious lacquer burgundy)
-      bg3d.clear()
-        .roundRect(-size / 2, -size / 2 + 4, size, size, 16)
-        .fill({ color: 0x4a000a })
-        .stroke({ width: 1, color: 0x240003 });
-
-      // 3. Main button body - premium smooth gradient (light crimson to deep crimson lacquer)
-      const btnGrad = new FillGradient({
-        start: { x: 0, y: -size / 2 },
-        end: { x: 0, y: size / 2 },
-        colorStops: [
-          { offset: 0, color: 0xff3b4e },
-          { offset: 0.4, color: 0xd32f2f },
-          { offset: 1, color: 0x6e0912 },
-        ],
+      btn.on("pointerover", () => {
+        gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.12 });
+        soundManager.playClick();
       });
 
-      const goldGrad = new FillGradient({
-        start: { x: -size / 2, y: -size / 2 },
-        end: { x: size / 2, y: size / 2 },
-        colorStops: [
-          { offset: 0, color: 0xffea00 },
-          { offset: 0.5, color: 0xb89326 },
-          { offset: 1, color: 0xffea00 },
-        ],
+      btn.on("pointerout", () => {
+        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
+        gsap.to(content, { y: 0, duration: 0.1 });
       });
 
-      bg.clear()
-        .roundRect(-size / 2, -size / 2, size, size, 16)
-        .fill(btnGrad)
-        .stroke({ width: 2, fill: goldGrad });
+      btn.on("pointerdown", () => {
+        gsap.to(content, { y: 4, duration: 0.05 });
+      });
 
-      // 4. Glossy highlight sheen on top
-      highlight
-        .clear()
-        .roundRect(-size / 2 + 4, -size / 2 + 3, size - 8, size * 0.35, 12)
-        .fill({ color: 0xffffff, alpha: 0.18 });
+      btn.on("pointerup", () => {
+        gsap.to(content, { y: 0, duration: 0.1 });
+        onClick();
+      });
 
-      // 5. Play icon (triangle pointing right in gold with a nice 3D drop shadow)
-      const triW = size * 0.35;
-      const triH = size * 0.38;
-      icon
-        .clear()
-        // Shadow of the triangle
-        .poly([
-          -triW * 0.4 + 1,
-          -triH / 2 + 1.5,
-          triW * 0.6 + 1,
-          1.5,
-          -triW * 0.4 + 1,
-          triH / 2 + 1.5,
-        ])
-        .fill({ color: 0x000000, alpha: 0.5 })
-        // Main triangle in gold
-        .poly([-triW * 0.4, -triH / 2, triW * 0.6, 0, -triW * 0.4, triH / 2])
-        .fill(goldGrad)
-        .stroke({ width: 1.2, color: 0x3d0006 });
-    };
+      btn.on("pointerupoutside", () => {
+        gsap.to(content, { y: 0, duration: 0.1 });
+      });
 
-    btn.updateStyle(btn.w, btn.h);
+      // Entrance animation
+      btn.alpha = 0;
+      gsap.to(btn, {
+        alpha: 1,
+        duration: 0.5,
+        delay: 0.4,
+        ease: "power2.out",
+      });
 
-    btn.on("pointerover", () => {
-      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-      soundManager.playClick();
-    });
-
-    btn.on("pointerout", () => {
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-    });
-
-    btn.on("pointerdown", () => {
-      gsap.to(content, { y: 2, duration: 0.05 });
-    });
-
-    btn.on("pointerup", () => {
-      gsap.to(content, { y: 0, duration: 0.1 });
-      onClick();
-    });
-
-    btn.on("pointerupoutside", () => {
-      gsap.to(content, { y: 0, duration: 0.1 });
-    });
-
-    return btn;
+      return btn;
+    }
+    return null;
   }
 
   /**
@@ -949,31 +1073,88 @@ export class MainMenuScene {
     popup.addChild(this.leaderboardModal);
 
     const cardW = 500;
-    const cardH = 500;
+    const cardH = 580;
 
-    // Modal bg
-    const modalBg = new Graphics();
-    modalBg.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24);
-    modalBg.fill({ color: 0x150103, alpha: 0.95 });
-    modalBg.stroke({ color: 0xd4af37, width: 3.5 });
-    this.leaderboardModal.addChild(modalBg);
+    // 1. Soft Card Shadow
+    const cardShadow = new Graphics()
+      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 24)
+      .fill({ color: 0x000000, alpha: 0.25 });
+    this.leaderboardModal.addChild(cardShadow);
 
-    // Header Title
+    // 2. Thick 3D Cyan-Blue Border
+    const borderBg = new Graphics()
+      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24)
+      .fill({ color: 0x004466 }) // Shadow Base
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
+      .fill({
+        fill: new FillGradient({
+          start: { x: 0, y: -cardH / 2 },
+          end: { x: 0, y: cardH / 2 },
+          colorStops: [
+            { offset: 0, color: 0x33ccff },
+            { offset: 1, color: 0x0088cc }
+          ]
+        })
+      })
+      .stroke({ color: 0xffea00, width: 2.5 }); // Gold inner border
+    this.leaderboardModal.addChild(borderBg);
+
+    // 3. Bright Cream Card Face
+    const cardFace = new Graphics()
+      .roundRect(-cardW / 2 + 8, -cardH / 2 + 8, cardW - 16, cardH - 16, 18)
+      .fill({ color: 0xfbfaf5 });
+    this.leaderboardModal.addChild(cardFace);
+
+    // 4. Floating 3D Title Ribbon (Pink/Magenta)
+    const ribbonW = 430;
+    const ribbonH = 48;
+    const ribbonY = -cardH / 2;
+    const ribbon = new Graphics()
+      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2 + 4, ribbonW, ribbonH, 12)
+      .fill({ color: 0x800040 }) // Ribbon shadow
+      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2, ribbonW, ribbonH, 12)
+      .fill({
+        fill: new FillGradient({
+          start: { x: 0, y: ribbonY - ribbonH / 2 },
+          end: { x: 0, y: ribbonY + ribbonH / 2 },
+          colorStops: [
+            { offset: 0, color: 0xff66b2 },
+            { offset: 1, color: 0xcc0066 }
+          ]
+        })
+      })
+      .stroke({ color: 0xffe6f2, width: 2 });
+    this.leaderboardModal.addChild(ribbon);
+
+    // Header Title centered inside ribbon
+    const titleContainer = new Container();
+    titleContainer.position.set(0, ribbonY);
+    this.leaderboardModal.addChild(titleContainer);
+
+    const titleIcon = createVectorIcon("🏆", 28);
+    titleContainer.addChild(titleIcon);
+
     const titleText = new Text({
-      text: "🏆 BẢNG VÀNG THÀNH TÍCH",
+      text: " BẢNG VÀNG THÀNH TÍCH",
       style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 26,
-        fill: 0xffea00,
+        fontFamily: "Arial Black, Impact, sans-serif",
+        fontSize: 19,
+        fill: 0xffffff, // white on pink ribbon
         fontWeight: "bold",
         letterSpacing: 1.5,
         align: "center",
-        dropShadow: { color: 0x000000, blur: 4, distance: 2 },
+        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        dropShadow: { color: 0x000000, blur: 2, distance: 1.5, alpha: 0.4 }
       }),
     });
     titleText.anchor.set(0.5);
-    titleText.y = -cardH / 2 + 32;
-    this.leaderboardModal.addChild(titleText);
+    titleContainer.addChild(titleText);
+
+    // Layout
+    const titleGap = 8;
+    const titleTotalW = titleIcon.width + titleGap + titleText.width;
+    titleIcon.x = -titleTotalW / 2 + titleIcon.width / 2;
+    titleText.x = titleTotalW / 2 - titleText.width / 2;
 
     // Active User Profile Display
     let currentUser = null;
@@ -991,10 +1172,11 @@ export class MainMenuScene {
     const userText = new Text({
       text: userTextStr,
       style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
+        fontFamily: "Arial Black, Arial, sans-serif",
         fontSize: 13,
         fontWeight: "bold",
-        fill: currentUser ? "#ffea00" : "#aaaaaa",
+        fill: currentUser ? "#e91e63" : "#7c73a1",
+        stroke: { color: 0xffffff, width: 3, join: 'round' },
       }),
     });
     userText.anchor.set(0.5);
@@ -1002,17 +1184,18 @@ export class MainMenuScene {
     this.leaderboardModal.addChild(userText);
 
     // Columns Header row
-    const headerY = -120;
-    const colRankX = -120;
-    const colScoreX = 120;
+    const headerY = -160;
+    const colRankX = -140;
+    const colScoreX = 130;
 
     const rankHeader = new Text({
       text: "HẠNG",
       style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 22,
+        fontFamily: "Arial Black, Impact, sans-serif",
+        fontSize: 20,
         fontWeight: "bold",
-        fill: 0xffea00,
+        fill: 0x004466,
+        stroke: { color: 0xffffff, width: 3.5, join: 'round' },
       }),
     });
     rankHeader.anchor.set(0.5);
@@ -1022,24 +1205,25 @@ export class MainMenuScene {
     const scoreHeader = new Text({
       text: "ĐIỂM",
       style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 22,
+        fontFamily: "Arial Black, Impact, sans-serif",
+        fontSize: 20,
         fontWeight: "bold",
-        fill: 0xffea00,
+        fill: 0x004466,
+        stroke: { color: 0xffffff, width: 3.5, join: 'round' },
       }),
     });
     scoreHeader.anchor.set(0.5);
     scoreHeader.position.set(colScoreX, headerY);
     this.leaderboardModal.addChild(scoreHeader);
 
-    // Divider line below headers
+    // Divider line below headers (using clean bright blue)
     const headerDivider = new Graphics()
-      .moveTo(-225, headerY + 16)
-      .lineTo(225, headerY + 16)
-      .stroke({ color: 0xd4af37, width: 1.5, alpha: 0.6 });
+      .moveTo(-225, headerY + 18)
+      .lineTo(225, headerY + 18)
+      .stroke({ color: 0x0088cc, width: 2, alpha: 0.35 });
     this.leaderboardModal.addChild(headerDivider);
 
-    // Fetch top scores
+    // Fetch top scores (unique profiles + default competitors bot integration)
     const list = saveManager.getLeaderboard();
 
     if (list.length === 0) {
@@ -1048,7 +1232,7 @@ export class MainMenuScene {
         style: new TextStyle({
           fontFamily: "Outfit, Arial, sans-serif",
           fontSize: 16,
-          fill: "#aaaaaa",
+          fill: "#7c73a1",
           align: "center",
           lineHeight: 22,
         }),
@@ -1058,93 +1242,250 @@ export class MainMenuScene {
       this.leaderboardModal.addChild(emptyText);
     } else {
       // Draw list items
-      const startY = -70;
-      const rowHeight = 44;
+      const startY = -110;
+      const rowHeight = 52;
 
       list.forEach((entry, idx) => {
         const rowY = startY + idx * rowHeight;
         const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
         const rankIcon = medals[idx] || `${idx + 1}`;
 
-        // Row background highlight for top 3 or player highlighted
+        // Row background highlight for top 3 or player highlighted using 3D lacquer colors
+        const rowW = 450;
+        const rowH = rowHeight - 12; // Gap of 12px
+        const rowRadius = 8;
+        const rowShadowOffset = 3;
+
+        let rTop, rBottom, rShadow, rStroke;
+        if (idx === 0) {
+          // Gold
+          rTop = 0xFFE500; rBottom = 0xFF9900; rShadow = 0x8A4500; rStroke = 0xFFF8B3;
+        } else if (idx === 1) {
+          // Silver
+          rTop = 0xf0f4f8; rBottom = 0xb0bec5; rShadow = 0x455a64; rStroke = 0xffffff;
+        } else if (idx === 2) {
+          // Bronze
+          rTop = 0xffebe6; rBottom = 0xa1887f; rShadow = 0x5d4037; rStroke = 0xfff3e0;
+        } else {
+          // Others (Brightened up to clean white-gray)
+          rTop = 0xffffff; rBottom = 0xf2f2f2; rShadow = 0xbdbdbd; rStroke = 0xffffff;
+        }
+
         const rowBg = new Graphics()
-          .roundRect(-225, rowY - rowHeight / 2 + 3, 450, rowHeight - 6, 8)
-          .fill({ color: 0x4a000a, alpha: idx === 0 ? 0.35 : idx === 1 ? 0.25 : 0.15 })
-          .stroke({ color: 0xffea00, width: 1.5, alpha: idx === 0 ? 0.8 : 0.3 });
+          // 3D Shadow Base
+          .roundRect(-rowW / 2, rowY - rowH / 2 + rowShadowOffset, rowW, rowH, rowRadius)
+          .fill({ color: rShadow })
+          // Main Face
+          .roundRect(-rowW / 2, rowY - rowH / 2, rowW, rowH, rowRadius)
+          .fill({
+            fill: new FillGradient({
+              start: { x: 0, y: rowY - rowH / 2 },
+              end: { x: 0, y: rowY + rowH / 2 },
+              colorStops: [
+                { offset: 0, color: rTop },
+                { offset: 1, color: rBottom }
+              ]
+            })
+          })
+          .stroke({ color: rStroke, width: 2 });
         this.leaderboardModal.addChild(rowBg);
 
-        let rankTextStr = rankIcon;
-        // Since all scores in this profile list belong to the active user, append silhouette
-        rankTextStr = `${rankTextStr} 👤`;
+        // --- Rank/Medal ---
+        const rankCell = new Container();
+        rankCell.position.set(-170, rowY);
+        this.leaderboardModal.addChild(rankCell);
 
-        // Rank Column (Enlarged)
-        const rankText = new Text({
-          text: rankTextStr,
+        let rankNode;
+        if (idx === 0) rankNode = createVectorIcon("🥇", 28);
+        else if (idx === 1) rankNode = createVectorIcon("🥈", 28);
+        else if (idx === 2) rankNode = createVectorIcon("🥉", 28);
+        else {
+          rankNode = new Text({
+            text: `${idx + 1}`,
+            style: new TextStyle({
+              fontFamily: "Arial Black, Impact, sans-serif",
+              fontSize: 24,
+              fontWeight: "bold",
+              fill: "#241d4f",
+              stroke: { color: 0xffffff, width: 3.5, join: 'round' },
+            }),
+          });
+          rankNode.anchor.set(0.5);
+        }
+        rankCell.addChild(rankNode);
+
+        // --- Avatar ---
+        const avatarCell = new Container();
+        avatarCell.position.set(-120, rowY);
+        this.leaderboardModal.addChild(avatarCell);
+
+        let borderCol;
+        if (idx === 0) borderCol = 0xffea00;
+        else if (idx === 1) borderCol = 0xb0bec5;
+        else if (idx === 2) borderCol = 0xa1887f;
+        else borderCol = 0xd7ccc8;
+
+        const avatarFrame = new Graphics()
+          .roundRect(-16, -16, 32, 32, 6)
+          .fill({ color: 0x120103, alpha: 0.9 })
+          .stroke({ color: borderCol, width: 1.5 });
+        avatarCell.addChild(avatarFrame);
+
+        const avatarMask = new Graphics()
+          .roundRect(-14, -14, 28, 28, 5)
+          .fill({ color: 0xffffff });
+        avatarCell.addChild(avatarMask);
+
+        // Map avatar dynamically based on user/bot name
+        const name = entry.userName || "";
+        const spriteAlias = getAvatarAlias(name);
+
+        const avatarSprite = Sprite.from(spriteAlias);
+        avatarSprite.anchor.set(0.5);
+        avatarSprite.width = 28;
+        avatarSprite.height = 28;
+        avatarSprite.mask = avatarMask;
+        avatarCell.addChild(avatarSprite);
+
+        // --- Name ---
+        const nameText = new Text({
+          text: name,
           style: new TextStyle({
-            fontFamily: "Outfit, Arial, sans-serif",
-            fontSize: 24,
+            fontFamily: "Arial Black, Impact, sans-serif",
+            fontSize: 18,
             fontWeight: "bold",
-            fill: idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "#ffffff",
+            fill: "#241d4f",
+            stroke: { color: 0xffffff, width: 2.5, join: 'round' },
           }),
         });
-        rankText.anchor.set(0.5);
-        rankText.position.set(colRankX, rowY);
-        this.leaderboardModal.addChild(rankText);
+        nameText.anchor.set(0, 0.5);
+        nameText.position.set(-90, rowY);
+        this.leaderboardModal.addChild(nameText);
 
-        // Score Column (Enlarged)
+        // --- Score ---
         const scoreText = new Text({
           text: entry.score.toLocaleString(),
           style: new TextStyle({
-            fontFamily: "Outfit, Arial, sans-serif",
+            fontFamily: "Arial Black, Impact, sans-serif",
             fontSize: 24,
             fontWeight: "bold",
-            fill: idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "#ffffff",
+            fill: "#241d4f",
+            stroke: { color: 0xffffff, width: 2.5, join: 'round' },
           }),
         });
-        scoreText.anchor.set(0.5);
-        scoreText.position.set(colScoreX, rowY);
+        scoreText.anchor.set(1, 0.5);
+        scoreText.position.set(160, rowY);
         this.leaderboardModal.addChild(scoreText);
       });
     }
 
-    if (list.length > 0) {
-      // Pinned Best Record Banner at the bottom (formatted exactly like Screenshot 1)
-      const footerBg = new Graphics()
-        .roundRect(-225, 138, 450, 44, 8)
-        .fill({ color: 0x4a000a, alpha: 0.9 })
-        .stroke({ color: 0xffea00, width: 1.5 });
-      this.leaderboardModal.addChild(footerBg);
+    // Determine active player's personal best score and rank
+    const personalList = saveManager.load().leaderboard || [];
+    const personalBest = personalList.length > 0 ? personalList[0].score : 0;
 
-      const bestScore = list[0].score;
-
-      const footerRank = new Text({
-        text: "🥇",
-        style: new TextStyle({
-          fontFamily: "Outfit, Arial, sans-serif",
-          fontSize: 24,
-          fontWeight: "bold",
-          fill: 0xffea00,
-        }),
-      });
-      footerRank.anchor.set(0.5);
-      footerRank.position.set(colRankX, 160);
-      this.leaderboardModal.addChild(footerRank);
-
-      const footerScore = new Text({
-        text: bestScore.toLocaleString(),
-        style: new TextStyle({
-          fontFamily: "Outfit, Arial, sans-serif",
-          fontSize: 24,
-          fontWeight: "bold",
-          fill: 0xffea00,
-        }),
-      });
-      footerScore.anchor.set(0.5);
-      footerScore.position.set(colScoreX, 160);
-      this.leaderboardModal.addChild(footerScore);
+    let activeKey = "match3_pure_leaderboard";
+    try {
+      const savedUser = localStorage.getItem("google_user");
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        activeKey = `match3_pure_leaderboard_${user.id}`;
+      }
+    } catch (e) {
+      console.error(e);
     }
 
-    // CLOSE Button (Red & Gold Lacquer rectangular QUAY LẠI button)
+    const activeRankIdx = list.findIndex(entry => entry.profileKey === activeKey);
+    const activeRankVal = activeRankIdx !== -1 ? (activeRankIdx + 1) : null;
+
+    // Pinned Best Record Banner at the bottom (Vibrant 3D style)
+    const footerBg = new Graphics()
+      .roundRect(-225, 143, 450, 44, 8)
+      .fill({ color: 0xfff275, alpha: 1.0 })
+      .stroke({ color: 0xffa200, width: 3, alpha: 1.0 });
+    this.leaderboardModal.addChild(footerBg);
+
+    // Footer Rank cell at -170
+    const footerRankCell = new Container();
+    footerRankCell.position.set(-170, 165);
+    this.leaderboardModal.addChild(footerRankCell);
+
+    let footerRankNode;
+    if (activeRankVal === 1) footerRankNode = createVectorIcon("🥇", 28);
+    else if (activeRankVal === 2) footerRankNode = createVectorIcon("🥈", 28);
+    else if (activeRankVal === 3) footerRankNode = createVectorIcon("🥉", 28);
+    else {
+      footerRankNode = new Text({
+        text: activeRankVal ? String(activeRankVal) : "-",
+        style: new TextStyle({
+          fontFamily: "Arial Black, Impact, sans-serif",
+          fontSize: 24,
+          fontWeight: "bold",
+          fill: "#241d4f",
+          stroke: { color: 0xffffff, width: 3.5, join: 'round' }
+        })
+      });
+      footerRankNode.anchor.set(0.5);
+    }
+    footerRankCell.addChild(footerRankNode);
+
+    // Footer Avatar at -120
+    const footerAvatar = new Container();
+    footerAvatar.position.set(-120, 165);
+    this.leaderboardModal.addChild(footerAvatar);
+
+    const footerFrame = new Graphics()
+      .roundRect(-16, -16, 32, 32, 6)
+      .fill({ color: 0x120103, alpha: 0.9 })
+      .stroke({ color: 0xffea00, width: 1.5 });
+    footerAvatar.addChild(footerFrame);
+
+    const footerMask = new Graphics()
+      .roundRect(-14, -14, 28, 28, 5)
+      .fill({ color: 0xffffff });
+    footerAvatar.addChild(footerMask);
+
+    // Resolve avatar for active user
+    const activeName = currentUser ? currentUser.name : "Khách";
+    const activeAvatarAlias = getAvatarAlias(activeName);
+
+    const footerSprite = Sprite.from(activeAvatarAlias);
+    footerSprite.anchor.set(0.5);
+    footerSprite.width = 28;
+    footerSprite.height = 28;
+    footerSprite.mask = footerMask;
+    footerAvatar.addChild(footerSprite);
+
+    // Footer Name text at -90
+    const footerName = new Text({
+      text: activeName,
+      style: new TextStyle({
+        fontFamily: "Arial Black, Impact, sans-serif",
+        fontSize: 18,
+        fontWeight: "bold",
+        fill: "#241d4f",
+        stroke: { color: 0xffffff, width: 3, join: 'round' },
+      }),
+    });
+    footerName.anchor.set(0, 0.5);
+    footerName.position.set(-90, 165);
+    this.leaderboardModal.addChild(footerName);
+
+    // Footer Score text at 160 (right aligned)
+    const footerScore = new Text({
+      text: personalBest.toLocaleString(),
+      style: new TextStyle({
+        fontFamily: "Arial Black, Impact, sans-serif",
+        fontSize: 24,
+        fontWeight: "bold",
+        fill: "#241d4f",
+        stroke: { color: 0xffffff, width: 3.5, join: 'round' },
+      }),
+    });
+    footerScore.anchor.set(1, 0.5);
+    footerScore.position.set(160, 165);
+    this.leaderboardModal.addChild(footerScore);
+
+    // CLOSE Button (3D circular back button at bottom center)
     const closePopup = () => {
       soundManager.playClick();
       gsap.to(this.leaderboardModal.scale, { x: 0.7, y: 0.7, duration: 0.25 });
@@ -1161,15 +1502,13 @@ export class MainMenuScene {
       });
     };
 
-    const closeBtn = this.createMenuButton(
-      "↩️ QUAY LẠI",
+    const closeBtn = this.createCircularButton(
+      "↩️",
       0,
-      215,
-      0x5c0612,
-      180,
+      235,
       closePopup,
       this.leaderboardModal,
-      38
+      32
     );
 
     // Apply responsive layout immediately to compute target scale
@@ -1211,61 +1550,75 @@ export class MainMenuScene {
     popup.addChild(this.settingsModal);
 
     const cardW = 340;
-    const cardH = 260;
+    const cardH = 300;
 
-    // Shadow
+    // 1. Soft Card Shadow
     const cardShadow = new Graphics()
-      .roundRect(-cardW / 2 + 5, -cardH / 2 + 5, cardW, cardH, 16)
-      .fill({ color: 0x000000, alpha: 0.35 });
+      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 20)
+      .fill({ color: 0x000000, alpha: 0.25 });
     this.settingsModal.addChild(cardShadow);
 
-    // Card Bg
-    const cardBg = new Graphics()
-      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 16)
-      .fill({ color: 0x150103, alpha: 0.92 })
-      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.85 });
-    this.settingsModal.addChild(cardBg);
+    // 2. Thick 3D Purple-Violet Border
+    const borderBg = new Graphics()
+      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 20)
+      .fill({ color: 0x330066 }) // Shadow Base
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
+      .fill({
+        fill: new FillGradient({
+          start: { x: 0, y: -cardH / 2 },
+          end: { x: 0, y: cardH / 2 },
+          colorStops: [
+            { offset: 0, color: 0xb266ff },
+            { offset: 1, color: 0x5900b3 }
+          ]
+        })
+      })
+      .stroke({ color: 0xffea00, width: 2.5 }); // Gold inner border
+    this.settingsModal.addChild(borderBg);
 
-    // Title
+    // 3. Bright Cream Card Face
+    const cardFace = new Graphics()
+      .roundRect(-cardW / 2 + 8, -cardH / 2 + 8, cardW - 16, cardH - 16, 14)
+      .fill({ color: 0xfbfaf5 });
+    this.settingsModal.addChild(cardFace);
+
+    // 4. Floating 3D Title Ribbon (Cyan-Blue)
+    const ribbonW = 210;
+    const ribbonH = 42;
+    const ribbonY = -cardH / 2;
+    const ribbon = new Graphics()
+      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2 + 4, ribbonW, ribbonH, 10)
+      .fill({ color: 0x004466 }) // Ribbon shadow
+      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2, ribbonW, ribbonH, 10)
+      .fill({
+        fill: new FillGradient({
+          start: { x: 0, y: ribbonY - ribbonH / 2 },
+          end: { x: 0, y: ribbonY + ribbonH / 2 },
+          colorStops: [
+            { offset: 0, color: 0x33ccff },
+            { offset: 1, color: 0x0088cc }
+          ]
+        })
+      })
+      .stroke({ color: 0xe6f9ff, width: 2 });
+    this.settingsModal.addChild(ribbon);
+
+    // Title text inside ribbon
     const titleText = new Text({
       text: "CÀI ĐẶT GAME",
       style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 20,
-        fill: 0xffea00,
+        fontFamily: "Arial Black, Impact, sans-serif",
+        fontSize: 18,
+        fill: 0xffffff,
         fontWeight: "bold",
-        letterSpacing: 1.8,
-        align: "center",
-        dropShadow: { color: 0x000000, blur: 4, distance: 2 },
+        letterSpacing: 1.5,
+        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        dropShadow: { color: 0x000000, blur: 2, distance: 1.5, alpha: 0.4 }
       }),
     });
     titleText.anchor.set(0.5);
-    titleText.position.set(0, -cardH / 2 + 32);
+    titleText.position.set(0, ribbonY);
     this.settingsModal.addChild(titleText);
-
-    // Circular close btn (✕) in top right
-    const closeBtn = new Container();
-    closeBtn.eventMode = "static";
-    closeBtn.cursor = "pointer";
-    closeBtn.position.set(cardW / 2 - 22, -cardH / 2 + 22);
-
-    const closeBg = new Graphics()
-      .circle(0, 0, 13)
-      .fill({ color: 0x1b0103, alpha: 0.8 })
-      .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.8 });
-    closeBtn.addChild(closeBg);
-
-    const closeText = new Text({
-      text: "✕",
-      style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 12,
-        fill: "#ffffff",
-        fontWeight: "bold",
-      }),
-    });
-    closeText.anchor.set(0.5);
-    closeBtn.addChild(closeText);
 
     const closePopup = () => {
       soundManager.playClick();
@@ -1283,78 +1636,66 @@ export class MainMenuScene {
       });
     };
 
-    closeBtn.on("pointertap", closePopup);
-    closeBtn.on("pointerover", () => {
-      gsap.to(closeBtn.scale, { x: 1.15, y: 1.15, duration: 0.15 });
-      closeBg.stroke({ width: 1.5, color: 0xffea00 });
-    });
-    closeBtn.on("pointerout", () => {
-      gsap.to(closeBtn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-      closeBg.stroke({ width: 1.2, color: 0xd4af37, alpha: 0.8 });
-    });
-    this.settingsModal.addChild(closeBtn);
+    // Circular close btn (✕) in top right using standard bubble button style
+    const closeBtn = this.createCircularButton("✕", cardW / 2 - 20, -cardH / 2 + 20, closePopup, this.settingsModal);
 
     // Reusable Toggle Row Builder
     const createToggleRow = (labelText, yPos, initialMuteState, onToggle) => {
       const row = new Container();
       row.position.set(0, yPos);
 
-      // Left label (enlarged)
+      // Row background card panel to group label and toggle visually
+      // Enlarged height to 56 to fit the 50-height toggle switch
+      const rowBg = new Graphics()
+        .roundRect(-135, -28, 270, 56, 10)
+        .fill({ color: 0xefede0 }) // Warm creamy beige
+        .stroke({ color: 0xdfdac0, width: 1.5 });
+      row.addChild(rowBg);
+
+      // Left label (enlarged cartoon text)
       const label = new Text({
-        text: labelText,
+        text: labelText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Outfit, Arial, sans-serif",
+          fontFamily: "Arial Black, Impact, sans-serif",
           fontSize: 18,
-          fill: "#ffffff",
+          fill: "#360207",
           fontWeight: "bold",
           letterSpacing: 0.8,
+          stroke: { color: 0xffffff, width: 3.5, join: 'round' }
         }),
       });
       label.anchor.set(0, 0.5);
-      label.position.set(-110, 0);
+      label.position.set(-115, 0);
       row.addChild(label);
 
-      // Right slider track (enlarged)
-      const trackW = 60;
-      const trackH = 30;
-      const track = new Container();
+      // Right slider track (using preloaded 3D toggle texture)
+      // Enlarged to width = 100, height = 50 to make it visually matching and prominent
+      const track = new Sprite(Texture.from(initialMuteState ? "toggle_off" : "toggle_on"));
+      track.anchor.set(0.5);
+      track.width = 100;
+      track.height = 50;
       track.eventMode = "static";
       track.cursor = "pointer";
-      track.position.set(70, 0);
+      track.position.set(80, 0);
       row.addChild(track);
 
-      const trackBg = new Graphics();
-      track.addChild(trackBg);
-
-      const knob = new Graphics()
-        .circle(0, 0, 12)
-        .fill({ color: 0xffffff })
-        .stroke({ width: 1, color: 0xdddddd });
-      knob.position.set(0, 0);
-      track.addChild(knob);
-
-      const drawTrack = (isMuted) => {
-        trackBg
-          .clear()
-          .roundRect(-trackW / 2, -trackH / 2, trackW, trackH, trackH / 2)
-          .fill({ color: isMuted ? 0x4f4f4f : 0x2ecc71 })
-          .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.7 });
-      };
-
-      // Initialize
-      drawTrack(initialMuteState);
-      knob.x = initialMuteState ? -trackW / 2 + 14 : trackW / 2 - 14;
+      // Draw dotted connector line dynamically between text and switch
+      const labelWidth = label.width;
+      const startX = -115 + labelWidth + 12;
+      const endX = 80 - 50 - 12;
+      if (startX < endX) {
+        const dots = new Graphics();
+        for (let dx = startX; dx <= endX; dx += 6) {
+          dots.circle(dx, 0, 1.5);
+        }
+        dots.fill({ color: 0xc0bba0 });
+        row.addChild(dots);
+      }
 
       const handleToggle = () => {
         soundManager.playClick();
         const isMuted = onToggle();
-        drawTrack(isMuted);
-        const targetKnobX = isMuted ? -trackW / 2 + 14 : trackW / 2 - 14;
-        gsap.to(knob, {
-          x: targetKnobX,
-          duration: 0.2,
-          ease: "power2.out",
-        });
+        track.texture = Texture.from(isMuted ? "toggle_off" : "toggle_on");
       };
 
       track.on("pointertap", handleToggle);
@@ -1365,12 +1706,12 @@ export class MainMenuScene {
       return row;
     };
 
-    // Add Music and SFX rows
-    const musicRowY = -45;
-    const sfxRowY = -5;
+    // Add Music and SFX rows (spaced out for cardH = 300)
+    const musicRowY = -60;
+    const sfxRowY = -10;
 
     const musicRow = createToggleRow(
-      "🎵 NHẠC NÈN",
+      "NHẠC NỀN",
       musicRowY,
       !soundManager.musicEnabled,
       () => {
@@ -1379,7 +1720,7 @@ export class MainMenuScene {
       }
     );
     const sfxRow = createToggleRow(
-      "🔊 HIỆU ỨNG",
+      "HIỆU ỨNG",
       sfxRowY,
       !soundManager.enabled,
       () => {
@@ -1391,52 +1732,37 @@ export class MainMenuScene {
     this.settingsModal.addChild(musicRow);
     this.settingsModal.addChild(sfxRow);
 
-    // Modern Outline Reset Data button (smaller and elegant)
-    const resetBtn = new Container();
-    resetBtn.eventMode = "static";
-    resetBtn.cursor = "pointer";
-    resetBtn.position.set(0, 50);
+    // Reset Data button styled as a single Red 3D capsule button with icon and text
+    const resetBtn = this.createMenuButton(
+      "🗑️ Xóa lịch sử",
+      0,
+      55,
+      "red",
+      230,
+      async () => {
+        soundManager.playClick();
+        const confirmDelete = await gameConfirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu thành tích không?");
+        if (confirmDelete) {
+          saveManager.reset();
+          closePopup();
+          await sceneManager.switchTo(MainMenuScene);
+        }
+      },
+      this.settingsModal,
+      44
+    );
 
-    const resetW = 230;
-    const resetH = 38;
-
-    const resetBg = new Graphics()
-      .roundRect(-resetW / 2, -resetH / 2, resetW, resetH, resetH / 2)
-      .fill({ color: 0x1b0103, alpha: 0.5 })
-      .stroke({ width: 1.5, color: 0xd32f2f, alpha: 0.8 });
-    resetBtn.addChild(resetBg);
-
-    const resetText = new Text({
-      text: "🗑️ XÓA DỮ LIỆU THÀNH TÍCH",
-      style: new TextStyle({
+    const versionText = new Text({
+      text: "Phiên bản: 1.0.0",
+      style: {
         fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 13,
-        fill: "#fdf5e6",
-        fontWeight: "bold",
-        letterSpacing: 0.5,
-      }),
+        fontSize: 12,
+        fill: "#aaaaaa",
+      },
     });
-    resetText.anchor.set(0.5);
-    resetBtn.addChild(resetText);
-
-    resetBtn.on("pointertap", async () => {
-      soundManager.playClick();
-      const confirmDelete = confirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu thành tích không?");
-      if (confirmDelete) {
-        saveManager.reset();
-        closePopup();
-        await sceneManager.switchTo(MainMenuScene);
-      }
-    });
-
-    resetBtn.on("pointerover", () => {
-      gsap.to(resetBtn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
-    });
-    resetBtn.on("pointerout", () => {
-      gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-    });
-
-    this.settingsModal.addChild(resetBtn);
+    versionText.anchor.set(0.5);
+    versionText.position.set(0, 110);
+    this.settingsModal.addChild(versionText);
 
     // Apply responsive layout immediately to compute target scale
     this.resize();
@@ -1471,98 +1797,6 @@ export class MainMenuScene {
   }
 
   initDOMOverlays() {
-    // 1. Fullscreen Button (iOS and cross-browser safe)
-    const fsBtn = document.getElementById("fullscreen-btn");
-    if (fsBtn) {
-      fsBtn.onclick = () => {
-        const docEl = document.documentElement;
-        const appEl = document.getElementById("app");
-        const isNativeFS = !!(
-          document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.mozFullScreenElement ||
-          document.msFullscreenElement
-        );
-        const isPseudoFS =
-          appEl && appEl.classList.contains("pseudo-fullscreen");
-
-        const enterPseudo = () => {
-          if (appEl) {
-            appEl.classList.add("pseudo-fullscreen");
-            setTimeout(() => {
-              window.dispatchEvent(new window.Event("resize"));
-            }, 100);
-          }
-        };
-
-        const exitPseudo = () => {
-          if (appEl) {
-            appEl.classList.remove("pseudo-fullscreen");
-            setTimeout(() => {
-              window.dispatchEvent(new window.Event("resize"));
-            }, 100);
-          }
-        };
-
-        if (!isNativeFS && !isPseudoFS) {
-          if (docEl.requestFullscreen) {
-            docEl.requestFullscreen().catch((err) => {
-              console.error(
-                "Error attempting to enable native fullscreen, falling back to pseudo:",
-                err,
-              );
-              enterPseudo();
-            });
-          } else if (docEl.webkitRequestFullscreen) {
-            docEl.webkitRequestFullscreen();
-          } else if (docEl.mozRequestFullScreen) {
-            docEl.mozRequestFullScreen();
-          } else if (docEl.msRequestFullscreen) {
-            docEl.msRequestFullscreen();
-          } else {
-            enterPseudo();
-          }
-        } else {
-          if (isNativeFS) {
-            if (document.exitFullscreen) {
-              document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-              document.webkitExitFullscreen();
-            } else if (document.mozCancelFullScreen) {
-              document.mozCancelFullScreen();
-            } else if (document.msExitFullscreen) {
-              document.msExitFullscreen();
-            }
-          }
-          if (isPseudoFS) {
-            exitPseudo();
-          }
-        }
-      };
-    }
-
-    // Clean up pseudo fullscreen if native fullscreen changes
-    const onFullscreenChange = () => {
-      const isNativeFS = !!(
-        document.fullscreenElement ||
-        document.webkitFullscreenElement ||
-        document.mozFullScreenElement ||
-        document.msFullscreenElement
-      );
-      if (isNativeFS) {
-        const appEl = document.getElementById("app");
-        if (appEl && appEl.classList.contains("pseudo-fullscreen")) {
-          appEl.classList.remove("pseudo-fullscreen");
-          setTimeout(() => {
-            window.dispatchEvent(new window.Event("resize"));
-          }, 100);
-        }
-      }
-    };
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", onFullscreenChange);
-    document.addEventListener("mozfullscreenchange", onFullscreenChange);
-    document.addEventListener("MSFullscreenChange", onFullscreenChange);
 
     // 2. Google Modal Account Items
     const modal = document.getElementById("google-login-modal");
@@ -1577,11 +1811,11 @@ export class MainMenuScene {
         if (accountId === "laclac") {
           name = "Lạc Lạc (Bơ Lạc)";
           email = "laclac.bolac@gmail.com";
-          avatar = "/assets/imagebldp/001_avatar_laclac.png";
+          avatar = "/assets/imagebldp_original/001_avatar_laclac.png";
         } else if (accountId === "dauphong") {
           name = "Đậu Phộng";
           email = "dauphong.bolac@gmail.com";
-          avatar = "/assets/imagebldp/015_avatar_dauLan.png";
+          avatar = "/assets/imagebldp_original/015_avatar_dauLan.png";
         }
 
         // Set current user

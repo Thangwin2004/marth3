@@ -65,12 +65,92 @@ class SaveManager {
   }
 
   /**
-   * Get the sorted list of top scores.
-   * @returns {Array<{score: number, date: string}>}
+  /**
+   * Get the sorted list of top scores across all unique profiles,
+   * keeping only the single highest score for each person/profile.
+   * If there are fewer than 5 entries, populates with themed default bots.
+   * @returns {Array<{score: number, date: string, userName: string, profileKey: string}>}
    */
   getLeaderboard() {
-    const data = this.load();
-    return data.leaderboard || [];
+    const allEntries = [];
+
+    // Get active user details
+    let activeId = null;
+    let activeName = null;
+    try {
+      const savedUser = localStorage.getItem("google_user");
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        activeId = user.id;
+        activeName = user.name;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    // 1. Scan localStorage to collect the best score of each unique profile
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(BASE_KEY)) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const list = parsed.leaderboard || [];
+            if (list.length > 0) {
+              const best = list[0]; // first item is their highest score
+              
+              let name = parsed.userName;
+              // If this key matches the active logged-in Google user, override or fallback to their name!
+              if (activeId && key === `${BASE_KEY}_${activeId}`) {
+                name = activeName;
+              }
+              // Support mockup profiles fallback for visual testing
+              if (!name) {
+                if (key.endsWith("_laclac")) name = "Lạc Lạc (Bơ Lạc)";
+                else if (key.endsWith("_dauphong")) name = "Đậu Phộng";
+                else name = (key === BASE_KEY ? "Khách" : "Người chơi");
+              }
+
+              allEntries.push({
+                score: best.score,
+                date: best.date,
+                userName: name,
+                profileKey: key
+              });
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    // 2. Define themed bot competitors
+    const defaultCompetitors = [
+      { userName: "Bơ Lạc", score: 5500, date: "Hệ thống", profileKey: "bot_1" },
+      { userName: "Đậu Phộng", score: 4000, date: "Hệ thống", profileKey: "bot_2" },
+      { userName: "Ếch Xanh", score: 2500, date: "Hệ thống", profileKey: "bot_3" },
+      { userName: "Gấu Trúc", score: 1500, date: "Hệ thống", profileKey: "bot_4" },
+      { userName: "Mèo Lười", score: 800, date: "Hệ thống", profileKey: "bot_5" }
+    ];
+
+    // Append all bots to ensure the leaderboard is always populated
+    defaultCompetitors.forEach(bot => allEntries.push(bot));
+
+    // 3. Keep only the single highest score for each unique player name
+    const uniqueMap = new Map();
+    allEntries.sort((a, b) => b.score - a.score);
+    allEntries.forEach(entry => {
+      if (!uniqueMap.has(entry.userName)) {
+        uniqueMap.set(entry.userName, entry);
+      }
+    });
+
+    const finalLeaderboard = Array.from(uniqueMap.values());
+    finalLeaderboard.sort((a, b) => b.score - a.score);
+
+    return finalLeaderboard.slice(0, 5);
   }
 
   /**
@@ -81,6 +161,20 @@ class SaveManager {
    */
   addScore(score) {
     const data = this.load();
+    
+    // Set active username at root of save data for aggregation
+    let activeName = "Khách";
+    try {
+      const savedUser = localStorage.getItem("google_user");
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        activeName = user.name || "Người chơi";
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    data.userName = activeName;
+
     const leaderboard = data.leaderboard || [];
 
     const now = new Date();
@@ -103,7 +197,6 @@ class SaveManager {
     this.save(data);
 
     // Find if the new score made it into the top 5, and at what rank
-    // (If there are duplicate scores, findIndex will find the first matching entry)
     const index = trimmed.findIndex(
       (entry) => entry.score === score && entry.date === dateString,
     );

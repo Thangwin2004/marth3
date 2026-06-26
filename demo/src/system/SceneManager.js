@@ -34,14 +34,33 @@ class SceneManager {
    */
   init(pixiApp) {
     this.app = pixiApp;
-    window.addEventListener("resize", () => {
+    
+    const handleResize = () => {
+      const container = this.app.canvas ? this.app.canvas.parentElement : null;
+      const w = container ? container.clientWidth : window.innerWidth;
+      const h = container ? container.clientHeight : window.innerHeight;
+      
       if (this.app && this.app.renderer) {
-        this.app.renderer.resize(window.innerWidth, window.innerHeight);
+        this.app.renderer.resize(w, h);
       }
       if (this.currentScene && typeof this.currentScene.resize === "function") {
         this.currentScene.resize();
       }
-    });
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Wait for canvas to be appended to parent before setting up ResizeObserver
+    setTimeout(() => {
+      const container = this.app.canvas ? this.app.canvas.parentElement : null;
+      if (container && window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver(() => {
+          handleResize();
+        });
+        resizeObserver.observe(container);
+      }
+      handleResize();
+    }, 100);
   }
 
   /**

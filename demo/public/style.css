@@ -64,10 +64,6 @@ body {
   fill: currentColor;
 }
 
-#fullscreen-btn {
-  top: 16px;
-  right: 16px;
-}
 
 /* User Profile Widget on top-left */
 .user-profile-widget {

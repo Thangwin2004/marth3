@@ -9,6 +9,7 @@ import {
   FillGradient,
   GraphicsContext,
   TextStyle,
+  Rectangle,
 } from "pixi.js";
 import { Board } from "../game/Board.js";
 import { CombinationManager } from "../game/CombinationManager.js";
@@ -17,6 +18,7 @@ import { saveManager } from "../system/SaveManager.js";
 import { sceneManager } from "../system/SceneManager.js";
 import { soundManager } from "../system/SoundManager.js";
 import gsap from "gsap";
+import { Colorful3DCircleButton, Colorful3DButton, createVectorIcon as createVectorIconFromUI, mapEmojiToIconType } from "../system/UIComponents.js";
 
 function gameAlert(message) {
   return new Promise((resolve) => {
@@ -30,7 +32,7 @@ function gameAlert(message) {
           left: 0;
           width: 100dvw;
           height: 100dvh;
-          background: rgba(0, 0, 0, 0.7);
+          background: rgba(0, 0, 0, 0.65);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
           display: flex;
@@ -41,11 +43,11 @@ function gameAlert(message) {
           transition: opacity 0.25s ease;
         }
         .game-alert-card {
-          background: linear-gradient(135deg, #121a2e 0%, #080c16 100%);
-          border: 2px solid #d4af37;
-          box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.6);
-          border-radius: 16px;
-          padding: 24px;
+          background: #fbfaf5;
+          border: 5px solid #5900b3;
+          box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
+          border-radius: 20px;
+          padding: 28px 24px;
           width: 85%;
           max-width: 340px;
           text-align: center;
@@ -54,32 +56,26 @@ function gameAlert(message) {
           font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .game-alert-text {
-          color: #fdf5e6;
-          font-size: 16px;
+          color: #360207;
+          font-size: 17px;
           line-height: 1.6;
           margin: 0 0 24px 0;
-          font-weight: 500;
-          text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        }
-        .game-alert-button {
-          background: linear-gradient(90deg, #d4af37 0%, #b89326 100%);
-          color: #121a2e;
-          border: 1px solid #ffea88;
-          border-radius: 24px;
-          padding: 10px 32px;
-          font-size: 15px;
           font-weight: 700;
+          text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .game-alert-img-btn {
+          height: 48px;
+          width: auto;
           cursor: pointer;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-          transition: transform 0.15s, box-shadow 0.15s;
-          outline: none;
+          transition: transform 0.1s ease, filter 0.1s ease;
         }
-        .game-alert-button:hover {
-          transform: translateY(-2px) scale(1.05);
-          box-shadow: 0 6px 15px rgba(212, 175, 55, 0.5);
+        .game-alert-img-btn:hover {
+          transform: scale(1.08);
+          filter: brightness(1.08);
         }
-        .game-alert-button:active {
-          transform: translateY(1px);
+        .game-alert-img-btn:active {
+          transform: scale(0.96);
+          filter: brightness(0.92);
         }
       `;
       document.head.appendChild(style);
@@ -99,9 +95,10 @@ function gameAlert(message) {
     text.className = "game-alert-text";
     text.innerText = message;
 
-    const button = document.createElement("button");
-    button.className = "game-alert-button";
-    button.innerText = "ĐỒNG Ý";
+    const button = document.createElement("img");
+    button.className = "game-alert-img-btn";
+    button.src = "assets/yes_btn.png";
+    button.alt = "ĐỒNG Ý";
 
     card.appendChild(text);
     card.appendChild(button);
@@ -212,6 +209,68 @@ function killTweensRecursive(obj) {
     const children = [...obj.children];
     children.forEach(killTweensRecursive);
   }
+}
+
+const palettes = {
+  yellow: { top: 0xFFE500, bottom: 0xFF9900, shadow: 0x8A4500, stroke: 0xFFF8B3 },
+  green:  { top: 0x7FFF00, bottom: 0x00CC00, shadow: 0x006600, stroke: 0xD4FFD4 },
+  pink:   { top: 0xFF66B2, bottom: 0xCC0066, shadow: 0x800040, stroke: 0xFFE6F2 },
+  blue:   { top: 0x33CCFF, bottom: 0x0088CC, shadow: 0x004466, stroke: 0xE6F9FF },
+  purple: { top: 0xB266FF, bottom: 0x5900B3, shadow: 0x330066, stroke: 0xF2E6FF },
+  red:    { top: 0xF95E8B, bottom: 0xD93955, shadow: 0x92233F, stroke: 0xFFD4E2 }
+};
+
+const getColorStyle = (colorValue, label = "") => {
+  const lbl = String(label).toUpperCase();
+  if (lbl.includes("PLAY") || lbl.includes("CHƠI LẠI")) return "green";
+  if (lbl.includes("TIẾP TỤC")) return "yellow";
+  if (lbl.includes("QUAY LẠI") || lbl.includes("BACK") || lbl.includes("TRANG CHỦ")) return "blue";
+  if (lbl.includes("XÓA") || lbl.includes("RESET")) return "red";
+  
+  if (colorValue === 0x5c0612 || colorValue === 0xd32f2f) return "red";
+  if (colorValue === 0x1b0103) return "blue";
+  if (colorValue === 0x4caf50 || colorValue === 0x2ecc71) return "green";
+  if (colorValue === 0xffaa00 || colorValue === 0xffea00) return "yellow";
+  
+  return "purple";
+};
+
+function getIconTexture(emojiChar) {
+  const mapping = {
+    "🏠": "home_btn",
+    "🏡": "home_btn",
+    "⚙️": "settings_btn",
+    "✕": "close_btn",
+    "↩️": "back_btn",
+    "👤": "profile_btn",
+    "▶️": "continue_btn",
+    "🏆": "trophy_btn",
+    "🔄": "replay_btn",
+    "🗑️": "delete_btn",
+    "heart": "revive_btn",
+    "star": "x2_btn"
+  };
+
+  const charStr = String(emojiChar);
+  for (const key of Object.keys(mapping)) {
+    if (charStr.includes(key)) {
+      return Texture.from(mapping[key]);
+    }
+  }
+  return null;
+}
+
+function createVectorIcon(emojiChar, size = 24) {
+  const tex = getIconTexture(emojiChar);
+  if (tex) {
+    const sprite = new Sprite(tex);
+    sprite.anchor.set(0.5);
+    const finalSize = String(emojiChar).includes("🗑️") ? size * 1.55 : size;
+    sprite.width = finalSize;
+    sprite.height = finalSize;
+    return sprite;
+  }
+  return createVectorIconFromUI(emojiChar, size);
 }
 
 export class GameScene {
@@ -380,17 +439,34 @@ export class GameScene {
     const boardWidth = this.board.cols * App.config.tileSize;
     const boardHeight = this.board.rows * App.config.tileSize;
     const padding = 16;
+    const w = boardWidth + padding * 2;
+    const h = boardHeight + padding * 2;
+    const shadowOffset = 8;
+
+    const theme = palettes.purple;
 
     this.boardBg = new Graphics();
-    this.boardBg.roundRect(
-      0,
-      0,
-      boardWidth + padding * 2,
-      boardHeight + padding * 2,
-      24,
-    );
-    this.boardBg.fill({ color: 0x121925, alpha: 0.96 });
-    this.boardBg.stroke({ color: 0x324b8b, width: 3, alpha: 0.45 });
+    
+    // 1. 3D Shadow Base
+    this.boardBg.roundRect(0, shadowOffset, w, h, 24);
+    this.boardBg.fill({ color: theme.shadow });
+
+    // 2. Main Face Background (gradient)
+    const bgGrad = new FillGradient({
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: h },
+      colorStops: [
+        { offset: 0, color: theme.top },
+        { offset: 1, color: theme.bottom }
+      ]
+    });
+    this.boardBg.roundRect(0, 0, w, h, 24);
+    this.boardBg.fill({ fill: bgGrad });
+    this.boardBg.stroke({ width: 5, color: theme.stroke });
+
+    // 3. Highlight Sheen
+    this.boardBg.ellipse(w / 2, h * 0.12, w * 0.45, h * 0.08);
+    this.boardBg.fill({ color: 0xffffff, alpha: 0.15 });
 
     // Scale background with the board container
     const scale = this.board.container.scale.x;
@@ -491,11 +567,13 @@ export class GameScene {
     this.scoreText = new Text({
       text: "ĐIỂM: 0",
       style: {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: "Arial Black, Impact, sans-serif",
         fontSize: 24,
         fontWeight: "bold",
-        fill: "#ffdd57",
-        dropShadow: { color: "#000000", blur: 4, distance: 2 },
+        fill: "#ffffff",
+        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 },
+        padding: 24,
       },
     });
     this.scoreText.anchor.set(0.5);
@@ -509,11 +587,13 @@ export class GameScene {
     this.movesText = new Text({
       text: `LƯỢT ĐI: ${this.moves}`,
       style: {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: "Arial Black, Impact, sans-serif",
         fontSize: 24,
         fontWeight: "bold",
-        fill: "#4fc3f7",
-        dropShadow: { color: "#000000", blur: 4, distance: 2 },
+        fill: "#ffffff",
+        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 },
+        padding: 24,
       },
     });
     this.movesText.anchor.set(0.5);
@@ -523,12 +603,12 @@ export class GameScene {
     this.comboText = new Text({
       text: "",
       style: {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: "Arial Black, Impact, sans-serif",
         fontSize: 42,
         fontWeight: "bold",
         fill: "#ff5252",
-        stroke: { color: "#000000", width: 6 },
-        dropShadow: { color: "#000000", blur: 6, distance: 3 },
+        stroke: { color: "#000000", width: 6, join: 'round' },
+        dropShadow: { color: "#000000", blur: 6, distance: 3, alpha: 0.5 },
       },
     });
     this.comboText.anchor.set(0.5);
@@ -538,11 +618,12 @@ export class GameScene {
     this.tutorialText = new Text({
       text: "👉 Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
       style: {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: "Arial Black, Arial, sans-serif",
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
-        dropShadow: { color: "#000000", blur: 4, distance: 1.5 },
+        stroke: { color: "#000000", width: 3, join: 'round' },
+        dropShadow: { color: "#000000", blur: 4, distance: 1.5, alpha: 0.5 },
       },
     });
     this.tutorialText.anchor.set(0.5);
@@ -659,10 +740,7 @@ export class GameScene {
     // Wobble and pulse the selected tile scale
     if (tile.sprite && !tile.sprite.destroyed) {
       gsap.killTweensOf(tile.sprite.scale);
-      const targetSize = App.config.tileSize;
-      const texture = tile.sprite.texture;
-      const baseScale =
-        (targetSize / Math.max(texture.orig.width, texture.orig.height)) * 0.95;
+      const baseScale = 1.0; // Standard container baseline scale
 
       gsap.to(tile.sprite.scale, {
         x: baseScale * 1.12,
@@ -683,11 +761,7 @@ export class GameScene {
       const tile = this.selectedTile;
       if (tile.sprite && !tile.sprite.destroyed) {
         gsap.killTweensOf(tile.sprite.scale);
-        const targetSize = App.config.tileSize;
-        const texture = tile.sprite.texture;
-        const baseScale =
-          (targetSize / Math.max(texture.orig.width, texture.orig.height)) *
-          0.95;
+        const baseScale = 1.0; // Standard container baseline scale
         gsap.to(tile.sprite.scale, {
           x: baseScale,
           y: baseScale,
@@ -1751,31 +1825,21 @@ export class GameScene {
     ];
     const particleColor = slotIndex !== -1 ? palette[slotIndex] : 0xffffff;
 
-    const count = 24; // Increased for a richer explosion
+    const count = 10; // Optimized count (from 24) to prevent CPU hitching
     for (let i = 0; i < count; i++) {
       const p = new Graphics();
       const isLeaf = Math.random() > 0.4; // 60% leaves, 40% sparks
 
       if (isLeaf) {
-        // Draw a beautiful small bamboo leaf
-        // Shadow
-        p.moveTo(1, -7);
-        p.quadraticCurveTo(4, 0, 1, 7);
-        p.quadraticCurveTo(-2, 0, 1, -7);
-        p.fill({ color: 0x000000, alpha: 0.35 });
-
-        // Body (vivid green)
-        p.moveTo(0, -8);
-        p.quadraticCurveTo(3, 0, 0, 8);
-        p.quadraticCurveTo(-3, 0, 0, -8);
+        // Draw a beautiful small bamboo leaf - simplified single fill pass (no shadow, no stroke)
+        p.moveTo(0, -6);
+        p.quadraticCurveTo(3, 0, 0, 6);
+        p.quadraticCurveTo(-3, 0, 0, -6);
         p.fill({ color: 0x2e7d32 });
-        p.stroke({ color: 0xaeed9e, width: 0.8 });
       } else {
-        // Draw a glowing firefly spark
-        p.circle(0, 0, 5);
-        p.fill({ color: particleColor, alpha: 0.25 });
-        p.circle(0, 0, 3);
-        p.fill({ color: 0xffffff, alpha: 0.95 });
+        // Draw a glowing firefly spark - simplified single circle fill pass
+        p.circle(0, 0, 3.5);
+        p.fill({ color: particleColor });
       }
 
       p.x = x;
@@ -1829,26 +1893,21 @@ export class GameScene {
     };
 
     // 1. Hạt lúa vàng mộc mạc (Rustic Golden Rice Grains)
-    // Draw 6-8 golden rice grains that shoot out radially
-    const grainCount = 6 + Math.floor(Math.random() * 3);
+    // Draw 3 golden rice grains (optimized from 6-8) - simplified fill pass (no stroke)
+    const grainCount = 3;
     for (let i = 0; i < grainCount; i++) {
       const grain = new Graphics();
 
       // Slender rice grain shape
-      grain.moveTo(-5, 0);
-      grain.quadraticCurveTo(0, -2.5, 5, 0);
-      grain.quadraticCurveTo(0, 2.5, -5, 0);
+      grain.moveTo(-4, 0);
+      grain.quadraticCurveTo(0, -2, 4, 0);
+      grain.quadraticCurveTo(0, 2, -4, 0);
 
       // Rice golden colors: amber/gold/yellow
       const grainColors = [0xffd54f, 0xffb300, 0xffc107];
       const grainColor =
         grainColors[Math.floor(Math.random() * grainColors.length)];
       grain.fill({ color: grainColor });
-
-      // Highlight line on the upper edge
-      grain.moveTo(-3, -1);
-      grain.quadraticCurveTo(0, -2, 3, -1);
-      grain.stroke({ color: 0xffffff, width: 0.8, alpha: 0.6 });
 
       grain.x = x;
       grain.y = y;
@@ -1879,15 +1938,15 @@ export class GameScene {
     }
 
     // 2. Cánh hoa / Lá quê sắc màu (Colored rural petals/leaves matching the tile color)
-    const leafCount = 5 + Math.floor(Math.random() * 3);
+    // Draw 3 leaves/petals (optimized from 5-7) - simplified fill pass (no stroke)
+    const leafCount = 3;
     for (let i = 0; i < leafCount; i++) {
       const leaf = new Graphics();
       // A simple curved leaf/petal shape
-      leaf.moveTo(0, -5);
-      leaf.quadraticCurveTo(2.5, 0, 0, 5);
-      leaf.quadraticCurveTo(-2.5, 0, 0, -5);
-      leaf.fill({ color: colorHex, alpha: 0.95 });
-      leaf.stroke({ color: 0xffffff, width: 0.8, alpha: 0.5 });
+      leaf.moveTo(0, -4);
+      leaf.quadraticCurveTo(2, 0, 0, 4);
+      leaf.quadraticCurveTo(-2, 0, 0, -4);
+      leaf.fill({ color: colorHex, alpha: 0.9 });
 
       leaf.x = x;
       leaf.y = y;
@@ -1917,14 +1976,12 @@ export class GameScene {
     }
 
     // 3. Khói sương bụi mộc mạc (Soft smoke/mist puffs that drift and expand slightly)
-    // Spawns 3 tiny drifting smoke puffs instead of scaling up a single giant concentric circle
-    const smokeCount = 3;
+    // Spawns 1 tiny smoke puff (optimized from 3) - simplified single circle pass
+    const smokeCount = 1;
     for (let i = 0; i < smokeCount; i++) {
       const smoke = new Graphics();
-      smoke.circle(0, 0, 10);
-      smoke.fill({ color: colorHex, alpha: 0.22 });
-      smoke.circle(-4, 3, 7);
-      smoke.fill({ color: 0xffffff, alpha: 0.12 });
+      smoke.circle(0, 0, 8);
+      smoke.fill({ color: colorHex, alpha: 0.18 });
 
       smoke.x = x;
       smoke.y = y;
@@ -2180,29 +2237,16 @@ export class GameScene {
     leafContainer.zIndex = 90;
     this.container.addChild(leafContainer);
 
-    const count = 54; // All 54 are green bamboo leaves for high clarity
+    const count = 24; // Optimized count (from 54) to prevent CPU lags
 
     for (let i = 0; i < count; i++) {
       const p = new Graphics();
 
-      // Bamboo leaf: Very long, vibrant green slender leaf with central vein (lá tre xanh)
-      // 1. Shadow (offset +2px x/y)
-      p.moveTo(2, -23);
-      p.quadraticCurveTo(10, -4, 2, 25);
-      p.quadraticCurveTo(-6, -4, 2, -23);
-      p.fill({ color: 0x000000, alpha: 0.35 });
-
-      // 2. Main body (Vibrant green instead of dark forest green for high contrast)
-      p.moveTo(0, -25);
-      p.quadraticCurveTo(8, -6, 0, 23);
-      p.quadraticCurveTo(-8, -6, 0, -25);
+      // Slender leaf shape - simplified single fill pass (no shadow, no strokes/veins)
+      p.moveTo(0, -18);
+      p.quadraticCurveTo(5, -4, 0, 16);
+      p.quadraticCurveTo(-5, -4, 0, -18);
       p.fill({ color: 0x2e7d32 });
-      p.stroke({ color: 0xaeed9e, width: 1.8 });
-
-      // 3. Central leaf vein (light/white green)
-      p.moveTo(0, -21);
-      p.lineTo(0, 21);
-      p.stroke({ color: 0xffffff, width: 1.5, alpha: 0.9 });
 
       p.x = x;
       p.y = y;
@@ -2265,28 +2309,15 @@ export class GameScene {
         },
       });
 
-      // Spawn 4 beautiful leaves at target flying towards the Rainbow Gem
+      // Spawn 2 beautiful leaves at target (optimized from 4) - simplified single fill pass
       const targetColorHex = colors[idx % colors.length];
-      for (let j = 0; j < 4; j++) {
+      for (let j = 0; j < 2; j++) {
         const p = new Graphics();
 
-        // 1. Shadow
-        p.moveTo(1, -9);
-        p.quadraticCurveTo(3, -2, 1, 9);
-        p.quadraticCurveTo(-2, -2, 1, -9);
-        p.fill({ color: 0x000000, alpha: 0.35 });
-
-        // 2. Leaf Body (slender leaf shape)
-        p.moveTo(0, -10);
-        p.quadraticCurveTo(4, -2, 0, 10);
-        p.quadraticCurveTo(-4, -2, 0, -10);
-        p.fill({ color: targetColorHex });
-        p.stroke({ color: 0xffffff, width: 0.8, alpha: 0.6 });
-
-        // 3. Central vein
         p.moveTo(0, -8);
-        p.lineTo(0, 8);
-        p.stroke({ color: 0xffffff, width: 0.8, alpha: 0.8 });
+        p.quadraticCurveTo(3.5, 0, 0, 8);
+        p.quadraticCurveTo(-3.5, 0, 0, -8);
+        p.fill({ color: targetColorHex });
 
         p.x = target.x + (Math.random() - 0.5) * 20;
         p.y = target.y + (Math.random() - 0.5) * 20;
@@ -2367,26 +2398,15 @@ export class GameScene {
       },
     });
 
-    // Spawn 80 green bamboo leaves blowing along the lines
-    const count = 80;
+    // Spawn 36 green bamboo leaves blowing along the lines (optimized from 80)
+    const count = 36;
     for (let i = 0; i < count; i++) {
       const p = new Graphics();
-      // Shadow
-      p.moveTo(2, -23);
-      p.quadraticCurveTo(10, -4, 2, 25);
-      p.quadraticCurveTo(-6, -4, 2, -23);
-      p.fill({ color: 0x000000, alpha: 0.35 });
-
-      // Body
-      p.moveTo(0, -25);
-      p.quadraticCurveTo(8, -6, 0, 23);
-      p.quadraticCurveTo(-8, -6, 0, -25);
+      // Slender leaf shape - simplified single fill pass (no shadow, no strokes/veins)
+      p.moveTo(0, -18);
+      p.quadraticCurveTo(6, -4, 0, 16);
+      p.quadraticCurveTo(-6, -4, 0, -18);
       p.fill({ color: 0x2e7d32 });
-      p.stroke({ color: 0xaeed9e, width: 1.8 });
-
-      p.moveTo(0, -21);
-      p.lineTo(0, 21);
-      p.stroke({ color: 0xffffff, width: 1.5, alpha: 0.9 });
 
       p.x = x;
       p.y = y;
@@ -2458,17 +2478,15 @@ export class GameScene {
       },
     });
 
-    // Spawn 100 colorful firefly sparks shooting out in all directions
+    // Spawn 48 colorful firefly sparks shooting out in all directions (optimized from 100) - simplified single fill pass
     const colors = [0xff1744, 0xff9100, 0xffea00, 0x00e676, 0x2979ff, 0xd500f9];
-    const count = 100;
+    const count = 48;
     for (let i = 0; i < count; i++) {
       const p = new Graphics();
       const color = colors[i % colors.length];
 
-      p.circle(0, 0, 7);
-      p.fill({ color: color, alpha: 0.3 });
       p.circle(0, 0, 4);
-      p.fill({ color: 0xffffff, alpha: 0.95 });
+      p.fill({ color: color });
 
       p.x = x;
       p.y = y;
@@ -2807,16 +2825,42 @@ export class GameScene {
       ease: "none",
     });
 
-    // Premium modal background (Themed in Vietnamese style!)
-    const modalBg = new Graphics();
-    modalBg.roundRect(-240, -225, 480, 450, 24);
-    modalBg.fill({ color: 0x120103, alpha: 0.95 }); // Deep maroon/black lacquer background
-    modalBg.stroke({ color: rank ? 0xffea00 : 0xd4af37, width: 4.5 });
-    this.gameOverModal.addChild(modalBg);
+    const cardW = 480;
+    const cardH = 480;
+
+    // 1. Soft Card Shadow
+    const cardShadow = new Graphics()
+      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 24)
+      .fill({ color: 0x000000, alpha: 0.25 });
+    this.gameOverModal.addChild(cardShadow);
+
+    // 2. Thick 3D Cyan-Blue Border
+    const borderBg = new Graphics()
+      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24)
+      .fill({ color: 0x004466 }) // Shadow Base
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
+      .fill({
+        fill: new FillGradient({
+          start: { x: 0, y: -cardH / 2 },
+          end: { x: 0, y: cardH / 2 },
+          colorStops: [
+            { offset: 0, color: 0x33ccff },
+            { offset: 1, color: 0x0088cc }
+          ]
+        })
+      })
+      .stroke({ color: 0xffea00, width: 2.5 }); // Gold inner border
+    this.gameOverModal.addChild(borderBg);
+
+    // 3. Bright Cream Card Face
+    const cardFace = new Graphics()
+      .roundRect(-cardW / 2 + 8, -cardH / 2 + 8, cardW - 16, cardH - 16, 18)
+      .fill({ color: 0xfbfaf5 });
+    this.gameOverModal.addChild(cardFace);
 
     // 1. Glowing neon & floating title
     const titleContainer = new Container();
-    titleContainer.position.set(0, -170);
+    titleContainer.position.set(0, -185);
     this.gameOverModal.addChild(titleContainer);
 
     const titleGrad = new FillGradient({
@@ -2830,7 +2874,7 @@ export class GameScene {
     const glowText = new Text({
       text: "TRÒ CHƠI KẾT THÚC",
       style: {
-        fontFamily: "Outfit, sans-serif",
+        fontFamily: "Arial Black, Impact, sans-serif",
         fontSize: 34,
         fill: 0xffea00,
         fontWeight: "900",
@@ -2847,7 +2891,7 @@ export class GameScene {
     const victoryText = new Text({
       text: "TRÒ CHƠI KẾT THÚC",
       style: {
-        fontFamily: "Outfit, sans-serif",
+        fontFamily: "Arial Black, Impact, sans-serif",
         fontSize: 34,
         fill: titleGrad,
         fontWeight: "900",
@@ -2877,7 +2921,8 @@ export class GameScene {
 
     // 2. Central Vietnamese Emblem Badge (rotating trống đồng and detailed chim lạc birds!)
     const badgeContainer = new Container();
-    badgeContainer.position.set(0, -55);
+    badgeContainer.position.set(0, -68);
+    badgeContainer.scale.set(1.45);
     this.gameOverModal.addChild(badgeContainer);
 
     const lacBirdCtx = new GraphicsContext()
@@ -2918,22 +2963,30 @@ export class GameScene {
       .moveTo(-8, -12)
       .lineTo(-5, -20)
       .moveTo(-12, -8)
-      .lineTo(-9, -14)
-      .stroke({ width: 1.2, color: 0xd4af37 })
+      .lineTo(-9, -15)
+      .moveTo(-16, -4)
+      .lineTo(-13, -10)
 
-      .moveTo(-24, 5)
-      .bezierCurveTo(-30, 16, -36, 26, -42, 30)
-      .quadraticCurveTo(-32, 18, -27, 10)
-      .quadraticCurveTo(-29, 12, -24, 5)
+      // --- Plumed Crest ---
+      .moveTo(8, -8)
+      .bezierCurveTo(12, -16, 25, -20, 38, -22)
+      .bezierCurveTo(24, -14, 18, -8, 10, -7)
       .closePath()
-      .fill({ color: 0xd4af37, alpha: 0.3 })
-      .stroke({ width: 1.2, color: 0xd4af37 })
+      .fill({ color: 0xd4af37, alpha: 0.35 })
+      .stroke({ width: 1, color: 0xd4af37 })
 
-      .moveTo(-28, 12)
-      .lineTo(-34, 21)
-      .moveTo(-26, 9)
-      .lineTo(-31, 16)
-      .stroke({ width: 1.0, color: 0xd4af37 })
+      // --- Tail Feathers ---
+      .moveTo(-20, -14)
+      .bezierCurveTo(-38, -18, -55, -15, -72, -10)
+      .bezierCurveTo(-52, -8, -35, -10, -20, -12)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.35 })
+      .stroke({ width: 1, color: 0xd4af37 })
+
+      .moveTo(-32, -11)
+      .lineTo(-52, -14)
+      .moveTo(-42, -10)
+      .lineTo(-62, -12)
 
       // --- Internal Dong Son Carving Details ---
       .moveTo(11, -3.2)
@@ -2965,7 +3018,7 @@ export class GameScene {
 
     const leftBird = new Graphics(lacBirdCtx);
     leftBird.position.set(-82, -5);
-    leftBird.scale.set(-1.1, 1.1); // Mirror left
+    leftBird.scale.set(-1.1, 1.1); // flip horizontally
     badgeContainer.addChild(leftBird);
 
     const rightBird = new Graphics(lacBirdCtx);
@@ -3009,20 +3062,23 @@ export class GameScene {
     // Record Ribbon (relocated down)
     if (rank) {
       const ribbon = new Graphics()
-        .roundRect(-55, 30, 110, 18, 4)
+        .roundRect(-60, 30, 120, 20, 5)
         .fill({ color: 0xd32f2f })
-        .stroke({ width: 1, color: 0xffea00 });
+        .stroke({ width: 1.2, color: 0xffea00 });
       const ribbonText = new Text({
         text: "KỶ LỤC MỚI!",
         style: {
-          fontFamily: "Outfit, sans-serif",
-          fontSize: 8.5,
+          fontFamily: "Arial Black, Impact, sans-serif",
+          fontSize: 10,
           fill: "#ffffff",
           fontWeight: "bold",
+          stroke: { color: 0x000000, width: 2.5, join: 'round' },
+          dropShadow: { color: 0x000000, blur: 1, distance: 1, alpha: 0.4 },
+          padding: 8,
         },
       });
       ribbonText.anchor.set(0.5);
-      ribbonText.position.set(0, 39);
+      ribbonText.position.set(0, 40);
       badgeContainer.addChild(ribbon, ribbonText);
     }
 
@@ -3030,34 +3086,47 @@ export class GameScene {
     const scoreLabel = new Text({
       text: `ĐIỂM SỐ: ${this.score}`,
       style: {
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 30,
+        fontFamily: "Arial Black, Impact, sans-serif",
+        fontSize: 26,
         fontWeight: "bold",
-        fill: "#ffffff",
+        fill: "#241d4f",
+        stroke: { color: 0xffffff, width: 3.5, join: 'round' },
       },
     });
     scoreLabel.anchor.set(0.5);
-    scoreLabel.y = 25;
+    scoreLabel.y = 35;
     this.gameOverModal.addChild(scoreLabel);
 
     if (rank) {
-      const rankLabel = new Text({
-        text: `🏆 KỶ LỤC MỚI! HẠNG #${rank} 🏆`,
+      const rankContainer = new Container();
+      rankContainer.y = 85;
+      this.gameOverModal.addChild(rankContainer);
+
+      const trophyL = createVectorIcon("🏆", 24);
+      rankContainer.addChild(trophyL);
+
+      const rankText = new Text({
+        text: ` KỶ LỤC MỚI! HẠNG #${rank} `,
         style: {
-          fontFamily: "Outfit, sans-serif",
+          fontFamily: "Arial Black, Impact, sans-serif",
           fontSize: 20,
           fontWeight: "bold",
-          fill: "#ffdd57",
-          dropShadow: { color: "#000000", blur: 4, distance: 2 },
+          fill: "#e91e63",
+          stroke: { color: 0xffffff, width: 3.5, join: 'round' },
         },
       });
-      rankLabel.anchor.set(0.5);
-      rankLabel.y = 65;
-      this.gameOverModal.addChild(rankLabel);
+      rankText.anchor.set(0.5);
+      rankText.position.set(20, 0);
+      rankContainer.addChild(rankText);
 
-      // Subtle scale pulsing on rank text
-      rankLabel.scale.set(1.0);
-      gsap.to(rankLabel.scale, {
+      // Center the elements in rankContainer
+      const gap = 8;
+      const totalW = trophyL.width + gap + rankText.width;
+      trophyL.x = -totalW / 2 + trophyL.width / 2;
+      rankText.x = totalW / 2 - rankText.width / 2;
+
+      rankContainer.scale.set(1.0);
+      gsap.to(rankContainer.scale, {
         x: 1.06,
         y: 1.06,
         duration: 0.6,
@@ -3069,23 +3138,26 @@ export class GameScene {
       const normalLabel = new Text({
         text: "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!",
         style: {
-          fontFamily: "Outfit, sans-serif",
-          fontSize: 15,
-          fill: "#aaaaaa",
+          fontFamily: "Arial Black, Arial, sans-serif",
+          fontSize: 14,
+          fill: "#7c73a1",
+          stroke: { color: 0xffffff, width: 2.5, join: 'round' },
         },
       });
       normalLabel.anchor.set(0.5);
-      normalLabel.y = 65;
+      normalLabel.y = 85;
       this.gameOverModal.addChild(normalLabel);
     }
 
-    // 4. Action Buttons (Shifted down slightly)
-    this.createModalButton(
-      this.gameOverModal,
-      this.hasContinued ? "⏱️ ĐÃ DÙNG" : "📺 HỒI SINH (+5 Lượt)",
-      -110,
-      115,
-      this.hasContinued ? 0x555555 : 0xffaa00,
+    // 4. Action Buttons (Circular Icon style in a single row)
+    const btnY = 165;
+    const btnRadius = 32;
+
+    // Revive button (heart icon)
+    const reviveBtn = this.createCircularButton(
+      "heart",
+      -135,
+      btnY,
       async () => {
         if (this.hasContinued) return;
         const success = await AdManager.showRewardedVideo();
@@ -3111,39 +3183,41 @@ export class GameScene {
           });
         }
       },
-      this.hasContinued ? 0x888888 : 0x3d1c02,
-      200,
-    );
-
-    // Double Reward button
-    let hasDoubled = false;
-    this.createModalButton(
       this.gameOverModal,
-      "📺 X2 ĐIỂM",
-      110,
-      115,
-      0xffea00,
+      btnRadius
+    );
+    if (this.hasContinued) {
+      reviveBtn.alpha = 0.5;
+      reviveBtn.eventMode = "none";
+    }
+
+    // Double Reward button (star x2 icon)
+    let hasDoubled = false;
+    const doubleBtn = this.createCircularButton(
+      "star",
+      -45,
+      btnY,
       async () => {
         if (hasDoubled) return;
         const success = await AdManager.showRewardedVideo();
         if (success) {
           hasDoubled = true;
+          doubleBtn.alpha = 0.5;
+          doubleBtn.eventMode = "none";
           this.score = this.score * 2;
           scoreLabel.text = `ĐIỂM SỐ: ${this.score}`;
           await gameAlert("🎉 Điểm số của bạn đã được x2!");
         }
       },
-      0x3d1c02,
-      200,
+      this.gameOverModal,
+      btnRadius
     );
 
-    // PLAY AGAIN Button
-    this.createModalButton(
-      this.gameOverModal,
-      "🔄 CHƠI LẠI",
-      -110,
-      180,
-      0x4caf50,
+    // PLAY AGAIN Button (replay arrow icon)
+    this.createCircularButton(
+      "🔄",
+      45,
+      btnY,
       async () => {
         if (this.gameOverIntervalId) {
           clearInterval(this.gameOverIntervalId);
@@ -3156,17 +3230,15 @@ export class GameScene {
         }
         await sceneManager.switchTo(GameScene);
       },
-      0xffffff,
-      200,
+      this.gameOverModal,
+      btnRadius
     );
 
-    // MAIN MENU Button
-    this.createModalButton(
-      this.gameOverModal,
-      "🏠 TRANG CHỦ",
-      110,
-      180,
-      0xe0e0e0,
+    // MAIN MENU Button (home icon)
+    this.createCircularButton(
+      "🏠",
+      135,
+      btnY,
       async () => {
         if (this.gameOverIntervalId) {
           clearInterval(this.gameOverIntervalId);
@@ -3175,8 +3247,8 @@ export class GameScene {
         const { MainMenuScene } = await import("./MainMenuScene.js");
         await sceneManager.switchTo(MainMenuScene);
       },
-      0x1c2833,
-      200,
+      this.gameOverModal,
+      btnRadius
     );
 
     // 5. Spawn Confetti Fireworks Loop
@@ -3267,18 +3339,19 @@ export class GameScene {
 
     const modalBg = new Graphics();
     modalBg.roundRect(-220, -70, 440, 140, 16);
-    modalBg.fill({ color: 0x121925, alpha: 0.95 });
-    modalBg.stroke({ color: 0xffaa00, width: 3, alpha: 0.85 });
+    modalBg.fill({ color: 0x161233, alpha: 0.96 });
+    modalBg.stroke({ color: 0xffea00, width: 5 });
     this.deadlockModal.addChild(modalBg);
 
     const text = new Text({
       text: "HẾT NƯỚC ĐI!\nĐANG TRÁO BÀN NGỌC...",
       style: {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: "Arial Black, Impact, sans-serif",
         fontSize: 24,
         fontWeight: "bold",
-        fill: "#ffaa00",
+        fill: "#ffea00",
         align: "center",
+        stroke: { color: 0x000000, width: 4.5, join: 'round' },
         dropShadow: { color: "#000000", blur: 4, distance: 2 },
       },
     });
@@ -3353,98 +3426,41 @@ export class GameScene {
     btn.addChild(content);
 
     const shadow = new Graphics();
-    const bg3d = new Graphics();
     const bg = new Graphics();
     const highlight = new Graphics();
 
     content.addChild(shadow);
-    content.addChild(bg3d);
     content.addChild(bg);
     content.addChild(highlight);
 
     const width = btnWidth;
     const hh = btnHeight / 2;
+    const isSmall = width < 150;
+    const radius = hh; // Capsule corner radius
+    const shadowOffset = isSmall ? 4 : 5;
 
-    let btnColorStops = [
-      { offset: 0, color: 0xff3b4e },
-      { offset: 0.4, color: 0xd32f2f },
-      { offset: 1, color: 0x6e0912 },
-    ];
-    let extrusionColor = 0x4a000a;
-    let borderExtrusionColor = 0x240003;
+    const colorStyle = getColorStyle(color, label);
+    const theme = palettes[colorStyle] || palettes.blue;
 
-    if (color === 0x4caf50) { // Green
-      btnColorStops = [
-        { offset: 0, color: 0x2ecc71 },
-        { offset: 0.4, color: 0x27ae60 },
-        { offset: 1, color: 0x1e824c },
-      ];
-      extrusionColor = 0x145a32;
-      borderExtrusionColor = 0x0b301a;
-    } else if (color === 0xffaa00 || color === 0xffea00) { // Gold/Yellow
-      btnColorStops = [
-        { offset: 0, color: 0xffeb3b },
-        { offset: 0.4, color: 0xfbc02d },
-        { offset: 1, color: 0xf57f17 },
-      ];
-      extrusionColor = 0x7e5109;
-      borderExtrusionColor = 0x422a05;
-    } else if (color === 0xe0e0e0 || color === 0xffffff) { // Grey/White
-      btnColorStops = [
-        { offset: 0, color: 0xfdfefe },
-        { offset: 0.4, color: 0xbdc3c7 },
-        { offset: 1, color: 0x7f8c8d },
-      ];
-      extrusionColor = 0x424949;
-      borderExtrusionColor = 0x212424;
-    } else if (color === 0x1b0103 || color === 0x121a2e || color === 0x555555 || color === 0x888888) { // Dark/Grey
-      btnColorStops = [
-        { offset: 0, color: 0x484848 },
-        { offset: 0.4, color: 0x2c2c2c },
-        { offset: 1, color: 0x151515 },
-      ];
-      extrusionColor = 0x1a1a1a;
-      borderExtrusionColor = 0x0d0d0d;
-    }
+    // 1. 3D Base Shadow
+    shadow.roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius).fill({ color: theme.shadow });
 
+    // 2. Main Face Background (gradient)
     const btnGrad = new FillGradient({
       start: { x: 0, y: -hh },
       end: { x: 0, y: hh },
-      colorStops: btnColorStops,
-    });
-
-    const goldGrad = new FillGradient({
-      start: { x: -width / 2, y: -hh },
-      end: { x: width / 2, y: hh },
       colorStops: [
-        { offset: 0, color: 0xffea00 },
-        { offset: 0.5, color: 0xb89326 },
-        { offset: 1, color: 0xffea00 },
-      ],
+        { offset: 0, color: theme.top },
+        { offset: 1, color: theme.bottom }
+      ]
     });
-
-    const isSmall = width < 150;
-    const radius = isSmall ? 10 : 14;
-    const offset3d = isSmall ? 3 : 4;
-    const shadowOffset = isSmall ? 4 : 6;
-
-    // 1. Soft 3D drop shadow
-    shadow.roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius).fill({ color: 0x000000, alpha: 0.45 });
-
-    // 2. 3D Extrusion base
-    bg3d.roundRect(-width / 2, -hh + offset3d, width, btnHeight, radius)
-      .fill({ color: extrusionColor })
-      .stroke({ width: 1, color: borderExtrusionColor });
-
-    // 3. Main face
     bg.roundRect(-width / 2, -hh, width, btnHeight, radius)
-      .fill(btnGrad)
-      .stroke({ width: 2, fill: goldGrad });
+      .fill({ fill: btnGrad })
+      .stroke({ width: 2.5, color: theme.stroke });
 
-    // 4. Glossy highlight sheen on top
-    const sheenH = isSmall ? 11 : 16;
-    highlight.roundRect(-width / 2 + 4, -hh + 2, width - 8, sheenH, isSmall ? 8 : 10)
-      .fill({ color: 0xffffff, alpha: 0.18 });
+    // 3. Glossy highlight sheen on top (ellipse highlight)
+    highlight.ellipse(0, -hh / 2, width * 0.42, btnHeight * 0.2)
+      .fill({ color: 0xffffff, alpha: 0.25 });
 
     // Add Label / Icon
     let textObj = null;
@@ -3457,25 +3473,18 @@ export class GameScene {
       const emojiSize = isSmall ? 16 : 26;
       const textSize = isSmall ? 11 : 14;
 
-      const emojiText = new Text({
-        text: emoji,
-        style: new TextStyle({
-          fontFamily: "Outfit, Arial, sans-serif",
-          fontSize: emojiSize,
-          fill: textColor,
-        }),
-      });
-      emojiText.anchor.set(0.5);
-      content.addChild(emojiText);
+      const emojiIcon = createVectorIcon(emoji, emojiSize);
+      content.addChild(emojiIcon);
 
       const text = new Text({
-        text: textStr,
+        text: textStr.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Outfit, Arial, sans-serif",
+          fontFamily: "Arial Black, Impact, sans-serif",
           fontSize: textSize,
           fontWeight: "bold",
           fill: textColor,
-          dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+          stroke: { color: 0x000000, width: 4.5, join: 'round' },
+          dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
         }),
       });
       text.anchor.set(0.5);
@@ -3483,19 +3492,20 @@ export class GameScene {
       textObj = text;
 
       const gap = isSmall ? 6 : 12;
-      const totalW = emojiText.width + gap + text.width;
-      emojiText.x = -totalW / 2 + emojiText.width / 2;
+      const totalW = emojiIcon.width + gap + text.width;
+      emojiIcon.x = -totalW / 2 + emojiIcon.width / 2;
       text.x = totalW / 2 - text.width / 2;
     } else {
       const textSize = isSmall ? 11 : (label.length > 2 ? 15 : 22);
       const text = new Text({
-        text: label,
+        text: label.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Outfit, Arial, sans-serif",
+          fontFamily: "Arial Black, Impact, sans-serif",
           fontSize: textSize,
           fontWeight: "bold",
           fill: textColor,
-          dropShadow: { color: 0x000000, blur: 2, distance: 1.5 }
+          stroke: { color: 0x000000, width: 4.5, join: 'round' },
+          dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
         }),
       });
       text.anchor.set(0.5);
@@ -3505,18 +3515,15 @@ export class GameScene {
 
     // Interactivity
     btn.on("pointerover", () => {
-      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-      bg.stroke({ width: 2.5, color: 0xffea00 });
-      if (textObj) textObj.style.fill = "#ffea00";
+      gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
       soundManager.playClick();
     });
     btn.on("pointerout", () => {
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-      bg.stroke({ width: 2, fill: goldGrad });
-      if (textObj) textObj.style.fill = "#ffffff";
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
+      gsap.to(content, { y: 0, duration: 0.1 });
     });
     btn.on("pointerdown", () => {
-      gsap.to(content, { y: 2, duration: 0.05 });
+      gsap.to(content, { y: shadowOffset - 1, duration: 0.05 });
     });
     btn.on("pointerup", () => {
       gsap.to(content, { y: 0, duration: 0.1 });
@@ -3527,95 +3534,76 @@ export class GameScene {
     });
   }
 
-  createCircularButton(emojiText, x, y, onClick) {
-    const btn = new Container();
-    btn.x = x;
-    btn.y = y;
+  createCircularButton(emojiText, x, y, onClick, parent = null, customRadius = 26) {
+    const tex = getIconTexture(emojiText);
+    if (tex) {
+      const btn = new Container();
+      btn.x = x;
+      btn.y = y;
+      if (parent) {
+        parent.addChild(btn);
+      }
+ 
+      btn.eventMode = "static";
+      btn.cursor = "pointer";
+ 
+      const content = new Container();
+      btn.addChild(content);
+ 
+      const sprite = new Sprite(tex);
+      sprite.anchor.set(0.5);
+      sprite.width = customRadius * 2;
+      sprite.height = customRadius * 2;
+      const drawOverlays = (r) => {};
+      content.addChild(sprite);
 
-    btn.eventMode = "static";
-    btn.cursor = "pointer";
 
-    const content = new Container();
-    btn.addChild(content);
 
-    const shadow = new Graphics();
-    const bg = new Graphics();
-    const highlight = new Graphics();
-
-    content.addChild(shadow);
-    content.addChild(bg);
-    content.addChild(highlight);
-
-    const r = 26;
-
-    // 1. Soft 3D drop shadow
-    shadow.circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
-
-    // 2. 3D Extrusion base
-    bg.circle(0, 3, r).fill({ color: 0x4a000a }).stroke({ width: 1, color: 0x240003 });
-
-    // 3. Main button body - premium smooth gradient
-    const btnGrad = new FillGradient({
-      start: { x: 0, y: -r },
-      end: { x: 0, y: r },
-      colorStops: [
-        { offset: 0, color: 0xff3b4e },
-        { offset: 0.4, color: 0xd32f2f },
-        { offset: 1, color: 0x6e0912 },
-      ],
-    });
-
-    const goldGrad = new FillGradient({
-      start: { x: -r, y: -r },
-      end: { x: r, y: r },
-      colorStops: [
-        { offset: 0, color: 0xffea00 },
-        { offset: 0.5, color: 0xb89326 },
-        { offset: 1, color: 0xffea00 },
-      ],
-    });
-
-    bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
-
-    // 4. Glossy highlight sheen
-    highlight.ellipse(0, -r * 0.4, r * 0.7, r * 0.35).fill({ color: 0xffffff, alpha: 0.18 });
-
-    const label = new Text({
-      text: emojiText,
-      style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 22,
-        fill: "#ffffff",
-        dropShadow: { color: 0x000000, blur: 2, distance: 1.5 },
-      }),
-    });
-    label.anchor.set(0.5);
-    content.addChild(label);
-    btn.label = label;
-
-    btn.on("pointerover", () => {
-      gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-      soundManager.playClick();
-    });
-
-    btn.on("pointerout", () => {
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-    });
-
-    btn.on("pointerdown", () => {
-      gsap.to(content, { y: 2, duration: 0.05 });
-    });
-
-    btn.on("pointerup", () => {
-      gsap.to(content, { y: 0, duration: 0.1 });
-      onClick();
-    });
-
-    btn.on("pointerupoutside", () => {
-      gsap.to(content, { y: 0, duration: 0.1 });
-    });
-
-    return btn;
+      drawOverlays(customRadius);
+ 
+      btn.r = customRadius;
+      btn.updateStyle = (r) => {
+        btn.r = r;
+        sprite.width = r * 2;
+        sprite.height = r * 2;
+        drawOverlays(r);
+      };
+ 
+      btn.on("pointerover", () => {
+        gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.12 });
+        soundManager.playClick();
+      });
+ 
+      btn.on("pointerout", () => {
+        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
+        gsap.to(content, { y: 0, duration: 0.1 });
+      });
+ 
+      btn.on("pointerdown", () => {
+        gsap.to(content, { y: 4, duration: 0.05 });
+      });
+ 
+      btn.on("pointerup", () => {
+        gsap.to(content, { y: 0, duration: 0.1 });
+        onClick();
+      });
+ 
+      btn.on("pointerupoutside", () => {
+        gsap.to(content, { y: 0, duration: 0.1 });
+      });
+ 
+      // Entrance animation
+      btn.alpha = 0;
+      gsap.to(btn, {
+        alpha: 1,
+        duration: 0.5,
+        delay: 0.4,
+        ease: "power2.out",
+      });
+ 
+      return btn;
+    }
+    return null;
   }
 
   resize() {
@@ -3704,16 +3692,50 @@ export class GameScene {
         this.movesPanel.y = topY;
       }
 
-      // Vẽ lại khung cho 2 bảng
-      this.scorePanel.clear();
-      this.scorePanel.roundRect(0, 0, panelWidth, panelHeight, 12);
-      this.scorePanel.fill({ color: 0x1a233a, alpha: 0.85 });
-      this.scorePanel.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.5 });
+      // Vẽ lại khung cho 2 bảng (Dạng hộp 3D cartoon bubble!)
+      const shadowOffset = 5;
 
-      this.movesPanel.clear();
-      this.movesPanel.roundRect(0, 0, panelWidth, panelHeight, 12);
-      this.movesPanel.fill({ color: 0x1a233a, alpha: 0.85 });
-      this.movesPanel.stroke({ color: 0x4fc3f7, width: 2, alpha: 0.5 });
+      this.scorePanel.clear()
+        // 3D Shadow Base
+        .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
+        .fill({ color: 0x004466 })
+        // Main Face Background (gradient)
+        .roundRect(0, 0, panelWidth, panelHeight, 12)
+        .fill({
+          fill: new FillGradient({
+            start: { x: 0, y: 0 },
+            end: { x: 0, y: panelHeight },
+            colorStops: [
+              { offset: 0, color: 0x33CCFF },
+              { offset: 1, color: 0x0088CC }
+            ]
+          })
+        })
+        .stroke({ width: 2.5, color: 0xE6F9FF })
+        // Highlight Sheen
+        .ellipse(panelWidth / 2, panelHeight * 0.22, panelWidth * 0.42, panelHeight * 0.15)
+        .fill({ color: 0xffffff, alpha: 0.25 });
+
+      this.movesPanel.clear()
+        // 3D Shadow Base
+        .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
+        .fill({ color: 0x800040 })
+        // Main Face Background (gradient)
+        .roundRect(0, 0, panelWidth, panelHeight, 12)
+        .fill({
+          fill: new FillGradient({
+            start: { x: 0, y: 0 },
+            end: { x: 0, y: panelHeight },
+            colorStops: [
+              { offset: 0, color: 0xFF66B2 },
+              { offset: 1, color: 0xCC0066 }
+            ]
+          })
+        })
+        .stroke({ width: 2.5, color: 0xFFE6F2 })
+        // Highlight Sheen
+        .ellipse(panelWidth / 2, panelHeight * 0.22, panelWidth * 0.42, panelHeight * 0.15)
+        .fill({ color: 0xffffff, alpha: 0.25 });
 
       // Định vị lại chữ vào giữa bảng tương ứng
       this.scoreText.style.fontSize = fontSize;
@@ -3751,23 +3773,46 @@ export class GameScene {
     if (this.tutorialText && !this.tutorialText.destroyed) {
       const isMobilePortrait = width < 600 || height > width;
       if (isMobilePortrait) {
+        // Enforce word wrapping on mobile to prevent overflow
+        this.tutorialText.style.wordWrap = true;
+        this.tutorialText.style.wordWrapWidth = Math.min(width - 80, 320);
+        this.tutorialText.style.align = "center";
+
         this.tutorialText.style.fontSize = Math.max(
-          10,
+          11,
           Math.min(13, 13 * (width / 450)),
         );
         this.tutorialText.x = width / 2;
         // Position it in the bottom space below the board
         let boardBottom = height - 100;
+        let scale = 1.0;
         if (this.board && this.board.container) {
+          scale = this.board.container.scale.y;
           boardBottom =
             this.board.container.y +
             this.board.rows *
               App.config.tileSize *
-              this.board.container.scale.y;
+              scale;
         }
-        this.tutorialText.y = boardBottom + (height - 35 - boardBottom) / 2;
+        // Visual bottom of the board background (includes outline padding 16px)
+        const boardBgBottom = boardBottom + 16 * scale;
+        // Settings button top boundary (center is height - 42, radius is 26)
+        const settingsBtnTop = height - 68;
+
+        // Position the tutorial text vertically centered in the safe gap
+        if (settingsBtnTop > boardBgBottom) {
+          this.tutorialText.y = boardBgBottom + (settingsBtnTop - boardBgBottom) / 2;
+        } else {
+          // Fallback if screen is extremely squished: place it slightly above settings button
+          this.tutorialText.y = settingsBtnTop - 20;
+        }
         this.tutorialText.visible = true;
       } else {
+        // Disable word wrap or set a large wrap width on PC
+        this.tutorialText.style.wordWrap = true;
+        this.tutorialText.style.wordWrapWidth = 600;
+        this.tutorialText.style.align = "center";
+
         this.tutorialText.style.fontSize = 14;
         this.tutorialText.x = width / 2;
         this.tutorialText.y = 110;
@@ -3862,36 +3907,74 @@ export class GameScene {
     popup.addChild(this.settingsModal);
 
     const cardW = 340;
-    const cardH = 310; // larger height for ingame controls
+    const cardH = 300;
 
-    // Shadow
+    // 1. Soft Card Shadow
     const cardShadow = new Graphics()
-      .roundRect(-cardW / 2 + 5, -cardH / 2 + 5, cardW, cardH, 16)
-      .fill({ color: 0x000000, alpha: 0.35 });
+      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 20)
+      .fill({ color: 0x000000, alpha: 0.25 });
     this.settingsModal.addChild(cardShadow);
 
-    // Card Bg
-    const cardBg = new Graphics()
-      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 16)
-      .fill({ color: 0x150103, alpha: 0.92 })
-      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.85 });
-    this.settingsModal.addChild(cardBg);
+    // 2. Thick 3D Purple-Violet Border
+    const borderBg = new Graphics()
+      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 20)
+      .fill({ color: 0x330066 }) // Shadow Base
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
+      .fill({
+        fill: new FillGradient({
+          start: { x: 0, y: -cardH / 2 },
+          end: { x: 0, y: cardH / 2 },
+          colorStops: [
+            { offset: 0, color: 0xb266ff },
+            { offset: 1, color: 0x5900b3 }
+          ]
+        })
+      })
+      .stroke({ color: 0xffea00, width: 2.5 }); // Gold inner border
+    this.settingsModal.addChild(borderBg);
 
-    // Title
+    // 3. Bright Cream Card Face
+    const cardFace = new Graphics()
+      .roundRect(-cardW / 2 + 8, -cardH / 2 + 8, cardW - 16, cardH - 16, 14)
+      .fill({ color: 0xfbfaf5 });
+    this.settingsModal.addChild(cardFace);
+
+    // 4. Floating 3D Title Ribbon (Cyan-Blue)
+    const ribbonW = 210;
+    const ribbonH = 42;
+    const ribbonY = -cardH / 2;
+    const ribbon = new Graphics()
+      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2 + 4, ribbonW, ribbonH, 10)
+      .fill({ color: 0x004466 }) // Ribbon shadow
+      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2, ribbonW, ribbonH, 10)
+      .fill({
+        fill: new FillGradient({
+          start: { x: 0, y: ribbonY - ribbonH / 2 },
+          end: { x: 0, y: ribbonY + ribbonH / 2 },
+          colorStops: [
+            { offset: 0, color: 0x33ccff },
+            { offset: 1, color: 0x0088cc }
+          ]
+        })
+      })
+      .stroke({ color: 0xe6f9ff, width: 2 });
+    this.settingsModal.addChild(ribbon);
+
+    // Title text inside ribbon
     const titleText = new Text({
       text: "CÀI ĐẶT GAME",
       style: new TextStyle({
-        fontFamily: "Outfit, Arial, sans-serif",
-        fontSize: 20,
-        fill: 0xffea00,
+        fontFamily: "Arial Black, Impact, sans-serif",
+        fontSize: 18,
+        fill: 0xffffff,
         fontWeight: "bold",
-        letterSpacing: 1.8,
-        align: "center",
-        dropShadow: { color: 0x000000, blur: 4, distance: 2 },
+        letterSpacing: 1.5,
+        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        dropShadow: { color: 0x000000, blur: 2, distance: 1.5, alpha: 0.4 }
       }),
     });
     titleText.anchor.set(0.5);
-    titleText.position.set(0, -cardH / 2 + 32);
+    titleText.position.set(0, ribbonY);
     this.settingsModal.addChild(titleText);
 
     // Reusable Toggle Row Builder
@@ -3899,62 +3982,58 @@ export class GameScene {
       const row = new Container();
       row.position.set(0, yPos);
 
-      // Left label (enlarged)
+      // Row background card panel to group label and toggle visually
+      // Enlarged height to 56 to fit the 50-height toggle switch
+      const rowBg = new Graphics()
+        .roundRect(-135, -28, 270, 56, 10)
+        .fill({ color: 0xefede0 }) // Warm creamy beige
+        .stroke({ color: 0xdfdac0, width: 1.5 });
+      row.addChild(rowBg);
+
+      // Left label (enlarged cartoon text)
       const label = new Text({
-        text: labelText,
+        text: labelText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Outfit, Arial, sans-serif",
+          fontFamily: "Arial Black, Impact, sans-serif",
           fontSize: 18,
-          fill: "#ffffff",
+          fill: "#360207",
           fontWeight: "bold",
           letterSpacing: 0.8,
+          stroke: { color: 0xffffff, width: 3.5, join: 'round' }
         }),
       });
       label.anchor.set(0, 0.5);
-      label.position.set(-110, 0);
+      label.position.set(-115, 0);
       row.addChild(label);
 
-      // Right slider track (enlarged)
-      const trackW = 60;
-      const trackH = 30;
-      const track = new Container();
+      // Right slider track (using preloaded 3D toggle texture)
+      // Enlarged to width = 100, height = 50 to make it visually matching and prominent
+      const track = new Sprite(Texture.from(initialMuteState ? "toggle_off" : "toggle_on"));
+      track.anchor.set(0.5);
+      track.width = 100;
+      track.height = 50;
       track.eventMode = "static";
       track.cursor = "pointer";
-      track.position.set(70, 0);
+      track.position.set(80, 0);
       row.addChild(track);
 
-      const trackBg = new Graphics();
-      track.addChild(trackBg);
-
-      const knob = new Graphics()
-        .circle(0, 0, 12)
-        .fill({ color: 0xffffff })
-        .stroke({ width: 1, color: 0xdddddd });
-      knob.position.set(0, 0);
-      track.addChild(knob);
-
-      const drawTrack = (isMuted) => {
-        trackBg
-          .clear()
-          .roundRect(-trackW / 2, -trackH / 2, trackW, trackH, trackH / 2)
-          .fill({ color: isMuted ? 0x4f4f4f : 0x2ecc71 })
-          .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.7 });
-      };
-
-      // Initialize
-      drawTrack(initialMuteState);
-      knob.x = initialMuteState ? -trackW / 2 + 14 : trackW / 2 - 14;
+      // Draw dotted connector line dynamically between text and switch
+      const labelWidth = label.width;
+      const startX = -115 + labelWidth + 12;
+      const endX = 80 - 50 - 12;
+      if (startX < endX) {
+        const dots = new Graphics();
+        for (let dx = startX; dx <= endX; dx += 6) {
+          dots.circle(dx, 0, 1.5);
+        }
+        dots.fill({ color: 0xc0bba0 });
+        row.addChild(dots);
+      }
 
       const handleToggle = () => {
         soundManager.playClick();
         const isMuted = onToggle();
-        drawTrack(isMuted);
-        const targetKnobX = isMuted ? -trackW / 2 + 14 : trackW / 2 - 14;
-        gsap.to(knob, {
-          x: targetKnobX,
-          duration: 0.2,
-          ease: "power2.out",
-        });
+        track.texture = Texture.from(isMuted ? "toggle_off" : "toggle_on");
       };
 
       track.on("pointertap", handleToggle);
@@ -3965,12 +4044,12 @@ export class GameScene {
       return row;
     };
 
-    // Add Music and SFX rows (higher up for ingame layout)
+    // Add Music and SFX rows (spaced out for cardH = 300)
     const musicRowY = -65;
-    const sfxRowY = -20;
+    const sfxRowY = -15;
 
     const musicRow = createToggleRow(
-      "🎵 NHẠC NÈN",
+      "NHẠC NỀN",
       musicRowY,
       !soundManager.musicEnabled,
       () => {
@@ -3979,7 +4058,7 @@ export class GameScene {
       }
     );
     const sfxRow = createToggleRow(
-      "🔊 HIỆU ỨNG",
+      "HIỆU ỨNG",
       sfxRowY,
       !soundManager.enabled,
       () => {
@@ -4008,50 +4087,53 @@ export class GameScene {
       });
     };
 
-    // Side-by-side Home & Replay buttons at y = 35
-    this.createModalButton(
-      this.settingsModal,
-      "🏡 TRANG CHỦ",
-      -65,
-      35,
-      0x1b0103,
+    // Use the 3D circular buttons side-by-side at y = 45!
+    // Enlarged to radius = 32 (diameter = 64) to match the Game Over screen
+    this.createCircularButton(
+      "🏠",
+      -80,
+      45,
       async () => {
         closePopup();
         const { MainMenuScene } = await import("./MainMenuScene.js");
         await sceneManager.switchTo(MainMenuScene);
       },
-      0xffffff,
-      120,
-      38
+      this.settingsModal,
+      32
     );
 
-    this.createModalButton(
-      this.settingsModal,
-      "🔄 CHƠI LẠI",
-      65,
-      35,
-      0x1b0103,
+    this.createCircularButton(
+      "🔄",
+      0,
+      45,
       async () => {
         closePopup();
         await sceneManager.switchTo(GameScene);
       },
-      0xffffff,
-      120,
-      38
+      this.settingsModal,
+      32
     );
 
-    // Centered Continue button at y = 95
-    this.createModalButton(
-      this.settingsModal,
-      "▶️ TIẾP TỤC",
-      0,
-      95,
-      0x5c0612,
+    this.createCircularButton(
+      "▶️",
+      80,
+      45,
       closePopup,
-      0xffffff,
-      250,
-      38
+      this.settingsModal,
+      32
     );
+
+    const versionText = new Text({
+      text: "Phiên bản: 1.0.0",
+      style: {
+        fontFamily: "Outfit, Arial, sans-serif",
+        fontSize: 11,
+        fill: "#7c73a1",
+      },
+    });
+    versionText.anchor.set(0.5);
+    versionText.position.set(0, 110);
+    this.settingsModal.addChild(versionText);
 
     // Apply responsive layout immediately to compute target scale
     this.resize();

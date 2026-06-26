@@ -319,6 +319,7 @@ export class Board {
 
     // Kiểm tra xem có phải màn hình điện thoại xoay ngang (chiều rộng > chiều cao và chiều cao < 500)
     const isMobileLandscape = canvasWidth > canvasHeight && canvasHeight < 500;
+    const isMobilePortrait = !isMobileLandscape && (canvasWidth < 600 || canvasHeight > canvasWidth);
 
     let maxBoardWidth, maxBoardHeight, topOffset;
 
@@ -328,11 +329,18 @@ export class Board {
       maxBoardWidth = canvasWidth - 360; // Dành 180px mỗi bên cho HUD
       maxBoardHeight = canvasHeight - 40; // Chỉ chừa 40px lề dọc
       topOffset = 20;
+    } else if (isMobilePortrait) {
+      // Màn hình dọc điện thoại: HUD nằm ở trên cùng
+      // Thu nhỏ lề trái/phải xuống còn 8px mỗi bên (canvasWidth - 16) để phóng to bảng chơi tối đa
+      maxBoardWidth = canvasWidth - 16;
+      // Chiều cao khả dụng an toàn là từ dưới HUD (y = 130) đến trước nút cài đặt ở dưới (y = canvasHeight - 75)
+      maxBoardHeight = canvasHeight - 205;
+      topOffset = 130;
     } else {
-      // Màn hình bình thường hoặc màn hình dọc: HUD nằm ở trên cùng
+      // Màn hình bình thường hoặc màn hình dọc PC/Laptop: HUD nằm ở trên cùng
       maxBoardWidth = canvasWidth - 24;
-      maxBoardHeight = canvasHeight - 145; // Increased board vertical space to make icons larger
-      topOffset = 115; // Adjusted top offset to center the board better and avoid overlapping top elements
+      maxBoardHeight = canvasHeight - 145;
+      topOffset = 115;
     }
 
     const scaleX = maxBoardWidth / boardWidth;
@@ -352,7 +360,21 @@ export class Board {
     this.container.x = canvasWidth / 2 - scaledWidth / 2;
 
     // Căn giữa bảng theo chiều dọc trong vùng khả dụng
-    this.container.y = topOffset + (maxBoardHeight - scaledHeight) / 2;
+    if (isMobilePortrait) {
+      // On mobile portrait, we want to center the board vertically if there's plenty of space,
+      // but shift it up if the bottom space is too tight (especially on smaller screens like 375x667).
+      // We enforce a minimum bottom safe gap of 60px between the board background bottom and settingsBtnTop.
+      const settingsBtnTop = canvasHeight - 68;
+      const boardBgPadding = 16 * scale;
+      const maxAllowedY = settingsBtnTop - 60 - boardBgPadding - scaledHeight;
+      const centeredY = topOffset + (maxBoardHeight - scaledHeight) / 2;
+
+      // We also ensure the board doesn't overlap the HUD at the top (topOffset of 125px).
+      // We make sure the container y is at least 145px (leaving a gap below HUD).
+      this.container.y = Math.max(145, Math.min(centeredY, maxAllowedY));
+    } else {
+      this.container.y = topOffset + (maxBoardHeight - scaledHeight) / 2;
+    }
   }
 
   // =========================================================================

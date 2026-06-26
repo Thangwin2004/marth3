@@ -23,16 +23,22 @@ class GameApp {
     this.config = config;
 
     this.app = new Application();
+    const container = document.getElementById("pixi-container") || document.body;
 
     await this.app.init({
-      resizeTo: window,
+      resizeTo: container,
       backgroundColor: 0x0a0a1a,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
       preference: "webgl",
     });
 
-    document.getElementById("pixi-container").appendChild(this.app.canvas);
+    if (container.id === "pixi-container") {
+      container.innerHTML = "";
+      container.appendChild(this.app.canvas);
+    } else {
+      document.body.appendChild(this.app.canvas);
+    }
 
     await this.loadAssets(config.assets);
 
