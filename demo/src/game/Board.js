@@ -338,9 +338,10 @@ export class Board {
       topOffset = 130;
     } else {
       // Màn hình bình thường hoặc màn hình dọc PC/Laptop: HUD nằm ở trên cùng
+      // Increase top offset to 135 to make room for the tutorial text
       maxBoardWidth = canvasWidth - 24;
-      maxBoardHeight = canvasHeight - 145;
-      topOffset = 115;
+      maxBoardHeight = canvasHeight - 165;
+      topOffset = 135;
     }
 
     const scaleX = maxBoardWidth / boardWidth;

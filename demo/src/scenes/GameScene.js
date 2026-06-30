@@ -3815,8 +3815,23 @@ export class GameScene {
 
         this.tutorialText.style.fontSize = 14;
         this.tutorialText.x = width / 2;
-        this.tutorialText.y = 110;
-        this.tutorialText.visible = true;
+        
+        // Calculate the top of the board visually
+        let boardTop = 115;
+        if (this.boardBg && this.board) {
+            boardTop = this.board.container.y - 16 * this.board.container.scale.x;
+        }
+        
+        const isMobileLandscape = width > height && height < 500;
+        if (isMobileLandscape) {
+            // Hide on squished mobile landscape to save space
+            this.tutorialText.visible = false;
+        } else {
+            // On PC, HUD ends at y = 85 (25 + 60). Center the text between HUD and Board.
+            const hudBottom = 85;
+            this.tutorialText.y = hudBottom + (boardTop - hudBottom) / 2;
+            this.tutorialText.visible = true;
+        }
       }
     }
 
