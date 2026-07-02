@@ -500,7 +500,7 @@ export class MainMenuScene {
     // 1. Load all unique avatars once to prevent duplicate asset loading
     const uniquePromises = ALL_AVATAR_FILES.map((file, idx) => {
       const alias = `menu_avatar_unique_${idx}`;
-      const src = `/assets/imagebldp_original/${file}`;
+      const src = `/assets/imagebldp/${file}`;
       return Assets.load({ alias, src });
     });
 
@@ -1811,11 +1811,11 @@ export class MainMenuScene {
         if (accountId === "laclac") {
           name = "Lạc Lạc (Bơ Lạc)";
           email = "laclac.bolac@gmail.com";
-          avatar = "/assets/imagebldp_original/001_avatar_laclac.png";
+          avatar = "/assets/imagebldp/001_avatar_laclac.png";
         } else if (accountId === "dauphong") {
           name = "Đậu Phộng";
           email = "dauphong.bolac@gmail.com";
-          avatar = "/assets/imagebldp_original/015_avatar_dauLan.png";
+          avatar = "/assets/imagebldp/015_avatar_dauLan.png";
         }
 
         // Set current user
