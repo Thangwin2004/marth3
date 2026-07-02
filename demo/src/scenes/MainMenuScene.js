@@ -617,7 +617,9 @@ export class MainMenuScene {
     }
 
     // 4. Play Button & Circular buttons below it (Memory Card style layout)
-    const playY = height * 0.53;
+    // Distribute dynamically to avoid overlap and fill empty space
+    const titleBottomY = this.infoText ? this.infoText.y : (this.titleContainer ? this.titleContainer.y + 115 * scale : height * 0.35);
+    const playY = Math.max(titleBottomY + 80 * scale, height * 0.55);
     const playH = Math.max(68, Math.min(84, 84 * scale));
 
     if (this.playBtn) {
@@ -626,7 +628,8 @@ export class MainMenuScene {
       this.playBtn.scale.set(scale);
     }
 
-    const circY = playY + 108 * scale;
+    // Push circY to bottom but keep safe distance from playBtn
+    const circY = Math.max(playY + 110 * scale, height * 0.8);
     const circR = Math.max(34, Math.min(42, 42 * scale));
     const circGap = 28 * scale;
 
