@@ -293,11 +293,11 @@ export class GameScene {
     this.loadingText = new Text({
       text: "ĐANG TẢI HÌNH ẢNH...",
       style: {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 22,
         fontWeight: "bold",
         fill: "#ffdd57",
-        dropShadow: { color: "#000000", blur: 4, distance: 2 },
+        
       },
     });
     this.loadingText.anchor.set(0.5);
@@ -521,12 +521,12 @@ export class GameScene {
     const floatText = new Text({
       text: textString,
       style: {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 26,
         fontWeight: "bold",
         fill: "#ffdd57",
         stroke: { color: "#000000", width: 4 },
-        dropShadow: { color: "#000000", blur: 4, distance: 2 },
+        
       },
     });
     floatText.anchor.set(0.5);
@@ -567,12 +567,12 @@ export class GameScene {
     this.scoreText = new Text({
       text: "ĐIỂM: 0",
       style: {
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
         fill: "#ffffff",
         stroke: { color: 0x000000, width: 4.5, join: 'round' },
-        dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 },
+        
         padding: 24,
       },
     });
@@ -587,12 +587,12 @@ export class GameScene {
     this.movesText = new Text({
       text: `LƯỢT ĐI: ${this.moves}`,
       style: {
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
         fill: "#ffffff",
         stroke: { color: 0x000000, width: 4.5, join: 'round' },
-        dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 },
+        
         padding: 24,
       },
     });
@@ -603,12 +603,12 @@ export class GameScene {
     this.comboText = new Text({
       text: "",
       style: {
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 42,
         fontWeight: "bold",
         fill: "#ff5252",
         stroke: { color: "#000000", width: 6, join: 'round' },
-        dropShadow: { color: "#000000", blur: 6, distance: 3, alpha: 0.5 },
+        
       },
     });
     this.comboText.anchor.set(0.5);
@@ -618,12 +618,12 @@ export class GameScene {
     this.tutorialText = new Text({
       text: "👉 Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
       style: {
-        fontFamily: "Arial Black, Arial, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
         stroke: { color: "#000000", width: 3, join: 'round' },
-        dropShadow: { color: "#000000", blur: 4, distance: 1.5, alpha: 0.5 },
+        
       },
     });
     this.tutorialText.anchor.set(0.5);
@@ -2874,7 +2874,7 @@ export class GameScene {
     const glowText = new Text({
       text: "TRÒ CHƠI KẾT THÚC",
       style: {
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 34,
         fill: 0xffea00,
         fontWeight: "900",
@@ -2891,12 +2891,12 @@ export class GameScene {
     const victoryText = new Text({
       text: "TRÒ CHƠI KẾT THÚC",
       style: {
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 34,
         fill: titleGrad,
         fontWeight: "900",
         stroke: { width: 5, color: 0x360207 },
-        dropShadow: { color: 0x000000, blur: 4, distance: 3 },
+        
       },
     });
     victoryText.anchor.set(0.5);
@@ -3068,12 +3068,12 @@ export class GameScene {
       const ribbonText = new Text({
         text: "KỶ LỤC MỚI!",
         style: {
-          fontFamily: "Arial Black, Impact, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 10,
           fill: "#ffffff",
           fontWeight: "bold",
           stroke: { color: 0x000000, width: 2.5, join: 'round' },
-          dropShadow: { color: 0x000000, blur: 1, distance: 1, alpha: 0.4 },
+          
           padding: 8,
         },
       });
@@ -3086,7 +3086,7 @@ export class GameScene {
     const scoreLabel = new Text({
       text: `ĐIỂM SỐ: ${this.score}`,
       style: {
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 26,
         fontWeight: "bold",
         fill: "#241d4f",
@@ -3108,7 +3108,7 @@ export class GameScene {
       const rankText = new Text({
         text: ` KỶ LỤC MỚI! HẠNG #${rank} `,
         style: {
-          fontFamily: "Arial Black, Impact, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 20,
           fontWeight: "bold",
           fill: "#e91e63",
@@ -3138,7 +3138,7 @@ export class GameScene {
       const normalLabel = new Text({
         text: "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!",
         style: {
-          fontFamily: "Arial Black, Arial, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 14,
           fill: "#7c73a1",
           stroke: { color: 0xffffff, width: 2.5, join: 'round' },
@@ -3346,13 +3346,13 @@ export class GameScene {
     const text = new Text({
       text: "HẾT NƯỚC ĐI!\nĐANG TRÁO BÀN NGỌC...",
       style: {
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
         fill: "#ffea00",
         align: "center",
         stroke: { color: 0x000000, width: 4.5, join: 'round' },
-        dropShadow: { color: "#000000", blur: 4, distance: 2 },
+        
       },
     });
     text.anchor.set(0.5);
@@ -3479,13 +3479,12 @@ export class GameScene {
       const text = new Text({
         text: textStr.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Arial Black, Impact, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: textSize,
           fontWeight: "bold",
           fill: textColor,
           stroke: { color: 0x000000, width: 4.5, join: 'round' },
-          dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
-        }),
+          }),
       });
       text.anchor.set(0.5);
       content.addChild(text);
@@ -3500,13 +3499,12 @@ export class GameScene {
       const text = new Text({
         text: label.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Arial Black, Impact, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: textSize,
           fontWeight: "bold",
           fill: textColor,
           stroke: { color: 0x000000, width: 4.5, join: 'round' },
-          dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
-        }),
+          }),
       });
       text.anchor.set(0.5);
       content.addChild(text);
@@ -3979,14 +3977,13 @@ export class GameScene {
     const titleText = new Text({
       text: "CÀI ĐẶT GAME",
       style: new TextStyle({
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 18,
         fill: 0xffffff,
         fontWeight: "bold",
         letterSpacing: 1.5,
         stroke: { color: 0x000000, width: 4.5, join: 'round' },
-        dropShadow: { color: 0x000000, blur: 2, distance: 1.5, alpha: 0.4 }
-      }),
+        }),
     });
     titleText.anchor.set(0.5);
     titleText.position.set(0, ribbonY);
@@ -4009,7 +4006,7 @@ export class GameScene {
       const label = new Text({
         text: labelText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Arial Black, Impact, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 18,
           fill: "#360207",
           fontWeight: "bold",
@@ -4141,7 +4138,7 @@ export class GameScene {
     const versionText = new Text({
       text: "Phiên bản: 1.0.0",
       style: {
-        fontFamily: "Outfit, Arial, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 11,
         fill: "#7c73a1",
       },

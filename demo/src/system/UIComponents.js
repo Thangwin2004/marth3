@@ -390,13 +390,12 @@ export function drawVectorIcon(g, type, size) {
       const text = new Text({
         text: type,
         style: new TextStyle({
-          fontFamily: "Arial Black, Arial, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: size * 0.95,
           fill: 0xFFFFFF,
           align: 'center',
           stroke: { color: 0x000000, width: 3 },
-          dropShadow: { color: 0x000000, blur: 1, distance: 1, alpha: 0.5 }
-        })
+          })
       });
       text.anchor.set(0.5);
       g.addChild(text);
@@ -420,7 +419,7 @@ export function createVectorIcon(type, size = 28) {
     const text = new Text({
       text: val,
       style: {
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: size * 0.5,
         fill: 0xffffff,
         stroke: { color: 0x000000, width: 3.5, join: 'round' }
@@ -604,13 +603,12 @@ export class Colorful3DButton extends Container {
       this.label = new Text({
         text: text.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Arial Black, Impact, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: fontSize,
           fill: 0xFFFFFF,
           align: "center",
           stroke: { color: 0x000000, width: 4.5, join: 'round' },
-          dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
-        })
+          })
       });
       this.label.anchor.set(0.5);
       this.face.addChild(this.label);

@@ -422,12 +422,12 @@ export class MainMenuScene {
     const title = new Text({
       text: "Bộ Lạc CRUSH",
       style: {
-        fontFamily: "Outfit, Arial, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 48,
         fontWeight: "bold",
         fill: titleGrad,
         stroke: { color: "#360207", width: 6 },
-        dropShadow: { color: "#2b050a", blur: 6, distance: 3, alpha: 0.85 },
+        
       },
     });
     title.anchor.set(0.5);
@@ -436,13 +436,13 @@ export class MainMenuScene {
     const subtitle = new Text({
       text: "DỄ THƯƠNG MATCH-3",
       style: {
-        fontFamily: "Outfit, Arial, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
         stroke: { color: "#000000", width: 4 },
         letterSpacing: 4,
-        dropShadow: { color: "#000000", blur: 4, distance: 2, alpha: 0.8 },
+        
       },
     });
     subtitle.anchor.set(0.5);
@@ -469,12 +469,12 @@ export class MainMenuScene {
           ? `🏆 KỶ LỤC ĐIỂM: ${topScore}`
           : `🎯 Hãy thiết lập kỷ lục điểm số ngay hôm nay!`,
       style: {
-        fontFamily: "Outfit, Arial, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 18,
         fontWeight: "bold",
         fill: "#ffdd57",
         stroke: { color: "#000000", width: 4 },
-        dropShadow: { color: "#000000", blur: 4, distance: 2, alpha: 0.9 },
+        
       },
     });
     this.infoText.anchor.set(0.5);
@@ -751,13 +751,12 @@ export class MainMenuScene {
       const text = new Text({
         text: displayText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Arial Black, Impact, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 14,
           fontWeight: "bold",
           fill: "#ffffff",
           stroke: { color: 0x000000, width: 4.5, join: 'round' },
-          dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
-        }),
+          }),
       });
       text.anchor.set(0.5);
       content.addChild(text);
@@ -796,13 +795,12 @@ export class MainMenuScene {
         const text = new Text({
           text: textStr.toUpperCase(),
           style: new TextStyle({
-            fontFamily: "Arial Black, Impact, sans-serif",
+            fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
             stroke: { color: 0x000000, width: 4.5, join: 'round' },
-            dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
-          }),
+            }),
         });
         text.anchor.set(0.5);
         content.addChild(text);
@@ -817,13 +815,12 @@ export class MainMenuScene {
         const text = new Text({
           text: label.toUpperCase(),
           style: new TextStyle({
-            fontFamily: "Arial Black, Impact, sans-serif",
+            fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
             stroke: { color: 0x000000, width: 4.5, join: 'round' },
-            dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
-          }),
+            }),
         });
         text.anchor.set(0.5);
         content.addChild(text);
@@ -887,13 +884,12 @@ export class MainMenuScene {
     const label = new Text({
       text: "CHƠI NGAY",
       style: {
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 18,
         fill: 0xFFFFFF,
         align: 'center',
         stroke: { color: 0x000000, width: 4.5, join: 'round' },
-        dropShadow: { color: 0x000000, blur: 2, distance: 2, alpha: 0.4 }
-      }
+        }
     });
     label.anchor.set(0.5);
     content.addChild(label);
@@ -1140,15 +1136,14 @@ export class MainMenuScene {
     const titleText = new Text({
       text: " BẢNG VÀNG THÀNH TÍCH",
       style: new TextStyle({
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 19,
         fill: 0xffffff, // white on pink ribbon
         fontWeight: "bold",
         letterSpacing: 1.5,
         align: "center",
         stroke: { color: 0x000000, width: 4.5, join: 'round' },
-        dropShadow: { color: 0x000000, blur: 2, distance: 1.5, alpha: 0.4 }
-      }),
+        }),
     });
     titleText.anchor.set(0.5);
     titleContainer.addChild(titleText);
@@ -1175,7 +1170,7 @@ export class MainMenuScene {
     const userText = new Text({
       text: userTextStr,
       style: new TextStyle({
-        fontFamily: "Arial Black, Arial, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 13,
         fontWeight: "bold",
         fill: currentUser ? "#e91e63" : "#7c73a1",
@@ -1194,7 +1189,7 @@ export class MainMenuScene {
     const rankHeader = new Text({
       text: "HẠNG",
       style: new TextStyle({
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
@@ -1208,7 +1203,7 @@ export class MainMenuScene {
     const scoreHeader = new Text({
       text: "ĐIỂM",
       style: new TextStyle({
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
@@ -1233,7 +1228,7 @@ export class MainMenuScene {
       const emptyText = new Text({
         text: "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀",
         style: new TextStyle({
-          fontFamily: "Outfit, Arial, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 16,
           fill: "#7c73a1",
           align: "center",
@@ -1306,7 +1301,7 @@ export class MainMenuScene {
           rankNode = new Text({
             text: `${idx + 1}`,
             style: new TextStyle({
-              fontFamily: "Arial Black, Impact, sans-serif",
+              fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
               fontSize: 24,
               fontWeight: "bold",
               fill: "#241d4f",
@@ -1354,7 +1349,7 @@ export class MainMenuScene {
         const nameText = new Text({
           text: name,
           style: new TextStyle({
-            fontFamily: "Arial Black, Impact, sans-serif",
+            fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
             fontSize: 18,
             fontWeight: "bold",
             fill: "#241d4f",
@@ -1369,7 +1364,7 @@ export class MainMenuScene {
         const scoreText = new Text({
           text: entry.score.toLocaleString(),
           style: new TextStyle({
-            fontFamily: "Arial Black, Impact, sans-serif",
+            fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
             fontSize: 24,
             fontWeight: "bold",
             fill: "#241d4f",
@@ -1420,7 +1415,7 @@ export class MainMenuScene {
       footerRankNode = new Text({
         text: activeRankVal ? String(activeRankVal) : "-",
         style: new TextStyle({
-          fontFamily: "Arial Black, Impact, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 24,
           fontWeight: "bold",
           fill: "#241d4f",
@@ -1462,7 +1457,7 @@ export class MainMenuScene {
     const footerName = new Text({
       text: activeName,
       style: new TextStyle({
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 18,
         fontWeight: "bold",
         fill: "#241d4f",
@@ -1477,7 +1472,7 @@ export class MainMenuScene {
     const footerScore = new Text({
       text: personalBest.toLocaleString(),
       style: new TextStyle({
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
         fill: "#241d4f",
@@ -1610,14 +1605,13 @@ export class MainMenuScene {
     const titleText = new Text({
       text: "CÀI ĐẶT GAME",
       style: new TextStyle({
-        fontFamily: "Arial Black, Impact, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 18,
         fill: 0xffffff,
         fontWeight: "bold",
         letterSpacing: 1.5,
         stroke: { color: 0x000000, width: 4.5, join: 'round' },
-        dropShadow: { color: 0x000000, blur: 2, distance: 1.5, alpha: 0.4 }
-      }),
+        }),
     });
     titleText.anchor.set(0.5);
     titleText.position.set(0, ribbonY);
@@ -1659,7 +1653,7 @@ export class MainMenuScene {
       const label = new Text({
         text: labelText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: "Arial Black, Impact, sans-serif",
+          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 18,
           fill: "#360207",
           fontWeight: "bold",
@@ -1758,7 +1752,7 @@ export class MainMenuScene {
     const versionText = new Text({
       text: "Phiên bản: 1.0.0",
       style: {
-        fontFamily: "Outfit, Arial, sans-serif",
+        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 12,
         fill: "#aaaaaa",
       },
