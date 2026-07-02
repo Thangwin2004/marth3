@@ -331,11 +331,10 @@ export class Board {
       topOffset = 20;
     } else if (isMobilePortrait) {
       // Màn hình dọc điện thoại: HUD nằm ở trên cùng
-      // Thu nhỏ lề trái/phải xuống còn 8px mỗi bên (canvasWidth - 16) để phóng to bảng chơi tối đa
       maxBoardWidth = canvasWidth - 16;
-      // Chiều cao khả dụng an toàn là từ dưới HUD (y = 130) đến trước nút cài đặt ở dưới (y = canvasHeight - 75)
-      maxBoardHeight = canvasHeight - 205;
-      topOffset = 130;
+      // Leave space for HUD at top (145px) and tutorial text + settings button at bottom (~130px)
+      maxBoardHeight = canvasHeight - 275;
+      topOffset = 145;
     } else {
       // Màn hình bình thường hoặc màn hình dọc PC/Laptop: HUD nằm ở trên cùng
       // Increase top offset to 135 to make room for the tutorial text
