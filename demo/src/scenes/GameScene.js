@@ -296,41 +296,27 @@ export class GameScene {
     this.loadingBg.fill(0x241442); // Deep vibrant purple matching game aesthetic
     this.container.addChild(this.loadingBg);
 
-    this.loadingText = new Text({
-      text: "ĐANG TẢI...",
-      style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 24,
-        fontWeight: "800",
-        fill: "#ffdd57",
-        letterSpacing: 2,
-      },
-    });
-    this.loadingText.anchor.set(0.5);
-    this.loadingText.x = App.app.screen.width / 2;
-    this.loadingText.y = App.app.screen.height / 2 + 60; // Moved down to make room for avatar
-    this.container.addChild(this.loadingText);
-
-    // Animated tribal avatar for loading screen
-    this.loadingAvatar = Sprite.from("/assets/imagebldp/001_avatar_laclac.png");
+    // Animated logo for loading screen (replacing text and tribal avatar)
+    this.loadingAvatar = Sprite.from("/logo.png");
     this.loadingAvatar.anchor.set(0.5);
     this.loadingAvatar.x = App.app.screen.width / 2;
-    this.loadingAvatar.y = App.app.screen.height / 2 - 20;
-    this.loadingAvatar.scale.set(1.5);
+    this.loadingAvatar.y = App.app.screen.height / 2;
+    // Scale logo down slightly depending on its intrinsic size (adjusting scale)
+    this.loadingAvatar.scale.set(0.8);
     this.container.addChild(this.loadingAvatar);
 
-    // Animate the avatar to make the loading screen feel alive
+    // Animate the logo to make the loading screen feel alive
     gsap.to(this.loadingAvatar.scale, {
-      x: 1.65,
-      y: 1.65,
-      duration: 0.5,
+      x: 0.9,
+      y: 0.9,
+      duration: 0.6,
       yoyo: true,
       repeat: -1,
       ease: "sine.inOut"
     });
     gsap.to(this.loadingAvatar, {
-      y: this.loadingAvatar.y - 15,
-      duration: 0.5,
+      y: this.loadingAvatar.y - 10,
+      duration: 0.6,
       yoyo: true,
       repeat: -1,
       ease: "sine.inOut"
@@ -360,16 +346,8 @@ export class GameScene {
             duration: 0.25,
             onComplete: () => {
               this.loadingAvatar.destroy();
-            }
-          });
-        }
-        if (this.loadingText && !this.loadingText.destroyed) {
-          gsap.to(this.loadingText, {
-            alpha: 0,
-            duration: 0.25,
-            onComplete: () => {
               this.initGame();
-            },
+            }
           });
         } else {
           this.initGame();
