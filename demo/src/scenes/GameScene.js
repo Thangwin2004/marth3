@@ -569,7 +569,7 @@ export class GameScene {
       style: {
         fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 24,
-        fontWeight: "bold",
+        fontWeight: "900",
         fill: "#ffffff",
         
         
@@ -589,7 +589,7 @@ export class GameScene {
       style: {
         fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: 24,
-        fontWeight: "bold",
+        fontWeight: "900",
         fill: "#ffffff",
         
         
@@ -3481,7 +3481,7 @@ export class GameScene {
         style: new TextStyle({
           fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: textSize,
-          fontWeight: "bold",
+          fontWeight: "900",
           fill: textColor,
           
           }),
@@ -3501,7 +3501,7 @@ export class GameScene {
         style: new TextStyle({
           fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: textSize,
-          fontWeight: "bold",
+          fontWeight: "900",
           fill: textColor,
           
           }),

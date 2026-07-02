@@ -900,7 +900,8 @@ export class MainMenuScene {
       text: "CHƠI NGAY",
       style: {
         fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 18,
+        fontSize: 22,
+        fontWeight: "900",
         fill: 0xFFFFFF,
         align: 'center',
         
