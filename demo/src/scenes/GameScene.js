@@ -290,14 +290,20 @@ export class GameScene {
     soundManager.setBGMVolume(0.25);
 
     // === SHOW LOADING OVERLAY ===
+    // Background to cover the transition
+    this.loadingBg = new Graphics();
+    this.loadingBg.rect(0, 0, App.app.screen.width, App.app.screen.height);
+    this.loadingBg.fill(0x0f0f1a); // Dark harmonious background
+    this.container.addChild(this.loadingBg);
+
     this.loadingText = new Text({
-      text: "ĐANG TẢI HÌNH ẢNH...",
+      text: "ĐANG TẢI...",
       style: {
         fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 22,
-        fontWeight: "bold",
+        fontSize: 24,
+        fontWeight: "800",
         fill: "#ffdd57",
-        
+        letterSpacing: 2,
       },
     });
     this.loadingText.anchor.set(0.5);
@@ -312,6 +318,15 @@ export class GameScene {
       const minDuration = 600; // minimum duration in ms
       const delay = Math.max(0, minDuration - elapsed);
       setTimeout(() => {
+        if (this.loadingBg && !this.loadingBg.destroyed) {
+          gsap.to(this.loadingBg, {
+            alpha: 0,
+            duration: 0.3,
+            onComplete: () => {
+              this.loadingBg.destroy();
+            }
+          });
+        }
         if (this.loadingText && !this.loadingText.destroyed) {
           gsap.to(this.loadingText, {
             alpha: 0,

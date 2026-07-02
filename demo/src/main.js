@@ -30,7 +30,16 @@ async function startGame() {
     const { MainMenuScene } = await import("./scenes/MainMenuScene.js");
     await sceneManager.switchTo(MainMenuScene);
 
-    console.log("✅ Game is ready!");
+    // Hide Splash Screen smoothly
+    const splash = document.getElementById("splash-screen");
+    if (splash) {
+      splash.style.opacity = "0";
+      setTimeout(() => {
+        splash.style.display = "none";
+      }, 500);
+    }
+
+    console.log("🔥 Game is ready!");
   } catch (error) {
     console.error("❌ Failed to start game:", error);
 
