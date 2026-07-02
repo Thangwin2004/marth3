@@ -4096,7 +4096,7 @@ export class GameScene {
         soundManager.toggleMusic();
         return !soundManager.musicEnabled;
       },
-      0x00ccff // Cyan border
+      0xc2a3ff // Light purple border
     );
     const sfxRow = createToggleRow(
       "HIỆU ỨNG",
@@ -4106,7 +4106,7 @@ export class GameScene {
         soundManager.enabled = !soundManager.enabled;
         return !soundManager.enabled;
       },
-      0xff66cc // Pink border
+      0xc2a3ff // Light purple border
     );
 
     this.settingsModal.addChild(musicRow);
