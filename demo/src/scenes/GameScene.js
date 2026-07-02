@@ -3948,8 +3948,8 @@ export class GameScene {
     this.settingsModal.y = App.app.screen.height / 2;
     popup.addChild(this.settingsModal);
 
-    const cardW = 340;
-    const cardH = 300;
+    const cardW = 420;
+    const cardH = 360;
 
     // 1. Soft Card Shadow
     const cardShadow = new Graphics()
@@ -4026,9 +4026,9 @@ export class GameScene {
       // Row background card panel to group label and toggle visually
       // Enlarged height to 56 to fit the 50-height toggle switch
       const rowBg = new Graphics()
-        .roundRect(-135, -28, 270, 56, 10)
-        .fill({ color: 0xefede0 }) // Warm creamy beige
-        .stroke({ color: 0xdfdac0, width: 1.5 });
+        .roundRect(-165, -32, 330, 64, 15)
+        .fill({ color: 0xffffff }) // Warm creamy beige
+        .stroke({ color: 0xddeaff, width: 2 });
       row.addChild(rowBg);
 
       // Left label (enlarged cartoon text)
@@ -4043,7 +4043,7 @@ export class GameScene {
           }),
       });
       label.anchor.set(0, 0.5);
-      label.position.set(-115, 0);
+      label.position.set(-140, 0);
       row.addChild(label);
 
       // Right slider track (using preloaded 3D toggle texture)
@@ -4054,19 +4054,19 @@ export class GameScene {
       track.height = 50;
       track.eventMode = "static";
       track.cursor = "pointer";
-      track.position.set(80, 0);
+      track.position.set(110, 0);
       row.addChild(track);
 
       // Draw dotted connector line dynamically between text and switch
       const labelWidth = label.width;
-      const startX = -115 + labelWidth + 12;
-      const endX = 80 - 50 - 12;
+      const startX = -140 + labelWidth + 15;
+      const endX = 110 - 50 - 15;
       if (startX < endX) {
         const dots = new Graphics();
         for (let dx = startX; dx <= endX; dx += 6) {
           dots.circle(dx, 0, 1.5);
         }
-        dots.fill({ color: 0xc0bba0 });
+        dots.fill({ color: 0xccccdd });
         row.addChild(dots);
       }
 
@@ -4085,8 +4085,8 @@ export class GameScene {
     };
 
     // Add Music and SFX rows (spaced out for cardH = 300)
-    const musicRowY = -65;
-    const sfxRowY = -15;
+    const musicRowY = -75;
+    const sfxRowY = 0;
 
     const musicRow = createToggleRow(
       "NHẠC NỀN",
@@ -4172,7 +4172,7 @@ export class GameScene {
       },
     });
     versionText.anchor.set(0.5);
-    versionText.position.set(0, 110);
+    versionText.position.set(0, 130);
     this.settingsModal.addChild(versionText);
 
     // Apply responsive layout immediately to compute target scale
