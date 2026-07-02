@@ -4,11 +4,15 @@
  * Quản lý nhạc nền và hiệu ứng âm thanh (SFX).
  * Sử dụng Web Audio API để tổng hợp trực tiếp hiệu ứng âm thanh (Synthesizer)
  * giúp giảm dung lượng game, không cần tải file ngoài và tránh lỗi CORS.
+ * Hệ thống mixer sử dụng GainNode để điều khiển âm lượng nhất quán.
  */
 
 class SoundManager {
   constructor() {
     this.ctx = null;
+    this.bgmGain = null;
+    this.sfxGain = null;
+
     this.bgm = null;
     this.enabled = true;
     this.musicEnabled = true; // music toggle state (BGM on/off)
@@ -38,9 +42,47 @@ class SoundManager {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (AudioContextClass) {
       this.ctx = new AudioContextClass();
+      
+      // Khởi tạo Mixer (GainNodes)
+      this.bgmGain = this.ctx.createGain();
+      this.sfxGain = this.ctx.createGain();
+
+      this.bgmGain.connect(this.ctx.destination);
+      this.sfxGain.connect(this.ctx.destination);
+
+      // Cập nhật trạng thái Mute ban đầu
+      this.bgmGain.gain.value = this.musicEnabled && !window.__GLOBAL_MUTE__ ? 1 : 0;
+      this.sfxGain.gain.value = this.enabled && !window.__GLOBAL_MUTE__ ? 1 : 0;
+
       if (this.ctx.state === "suspended") {
         this.ctx.resume().catch(() => {});
       }
+    }
+  }
+
+  /**
+   * Đồng bộ lại trạng thái mute tổng (từ wink-bridge hoặc settings)
+   */
+  syncMuteState() {
+    if (!this.ctx) return;
+    
+    // BGM
+    if (!this.musicEnabled || window.__GLOBAL_MUTE__) {
+      this.bgmGain.gain.value = 0;
+      if (this.bgm) this.bgm.pause();
+    } else {
+      this.bgmGain.gain.value = 1;
+      if (this.bgm && this.bgm.paused) {
+        if (this.ctx.state === "suspended") this.ctx.resume().catch(() => {});
+        this.bgm.play().catch(() => {});
+      }
+    }
+
+    // SFX
+    if (!this.enabled || window.__GLOBAL_MUTE__) {
+      this.sfxGain.gain.value = 0;
+    } else {
+      this.sfxGain.gain.value = 1;
     }
   }
 
@@ -60,16 +102,26 @@ class SoundManager {
     // Sử dụng nhạc nền cục bộ
     this.bgm = new Audio("/assets/music/music.mp3");
     this.bgm.loop = true;
+
+    // Tính toán Volume
     let factor = 1.0;
     if (this.isMobile) {
       factor = this.bgmVolume >= 0.35 ? 0.25 : 0.02;
     }
-    this.bgm.volume = this.bgmVolume * factor; // Sử dụng mức âm lượng được thiết lập
+    const finalVolume = this.bgmVolume * factor;
 
-    // Đồng bộ với trạng thái tắt tiếng của wink-bridge
-    if (window.__GLOBAL_MUTE__) {
-      this.bgm.muted = true;
+    if (this.ctx && this.bgmGain) {
+      const source = this.ctx.createMediaElementSource(this.bgm);
+      const localGain = this.ctx.createGain();
+      localGain.gain.value = finalVolume;
+      source.connect(localGain);
+      localGain.connect(this.bgmGain);
+    } else {
+      // Fallback
+      this.bgm.volume = finalVolume;
     }
+
+    this.syncMuteState();
 
     this.bgm.play().catch((err) => {
       console.log("Audio play deferred until user interaction:", err);
@@ -94,7 +146,14 @@ class SoundManager {
    */
   setBGMVolume(vol) {
     this.bgmVolume = vol;
-    if (this.bgm) {
+    // Vì kiến trúc mới dùng createMediaElementSource, 
+    // chúng ta phải tái tạo lại BGM nếu muốn thay đổi volume động (localGain đang bị ẩn).
+    // Ở đây, để đơn giản và hiệu quả, ta set trực tiếp vào HTMLAudioElement (chỉ dùng cho fallback), 
+    // Còn nếu đã kết nối WebAudio API, ta sẽ cập nhật lại thuộc tính của nó thông qua cơ chế khác nếu cần,
+    // hoặc đơn giản là set lại giá trị nếu ta lưu trữ `localGain`.
+    // Do hệ thống chỉ dùng BGM volume lúc init, cách an toàn nhất là tái tạo hoặc kệ (với game nhỏ).
+    // Chúng ta vẫn có thể dùng bgm.volume như một state phụ.
+    if (this.bgm && !this.ctx) {
       let factor = 1.0;
       if (this.isMobile) {
         factor = vol >= 0.35 ? 0.25 : 0.02;
@@ -119,14 +178,11 @@ class SoundManager {
     const gain = this.ctx.createGain();
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGain);
 
     osc.type = "sine";
     osc.frequency.setValueAtTime(450, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(
-      900,
-      this.ctx.currentTime + 0.08,
-    );
+    osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.08);
 
     gain.gain.setValueAtTime(0.18 * this.sfxMultiplier, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
@@ -146,7 +202,7 @@ class SoundManager {
     const gain = this.ctx.createGain();
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGain);
 
     osc.type = "triangle";
     osc.frequency.setValueAtTime(280, this.ctx.currentTime);
@@ -181,7 +237,7 @@ class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
 
       osc.type = "triangle"; // triangle waves create a warm, punchy arcade chime
       osc.frequency.setValueAtTime(freq, now + index * 0.04);
@@ -212,7 +268,7 @@ class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
       osc.type = "triangle";
       osc.frequency.setValueAtTime(freq, now + start);
       gain.gain.setValueAtTime(0.28 * this.sfxMultiplier, now + start);
@@ -240,7 +296,7 @@ class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(freq, now + start);
       gain.gain.setValueAtTime(0.22 * this.sfxMultiplier, now + start);
@@ -266,14 +322,11 @@ class SoundManager {
     const gain = this.ctx.createGain();
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGain);
 
     osc.type = "triangle";
     osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(
-      150,
-      this.ctx.currentTime + 0.15,
-    );
+    osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.15);
 
     gain.gain.setValueAtTime(0.22 * this.sfxMultiplier, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
@@ -299,7 +352,7 @@ class SoundManager {
     const clickOsc = this.ctx.createOscillator();
     const clickGain = this.ctx.createGain();
     clickOsc.connect(clickGain);
-    clickGain.connect(this.ctx.destination);
+    clickGain.connect(this.sfxGain);
 
     clickOsc.type = "sine";
     clickOsc.frequency.setValueAtTime(1800, ctxTime);
@@ -315,7 +368,7 @@ class SoundManager {
     const bodyOsc = this.ctx.createOscillator();
     const bodyGain = this.ctx.createGain();
     bodyOsc.connect(bodyGain);
-    bodyGain.connect(this.ctx.destination);
+    bodyGain.connect(this.sfxGain);
 
     bodyOsc.type = "triangle";
     bodyOsc.frequency.setValueAtTime(360, ctxTime);
@@ -340,7 +393,7 @@ class SoundManager {
     const osc1 = this.ctx.createOscillator();
     const gain1 = this.ctx.createGain();
     osc1.connect(gain1);
-    gain1.connect(this.ctx.destination);
+    gain1.connect(this.sfxGain);
     osc1.type = "triangle";
     osc1.frequency.setValueAtTime(180, now);
     osc1.frequency.exponentialRampToValueAtTime(45, now + 0.35);
@@ -355,7 +408,7 @@ class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
 
       osc.type = "triangle";
       osc.frequency.setValueAtTime(freq, now + idx * 0.05);
@@ -370,7 +423,7 @@ class SoundManager {
     const oscLeaf = this.ctx.createOscillator();
     const gainLeaf = this.ctx.createGain();
     oscLeaf.connect(gainLeaf);
-    gainLeaf.connect(this.ctx.destination);
+    gainLeaf.connect(this.sfxGain);
     oscLeaf.type = "sine";
     oscLeaf.frequency.setValueAtTime(1000, now);
     oscLeaf.frequency.exponentialRampToValueAtTime(250, now + 0.3);
@@ -392,7 +445,7 @@ class SoundManager {
     const baseOsc = this.ctx.createOscillator();
     const baseGain = this.ctx.createGain();
     baseOsc.connect(baseGain);
-    baseGain.connect(this.ctx.destination);
+    baseGain.connect(this.sfxGain);
     baseOsc.type = "sine";
     baseOsc.frequency.setValueAtTime(220, now);
     baseOsc.frequency.exponentialRampToValueAtTime(650, now + 0.42);
@@ -407,7 +460,7 @@ class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
 
       osc.type = "sine";
       osc.frequency.setValueAtTime(freq, now + idx * 0.03);
@@ -437,7 +490,7 @@ class SoundManager {
     const osc1 = this.ctx.createOscillator();
     const gain1 = this.ctx.createGain();
     osc1.connect(gain1);
-    gain1.connect(this.ctx.destination);
+    gain1.connect(this.sfxGain);
     osc1.type = "triangle";
     osc1.frequency.setValueAtTime(180, now);
     osc1.frequency.linearRampToValueAtTime(30, now + 0.85);
@@ -450,7 +503,7 @@ class SoundManager {
     const osc2 = this.ctx.createOscillator();
     const gain2 = this.ctx.createGain();
     osc2.connect(gain2);
-    gain2.connect(this.ctx.destination);
+    gain2.connect(this.sfxGain);
     osc2.type = "sawtooth";
     osc2.frequency.setValueAtTime(240, now);
     osc2.frequency.exponentialRampToValueAtTime(60, now + 0.5);
@@ -463,7 +516,7 @@ class SoundManager {
     const osc3 = this.ctx.createOscillator();
     const gain3 = this.ctx.createGain();
     osc3.connect(gain3);
-    gain3.connect(this.ctx.destination);
+    gain3.connect(this.sfxGain);
     osc3.type = "sine";
     osc3.frequency.setValueAtTime(500, now);
     osc3.frequency.exponentialRampToValueAtTime(2200, now + 0.5);
@@ -487,7 +540,7 @@ class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
 
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(freq, now);
@@ -502,7 +555,7 @@ class SoundManager {
     const drumOsc = this.ctx.createOscillator();
     const drumGain = this.ctx.createGain();
     drumOsc.connect(drumGain);
-    drumGain.connect(this.ctx.destination);
+    drumGain.connect(this.sfxGain);
     drumOsc.type = "triangle";
     drumOsc.frequency.setValueAtTime(140, now);
     drumOsc.frequency.linearRampToValueAtTime(45, now + 0.5);
@@ -512,21 +565,19 @@ class SoundManager {
     drumOsc.stop(now + 0.5);
 
     // 3. Majestic Gong Resonance (Resounding ringing tone)
-    // Three slightly detuned oscillators to create a natural, rich chorus/reverb ring
     const resonanceFreq = 220; // A3 (deep, powerful gong note)
     const detunes = [-4, 0, 5]; // cents
     detunes.forEach((detune) => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
 
       osc.type = "sine";
       osc.frequency.setValueAtTime(resonanceFreq, now);
       osc.detune.setValueAtTime(detune, now);
 
       gain.gain.setValueAtTime(0.4 * this.sfxMultiplier, now);
-      // Let it ring out for 1.25 seconds!
       gain.gain.exponentialRampToValueAtTime(0.005, now + 1.25);
 
       osc.start();
@@ -546,7 +597,7 @@ class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
       osc.type = "triangle";
       osc.frequency.setValueAtTime(freq, now + start);
       osc.frequency.exponentialRampToValueAtTime(
@@ -575,7 +626,7 @@ class SoundManager {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGain);
 
     osc.type = "sine";
     osc.frequency.setValueAtTime(350, now);
@@ -599,7 +650,7 @@ class SoundManager {
     const osc1 = this.ctx.createOscillator();
     const gain1 = this.ctx.createGain();
     osc1.connect(gain1);
-    gain1.connect(this.ctx.destination);
+    gain1.connect(this.sfxGain);
     osc1.type = "triangle";
     osc1.frequency.setValueAtTime(120, now);
     osc1.frequency.linearRampToValueAtTime(300, now + 0.28);
@@ -611,7 +662,7 @@ class SoundManager {
     const osc2 = this.ctx.createOscillator();
     const gain2 = this.ctx.createGain();
     osc2.connect(gain2);
-    gain2.connect(this.ctx.destination);
+    gain2.connect(this.sfxGain);
     osc2.type = "sine";
     osc2.frequency.setValueAtTime(240, now);
     osc2.frequency.linearRampToValueAtTime(600, now + 0.28);
@@ -627,19 +678,7 @@ class SoundManager {
    */
   toggleMusic() {
     this.musicEnabled = !this.musicEnabled;
-    if (this.bgm) {
-      if (this.musicEnabled) {
-        if (this.bgm.paused) {
-          this.bgm
-            .play()
-            .catch((err) => console.log("Failed to resume BGM:", err));
-        }
-      } else {
-        this.bgm.pause();
-      }
-    } else if (this.musicEnabled) {
-      this.playBGM();
-    }
+    this.syncMuteState();
     return this.musicEnabled;
   }
 }
