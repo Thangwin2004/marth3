@@ -308,8 +308,33 @@ export class GameScene {
     });
     this.loadingText.anchor.set(0.5);
     this.loadingText.x = App.app.screen.width / 2;
-    this.loadingText.y = App.app.screen.height / 2;
+    this.loadingText.y = App.app.screen.height / 2 + 60; // Moved down to make room for avatar
     this.container.addChild(this.loadingText);
+
+    // Animated tribal avatar for loading screen
+    this.loadingAvatar = Sprite.from("/assets/imagebldp/001_avatar_laclac.png");
+    this.loadingAvatar.anchor.set(0.5);
+    this.loadingAvatar.x = App.app.screen.width / 2;
+    this.loadingAvatar.y = App.app.screen.height / 2 - 20;
+    this.loadingAvatar.scale.set(1.5);
+    this.container.addChild(this.loadingAvatar);
+
+    // Animate the avatar to make the loading screen feel alive
+    gsap.to(this.loadingAvatar.scale, {
+      x: 1.65,
+      y: 1.65,
+      duration: 0.5,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut"
+    });
+    gsap.to(this.loadingAvatar, {
+      y: this.loadingAvatar.y - 15,
+      duration: 0.5,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut"
+    });
 
     // Load background and avatars, then start with smooth fade out
     const startTime = Date.now();
@@ -324,6 +349,17 @@ export class GameScene {
             duration: 0.3,
             onComplete: () => {
               this.loadingBg.destroy();
+            }
+          });
+        }
+        if (this.loadingAvatar && !this.loadingAvatar.destroyed) {
+          gsap.killTweensOf(this.loadingAvatar);
+          gsap.killTweensOf(this.loadingAvatar.scale);
+          gsap.to(this.loadingAvatar, {
+            alpha: 0,
+            duration: 0.25,
+            onComplete: () => {
+              this.loadingAvatar.destroy();
             }
           });
         }
