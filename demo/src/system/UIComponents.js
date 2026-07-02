@@ -492,7 +492,7 @@ export class Colorful3DCircleButton extends Container {
 
     this.on("pointerover", () => {
       gsap.to(this.scale, { x: 1.08, y: 1.08, duration: 0.12 });
-      soundManager.playClick();
+      // soundManager.playClick();
     });
 
     this.on("pointerout", () => {
@@ -619,7 +619,7 @@ export class Colorful3DButton extends Container {
 
     this.on("pointerover", () => {
       gsap.to(this.scale, { x: 1.05, y: 1.05, duration: 0.12 });
-      soundManager.playClick();
+      // soundManager.playClick();
     });
 
     this.on("pointerout", () => {

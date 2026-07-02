@@ -78,13 +78,13 @@ export class Tile {
     this.sprite = new Container();
     // Fake anchor object so it doesn't crash on this.sprite.anchor.set(0.5)
     this.sprite.anchor = {
-      set: () => {}
+      set: () => {},
     };
 
     // Getter for texture so it doesn't crash on external tile.sprite.texture calls
     Object.defineProperty(this.sprite, "texture", {
-      get: () => this.imageSprite ? this.imageSprite.texture : null,
-      configurable: true
+      get: () => (this.imageSprite ? this.imageSprite.texture : null),
+      configurable: true,
     });
 
     // 1. Card Background Graphics
@@ -113,18 +113,36 @@ export class Tile {
     const maskRadius = 12;
 
     this.cardBg.clear();
-    
+
     // Soft drop shadow under the tile
-    this.cardBg.roundRect(-maskSize / 2, -maskSize / 2 + 3, maskSize, maskSize, maskRadius);
+    this.cardBg.roundRect(
+      -maskSize / 2,
+      -maskSize / 2 + 3,
+      maskSize,
+      maskSize,
+      maskRadius,
+    );
     this.cardBg.fill({ color: 0x000000, alpha: 0.25 });
 
     // Thin elegant white frame around the tile image
-    this.cardBg.roundRect(-maskSize / 2, -maskSize / 2, maskSize, maskSize, maskRadius);
+    this.cardBg.roundRect(
+      -maskSize / 2,
+      -maskSize / 2,
+      maskSize,
+      maskSize,
+      maskRadius,
+    );
     this.cardBg.stroke({ color: 0xffffff, width: 2.2 });
 
     // Crop Mask to isolate the animal character (full rounded rectangle)
     this.cardMask.clear();
-    this.cardMask.roundRect(-maskSize / 2, -maskSize / 2, maskSize, maskSize, maskRadius);
+    this.cardMask.roundRect(
+      -maskSize / 2,
+      -maskSize / 2,
+      maskSize,
+      maskSize,
+      maskRadius,
+    );
     this.cardMask.fill({ color: 0xffffff });
   }
 
@@ -134,7 +152,7 @@ export class Tile {
     const textureWidth = texture.orig.width;
     const textureHeight = texture.orig.height;
     const baseSize = Math.max(textureWidth, textureHeight);
-    // Zoom in slightly (1.1x) to show mostly the character and crop the background, 
+    // Zoom in slightly (1.1x) to show mostly the character and crop the background,
     // but keep it small enough so the head/legs are not cut off by the mask.
     const scale = (targetSize / baseSize) * 1.1;
     this.imageSprite.scale.set(scale);

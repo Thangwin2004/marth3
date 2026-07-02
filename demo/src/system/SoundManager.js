@@ -42,7 +42,7 @@ class SoundManager {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (AudioContextClass) {
       this.ctx = new AudioContextClass();
-      
+
       // Khởi tạo Mixer (GainNodes)
       this.bgmGain = this.ctx.createGain();
       this.sfxGain = this.ctx.createGain();
@@ -51,7 +51,8 @@ class SoundManager {
       this.sfxGain.connect(this.ctx.destination);
 
       // Cập nhật trạng thái Mute ban đầu
-      this.bgmGain.gain.value = this.musicEnabled && !window.__GLOBAL_MUTE__ ? 1 : 0;
+      this.bgmGain.gain.value =
+        this.musicEnabled && !window.__GLOBAL_MUTE__ ? 1 : 0;
       this.sfxGain.gain.value = this.enabled && !window.__GLOBAL_MUTE__ ? 1 : 0;
 
       if (this.ctx.state === "suspended") {
@@ -65,7 +66,7 @@ class SoundManager {
    */
   syncMuteState() {
     if (!this.ctx) return;
-    
+
     // BGM
     if (!this.musicEnabled || window.__GLOBAL_MUTE__) {
       this.bgmGain.gain.value = 0;
@@ -145,9 +146,9 @@ class SoundManager {
    */
   setBGMVolume(vol) {
     this.bgmVolume = vol;
-    // Vì kiến trúc mới dùng createMediaElementSource, 
+    // Vì kiến trúc mới dùng createMediaElementSource,
     // chúng ta phải tái tạo lại BGM nếu muốn thay đổi volume động (localGain đang bị ẩn).
-    // Ở đây, để đơn giản và hiệu quả, ta set trực tiếp vào HTMLAudioElement (chỉ dùng cho fallback), 
+    // Ở đây, để đơn giản và hiệu quả, ta set trực tiếp vào HTMLAudioElement (chỉ dùng cho fallback),
     // Còn nếu đã kết nối WebAudio API, ta sẽ cập nhật lại thuộc tính của nó thông qua cơ chế khác nếu cần,
     // hoặc đơn giản là set lại giá trị nếu ta lưu trữ `localGain`.
     // Do hệ thống chỉ dùng BGM volume lúc init, cách an toàn nhất là tái tạo hoặc kệ (với game nhỏ).
@@ -181,7 +182,10 @@ class SoundManager {
 
     osc.type = "sine";
     osc.frequency.setValueAtTime(450, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(
+      900,
+      this.ctx.currentTime + 0.08,
+    );
 
     gain.gain.setValueAtTime(0.18 * this.sfxMultiplier, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
@@ -325,7 +329,10 @@ class SoundManager {
 
     osc.type = "triangle";
     osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.15);
+    osc.frequency.exponentialRampToValueAtTime(
+      150,
+      this.ctx.currentTime + 0.15,
+    );
 
     gain.gain.setValueAtTime(0.22 * this.sfxMultiplier, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);

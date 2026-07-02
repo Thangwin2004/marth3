@@ -99,7 +99,7 @@ class SaveManager {
             const list = parsed.leaderboard || [];
             if (list.length > 0) {
               const best = list[0]; // first item is their highest score
-              
+
               let name = parsed.userName;
               // If this key matches the active logged-in Google user, override or fallback to their name!
               if (activeId && key === `${BASE_KEY}_${activeId}`) {
@@ -109,14 +109,14 @@ class SaveManager {
               if (!name) {
                 if (key.endsWith("_laclac")) name = "Lạc Lạc (Bơ Lạc)";
                 else if (key.endsWith("_dauphong")) name = "Đậu Phộng";
-                else name = (key === BASE_KEY ? "Khách" : "Người chơi");
+                else name = key === BASE_KEY ? "Khách" : "Người chơi";
               }
 
               allEntries.push({
                 score: best.score,
                 date: best.date,
                 userName: name,
-                profileKey: key
+                profileKey: key,
               });
             }
           }
@@ -128,20 +128,45 @@ class SaveManager {
 
     // 2. Define themed bot competitors
     const defaultCompetitors = [
-      { userName: "Bơ Lạc", score: 5500, date: "Hệ thống", profileKey: "bot_1" },
-      { userName: "Đậu Phộng", score: 4000, date: "Hệ thống", profileKey: "bot_2" },
-      { userName: "Ếch Xanh", score: 2500, date: "Hệ thống", profileKey: "bot_3" },
-      { userName: "Gấu Trúc", score: 1500, date: "Hệ thống", profileKey: "bot_4" },
-      { userName: "Mèo Lười", score: 800, date: "Hệ thống", profileKey: "bot_5" }
+      {
+        userName: "Bơ Lạc",
+        score: 5500,
+        date: "Hệ thống",
+        profileKey: "bot_1",
+      },
+      {
+        userName: "Đậu Phộng",
+        score: 4000,
+        date: "Hệ thống",
+        profileKey: "bot_2",
+      },
+      {
+        userName: "Ếch Xanh",
+        score: 2500,
+        date: "Hệ thống",
+        profileKey: "bot_3",
+      },
+      {
+        userName: "Gấu Trúc",
+        score: 1500,
+        date: "Hệ thống",
+        profileKey: "bot_4",
+      },
+      {
+        userName: "Mèo Lười",
+        score: 800,
+        date: "Hệ thống",
+        profileKey: "bot_5",
+      },
     ];
 
     // Append all bots to ensure the leaderboard is always populated
-    defaultCompetitors.forEach(bot => allEntries.push(bot));
+    defaultCompetitors.forEach((bot) => allEntries.push(bot));
 
     // 3. Keep only the single highest score for each unique player name
     const uniqueMap = new Map();
     allEntries.sort((a, b) => b.score - a.score);
-    allEntries.forEach(entry => {
+    allEntries.forEach((entry) => {
       if (!uniqueMap.has(entry.userName)) {
         uniqueMap.set(entry.userName, entry);
       }
@@ -161,7 +186,7 @@ class SaveManager {
    */
   addScore(score) {
     const data = this.load();
-    
+
     // Set active username at root of save data for aggregation
     let activeName = "Khách";
     try {

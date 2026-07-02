@@ -3529,7 +3529,7 @@ export class GameScene {
     // Interactivity
     btn.on("pointerover", () => {
       gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
-      soundManager.playClick();
+      // soundManager.playClick();
     });
     btn.on("pointerout", () => {
       gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
@@ -3584,7 +3584,7 @@ export class GameScene {
  
       btn.on("pointerover", () => {
         gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.12 });
-        soundManager.playClick();
+        // soundManager.playClick();
       });
  
       btn.on("pointerout", () => {

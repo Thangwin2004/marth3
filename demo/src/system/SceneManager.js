@@ -34,12 +34,12 @@ class SceneManager {
    */
   init(pixiApp) {
     this.app = pixiApp;
-    
+
     const handleResize = () => {
       const container = this.app.canvas ? this.app.canvas.parentElement : null;
       const w = container ? container.clientWidth : window.innerWidth;
       const h = container ? container.clientHeight : window.innerHeight;
-      
+
       if (this.app && this.app.renderer) {
         this.app.renderer.resize(w, h);
       }

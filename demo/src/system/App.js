@@ -23,7 +23,8 @@ class GameApp {
     this.config = config;
 
     this.app = new Application();
-    const container = document.getElementById("pixi-container") || document.body;
+    const container =
+      document.getElementById("pixi-container") || document.body;
 
     await this.app.init({
       resizeTo: container,

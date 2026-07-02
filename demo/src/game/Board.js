@@ -319,7 +319,8 @@ export class Board {
 
     // Kiểm tra xem có phải màn hình điện thoại xoay ngang (chiều rộng > chiều cao và chiều cao < 500)
     const isMobileLandscape = canvasWidth > canvasHeight && canvasHeight < 500;
-    const isMobilePortrait = !isMobileLandscape && (canvasWidth < 600 || canvasHeight > canvasWidth);
+    const isMobilePortrait =
+      !isMobileLandscape && (canvasWidth < 600 || canvasHeight > canvasWidth);
 
     let maxBoardWidth, maxBoardHeight, topOffset;
 
