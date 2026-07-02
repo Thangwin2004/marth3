@@ -1111,7 +1111,7 @@ export class MainMenuScene {
           ]
         })
       })
-      .stroke({ color: 0xffea00, width: 2.5 }); // Gold inner border
+      .stroke({ color: 0xffffff, width: 3 }); // White inner border
     this.leaderboardModal.addChild(borderBg);
 
     // 3. Bright Cream Card Face
@@ -1586,7 +1586,7 @@ export class MainMenuScene {
           ]
         })
       })
-      .stroke({ color: 0xffea00, width: 2.5 }); // Gold inner border
+      .stroke({ color: 0xffffff, width: 3 }); // White inner border
     this.settingsModal.addChild(borderBg);
 
     // 3. Bright Cream Card Face
@@ -1621,12 +1621,19 @@ export class MainMenuScene {
       text: "CÀI ĐẶT GAME",
       style: new TextStyle({
         fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 18,
+        fontSize: 22,
         fill: 0xffffff,
-        fontWeight: "bold",
-        letterSpacing: 1.5,
-        
-        }),
+        fontWeight: "900",
+        stroke: { color: 0x004466, width: 4 },
+        dropShadow: {
+          alpha: 1,
+          angle: Math.PI / 2,
+          blur: 0,
+          color: 0x002244,
+          distance: 3,
+        },
+        letterSpacing: 2,
+      }),
     });
     titleText.anchor.set(0.5);
     titleText.position.set(0, ribbonY);
