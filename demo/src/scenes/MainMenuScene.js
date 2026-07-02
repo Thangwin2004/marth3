@@ -1718,8 +1718,8 @@ export class MainMenuScene {
     };
 
     // Add Music and SFX rows (spaced out for cardH = 300)
-    const musicRowY = -80;
-    const sfxRowY = -10;
+    const musicRowY = -90;
+    const sfxRowY = 5;
 
     const musicRow = createToggleRow(
       "NHẠC NỀN",
@@ -1749,7 +1749,7 @@ export class MainMenuScene {
     const resetBtn = this.createMenuButton(
       "🗑️ Xóa lịch sử",
       0,
-      75,
+      85,
       "red",
       260,
       async () => {

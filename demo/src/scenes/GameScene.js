@@ -4085,8 +4085,8 @@ export class GameScene {
     };
 
     // Add Music and SFX rows (spaced out for cardH = 300)
-    const musicRowY = -80;
-    const sfxRowY = -10;
+    const musicRowY = -90;
+    const sfxRowY = 5;
 
     const musicRow = createToggleRow(
       "NHẠC NỀN",
