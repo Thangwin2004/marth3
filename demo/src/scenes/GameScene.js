@@ -2878,12 +2878,12 @@ export class GameScene {
           ]
         })
       })
-      .stroke({ color: 0xffffff, width: 3 }); // White inner border
+      
     this.gameOverModal.addChild(borderBg);
 
     // 3. Bright Cream Card Face
     const cardFace = new Graphics()
-      .roundRect(-cardW / 2 + 8, -cardH / 2 + 8, cardW - 16, cardH - 16, 18)
+      .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 18)
       .fill({ color: 0xfbfaf5 });
     this.gameOverModal.addChild(cardFace);
 
@@ -3967,17 +3967,17 @@ export class GameScene {
           start: { x: 0, y: -cardH / 2 },
           end: { x: 0, y: cardH / 2 },
           colorStops: [
-            { offset: 0, color: 0xb266ff },
-            { offset: 1, color: 0x5900b3 }
+            { offset: 0, color: 0xd2a6ff },
+            { offset: 1, color: 0x9933ff }
           ]
         })
       })
-      .stroke({ color: 0xffffff, width: 3 }); // White inner border
+      
     this.settingsModal.addChild(borderBg);
 
     // 3. Bright Cream Card Face
     const cardFace = new Graphics()
-      .roundRect(-cardW / 2 + 8, -cardH / 2 + 8, cardW - 16, cardH - 16, 14)
+      .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 14)
       .fill({ color: 0xfbfaf5 });
     this.settingsModal.addChild(cardFace);
 
