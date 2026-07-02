@@ -619,19 +619,34 @@ export class MainMenuScene {
     // 4. Play Button & Circular buttons below it (Memory Card style layout)
     // Distribute dynamically to avoid overlap and fill empty space
     const titleBottomY = this.infoText ? this.infoText.y : (this.titleContainer ? this.titleContainer.y + 115 * scale : height * 0.35);
-    const playY = Math.max(titleBottomY + 80 * scale, height * 0.55);
+    let playY = Math.max(titleBottomY + 80 * scale, height * 0.55);
     const playH = Math.max(68, Math.min(84, 84 * scale));
+
+    const circR = Math.max(34, Math.min(42, 42 * scale));
+    const circGap = 28 * scale;
+    
+    // Parade top bound is roughly (height - 85) - 30 = height - 115
+    const maxCircY = height - 115 - 15 - circR; 
+
+    // Determine circY, spacing it nicely below playBtn but avoiding parade
+    let circY = Math.max(playY + 110 * scale, height * 0.75);
+    if (circY > maxCircY) {
+      circY = maxCircY;
+    }
+    
+    // If circY was pushed up too high, ensure it doesn't overlap playBtn
+    const minCircY = playY + playH / 2 + circR + 15;
+    if (circY < minCircY) {
+      circY = minCircY;
+      // If even minCircY pushes playBtn out, shift playBtn up
+      playY = circY - (playH / 2 + circR + 15);
+    }
 
     if (this.playBtn) {
       this.playBtn.position.set(width / 2, playY);
       this.playBtn.updateStyle(playH / 2 / scale);
       this.playBtn.scale.set(scale);
     }
-
-    // Push circY to bottom but keep safe distance from playBtn
-    const circY = Math.max(playY + 110 * scale, height * 0.8);
-    const circR = Math.max(34, Math.min(42, 42 * scale));
-    const circGap = 28 * scale;
 
     const visibleCircs = [];
     if (this.achievementsBtn) {
