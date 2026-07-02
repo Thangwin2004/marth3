@@ -394,7 +394,7 @@ export function drawVectorIcon(g, type, size) {
           fontSize: size * 0.95,
           fill: 0xFFFFFF,
           align: 'center',
-          stroke: { color: 0x000000, width: 3 },
+          
           })
       });
       text.anchor.set(0.5);
@@ -422,8 +422,7 @@ export function createVectorIcon(type, size = 28) {
         fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
         fontSize: size * 0.5,
         fill: 0xffffff,
-        stroke: { color: 0x000000, width: 3.5, join: 'round' }
-      }
+        }
     });
     text.anchor.set(0.5);
     container.addChild(text);
@@ -607,7 +606,7 @@ export class Colorful3DButton extends Container {
           fontSize: fontSize,
           fill: 0xFFFFFF,
           align: "center",
-          stroke: { color: 0x000000, width: 4.5, join: 'round' },
+          
           })
       });
       this.label.anchor.set(0.5);

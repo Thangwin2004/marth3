@@ -426,7 +426,7 @@ export class MainMenuScene {
         fontSize: 48,
         fontWeight: "bold",
         fill: titleGrad,
-        stroke: { color: "#360207", width: 6 },
+        
         
       },
     });
@@ -440,7 +440,7 @@ export class MainMenuScene {
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
-        stroke: { color: "#000000", width: 4 },
+        
         letterSpacing: 4,
         
       },
@@ -473,7 +473,7 @@ export class MainMenuScene {
         fontSize: 18,
         fontWeight: "bold",
         fill: "#ffdd57",
-        stroke: { color: "#000000", width: 4 },
+        
         
       },
     });
@@ -755,7 +755,7 @@ export class MainMenuScene {
           fontSize: 14,
           fontWeight: "bold",
           fill: "#ffffff",
-          stroke: { color: 0x000000, width: 4.5, join: 'round' },
+          
           }),
       });
       text.anchor.set(0.5);
@@ -799,7 +799,7 @@ export class MainMenuScene {
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
-            stroke: { color: 0x000000, width: 4.5, join: 'round' },
+            
             }),
         });
         text.anchor.set(0.5);
@@ -819,7 +819,7 @@ export class MainMenuScene {
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
-            stroke: { color: 0x000000, width: 4.5, join: 'round' },
+            
             }),
         });
         text.anchor.set(0.5);
@@ -888,7 +888,7 @@ export class MainMenuScene {
         fontSize: 18,
         fill: 0xFFFFFF,
         align: 'center',
-        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        
         }
     });
     label.anchor.set(0.5);
@@ -1142,7 +1142,7 @@ export class MainMenuScene {
         fontWeight: "bold",
         letterSpacing: 1.5,
         align: "center",
-        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        
         }),
     });
     titleText.anchor.set(0.5);
@@ -1174,7 +1174,7 @@ export class MainMenuScene {
         fontSize: 13,
         fontWeight: "bold",
         fill: currentUser ? "#e91e63" : "#7c73a1",
-        stroke: { color: 0xffffff, width: 3, join: 'round' },
+        
       }),
     });
     userText.anchor.set(0.5);
@@ -1193,7 +1193,7 @@ export class MainMenuScene {
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
-        stroke: { color: 0xffffff, width: 3.5, join: 'round' },
+        
       }),
     });
     rankHeader.anchor.set(0.5);
@@ -1207,7 +1207,7 @@ export class MainMenuScene {
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
-        stroke: { color: 0xffffff, width: 3.5, join: 'round' },
+        
       }),
     });
     scoreHeader.anchor.set(0.5);
@@ -1305,7 +1305,7 @@ export class MainMenuScene {
               fontSize: 24,
               fontWeight: "bold",
               fill: "#241d4f",
-              stroke: { color: 0xffffff, width: 3.5, join: 'round' },
+              
             }),
           });
           rankNode.anchor.set(0.5);
@@ -1353,7 +1353,7 @@ export class MainMenuScene {
             fontSize: 18,
             fontWeight: "bold",
             fill: "#241d4f",
-            stroke: { color: 0xffffff, width: 2.5, join: 'round' },
+            
           }),
         });
         nameText.anchor.set(0, 0.5);
@@ -1368,7 +1368,7 @@ export class MainMenuScene {
             fontSize: 24,
             fontWeight: "bold",
             fill: "#241d4f",
-            stroke: { color: 0xffffff, width: 2.5, join: 'round' },
+            
           }),
         });
         scoreText.anchor.set(1, 0.5);
@@ -1419,8 +1419,7 @@ export class MainMenuScene {
           fontSize: 24,
           fontWeight: "bold",
           fill: "#241d4f",
-          stroke: { color: 0xffffff, width: 3.5, join: 'round' }
-        })
+          })
       });
       footerRankNode.anchor.set(0.5);
     }
@@ -1461,7 +1460,7 @@ export class MainMenuScene {
         fontSize: 18,
         fontWeight: "bold",
         fill: "#241d4f",
-        stroke: { color: 0xffffff, width: 3, join: 'round' },
+        
       }),
     });
     footerName.anchor.set(0, 0.5);
@@ -1476,7 +1475,7 @@ export class MainMenuScene {
         fontSize: 24,
         fontWeight: "bold",
         fill: "#241d4f",
-        stroke: { color: 0xffffff, width: 3.5, join: 'round' },
+        
       }),
     });
     footerScore.anchor.set(1, 0.5);
@@ -1610,7 +1609,7 @@ export class MainMenuScene {
         fill: 0xffffff,
         fontWeight: "bold",
         letterSpacing: 1.5,
-        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        
         }),
     });
     titleText.anchor.set(0.5);
@@ -1658,8 +1657,7 @@ export class MainMenuScene {
           fill: "#360207",
           fontWeight: "bold",
           letterSpacing: 0.8,
-          stroke: { color: 0xffffff, width: 3.5, join: 'round' }
-        }),
+          }),
       });
       label.anchor.set(0, 0.5);
       label.position.set(-115, 0);

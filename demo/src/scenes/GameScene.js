@@ -525,7 +525,7 @@ export class GameScene {
         fontSize: 26,
         fontWeight: "bold",
         fill: "#ffdd57",
-        stroke: { color: "#000000", width: 4 },
+        
         
       },
     });
@@ -571,7 +571,7 @@ export class GameScene {
         fontSize: 24,
         fontWeight: "bold",
         fill: "#ffffff",
-        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        
         
         padding: 24,
       },
@@ -591,7 +591,7 @@ export class GameScene {
         fontSize: 24,
         fontWeight: "bold",
         fill: "#ffffff",
-        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        
         
         padding: 24,
       },
@@ -607,7 +607,7 @@ export class GameScene {
         fontSize: 42,
         fontWeight: "bold",
         fill: "#ff5252",
-        stroke: { color: "#000000", width: 6, join: 'round' },
+        
         
       },
     });
@@ -622,7 +622,7 @@ export class GameScene {
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
-        stroke: { color: "#000000", width: 3, join: 'round' },
+        
         
       },
     });
@@ -2878,7 +2878,7 @@ export class GameScene {
         fontSize: 34,
         fill: 0xffea00,
         fontWeight: "900",
-        stroke: { width: 8, color: 0xffea00 },
+        
       },
     });
     glowText.anchor.set(0.5);
@@ -2895,7 +2895,7 @@ export class GameScene {
         fontSize: 34,
         fill: titleGrad,
         fontWeight: "900",
-        stroke: { width: 5, color: 0x360207 },
+        
         
       },
     });
@@ -3072,7 +3072,7 @@ export class GameScene {
           fontSize: 10,
           fill: "#ffffff",
           fontWeight: "bold",
-          stroke: { color: 0x000000, width: 2.5, join: 'round' },
+          
           
           padding: 8,
         },
@@ -3090,7 +3090,7 @@ export class GameScene {
         fontSize: 26,
         fontWeight: "bold",
         fill: "#241d4f",
-        stroke: { color: 0xffffff, width: 3.5, join: 'round' },
+        
       },
     });
     scoreLabel.anchor.set(0.5);
@@ -3112,7 +3112,7 @@ export class GameScene {
           fontSize: 20,
           fontWeight: "bold",
           fill: "#e91e63",
-          stroke: { color: 0xffffff, width: 3.5, join: 'round' },
+          
         },
       });
       rankText.anchor.set(0.5);
@@ -3141,7 +3141,7 @@ export class GameScene {
           fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 14,
           fill: "#7c73a1",
-          stroke: { color: 0xffffff, width: 2.5, join: 'round' },
+          
         },
       });
       normalLabel.anchor.set(0.5);
@@ -3351,7 +3351,7 @@ export class GameScene {
         fontWeight: "bold",
         fill: "#ffea00",
         align: "center",
-        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        
         
       },
     });
@@ -3483,7 +3483,7 @@ export class GameScene {
           fontSize: textSize,
           fontWeight: "bold",
           fill: textColor,
-          stroke: { color: 0x000000, width: 4.5, join: 'round' },
+          
           }),
       });
       text.anchor.set(0.5);
@@ -3503,7 +3503,7 @@ export class GameScene {
           fontSize: textSize,
           fontWeight: "bold",
           fill: textColor,
-          stroke: { color: 0x000000, width: 4.5, join: 'round' },
+          
           }),
       });
       text.anchor.set(0.5);
@@ -3982,7 +3982,7 @@ export class GameScene {
         fill: 0xffffff,
         fontWeight: "bold",
         letterSpacing: 1.5,
-        stroke: { color: 0x000000, width: 4.5, join: 'round' },
+        
         }),
     });
     titleText.anchor.set(0.5);
@@ -4011,8 +4011,7 @@ export class GameScene {
           fill: "#360207",
           fontWeight: "bold",
           letterSpacing: 0.8,
-          stroke: { color: 0xffffff, width: 3.5, join: 'round' }
-        }),
+          }),
       });
       label.anchor.set(0, 0.5);
       label.position.set(-115, 0);
