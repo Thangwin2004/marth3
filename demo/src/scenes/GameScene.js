@@ -3985,10 +3985,11 @@ export class GameScene {
     const ribbonW = 210;
     const ribbonH = 42;
     const ribbonY = -cardH / 2;
+    const ribbonRadius = ribbonH / 2;
     const ribbon = new Graphics()
-      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2 + 4, ribbonW, ribbonH, 10)
+      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2 + 5, ribbonW, ribbonH, ribbonRadius)
       .fill({ color: 0x004466 }) // Ribbon shadow
-      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2, ribbonW, ribbonH, 10)
+      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2, ribbonW, ribbonH, ribbonRadius)
       .fill({
         fill: new FillGradient({
           start: { x: 0, y: ribbonY - ribbonH / 2 },
@@ -3999,7 +4000,9 @@ export class GameScene {
           ]
         })
       })
-      .stroke({ color: 0xe6f9ff, width: 2 });
+      .stroke({ color: 0xffffff, width: 3.5 })
+      .ellipse(0, ribbonY - ribbonH / 4, ribbonW * 0.42, ribbonH * 0.2)
+      .fill({ color: 0xffffff, alpha: 0.25 });
     this.settingsModal.addChild(ribbon);
 
     // Title text inside ribbon
@@ -4010,14 +4013,6 @@ export class GameScene {
         fontSize: 22,
         fill: 0xffffff,
         fontWeight: "900",
-        stroke: { color: 0x004466, width: 4 },
-        dropShadow: {
-          alpha: 1,
-          angle: Math.PI / 2,
-          blur: 0,
-          color: 0x002244,
-          distance: 3,
-        },
         letterSpacing: 2,
       }),
     });
