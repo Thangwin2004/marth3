@@ -1652,7 +1652,7 @@ export class MainMenuScene {
     const closeBtn = this.createCircularButton("✕", cardW / 2 - 20, -cardH / 2 + 20, closePopup, this.settingsModal);
 
     // Reusable Toggle Row Builder
-    const createToggleRow = (labelText, yPos, initialMuteState, onToggle) => {
+    const createToggleRow = (labelText, yPos, initialMuteState, onToggle, strokeColor = 0xddeaff) => {
       const row = new Container();
       row.position.set(0, yPos);
 
@@ -1661,7 +1661,7 @@ export class MainMenuScene {
       const rowBg = new Graphics()
         .roundRect(-165, -32, 330, 64, 15)
         .fill({ color: 0xffffff }) // Warm creamy beige
-        .stroke({ color: 0xddeaff, width: 2 });
+        .stroke({ color: strokeColor, width: 3 });
       row.addChild(rowBg);
 
       // Left label (enlarged cartoon text)
@@ -1728,7 +1728,8 @@ export class MainMenuScene {
       () => {
         soundManager.toggleMusic();
         return !soundManager.musicEnabled;
-      }
+      },
+      0x00ccff // Cyan border
     );
     const sfxRow = createToggleRow(
       "HIỆU ỨNG",
@@ -1737,7 +1738,8 @@ export class MainMenuScene {
       () => {
         soundManager.enabled = !soundManager.enabled;
         return !soundManager.enabled;
-      }
+      },
+      0xff66cc // Pink border
     );
 
     this.settingsModal.addChild(musicRow);
@@ -1772,7 +1774,7 @@ export class MainMenuScene {
       },
     });
     versionText.anchor.set(0.5);
-    versionText.position.set(0, 140);
+    versionText.position.set(0, 150);
     this.settingsModal.addChild(versionText);
 
     // Apply responsive layout immediately to compute target scale

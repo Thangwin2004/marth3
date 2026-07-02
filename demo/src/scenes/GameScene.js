@@ -3949,7 +3949,7 @@ export class GameScene {
     popup.addChild(this.settingsModal);
 
     const cardW = 420;
-    const cardH = 360;
+    const cardH = 380;
 
     // 1. Soft Card Shadow
     const cardShadow = new Graphics()
@@ -4019,7 +4019,7 @@ export class GameScene {
     this.settingsModal.addChild(titleText);
 
     // Reusable Toggle Row Builder
-    const createToggleRow = (labelText, yPos, initialMuteState, onToggle) => {
+    const createToggleRow = (labelText, yPos, initialMuteState, onToggle, strokeColor = 0xddeaff) => {
       const row = new Container();
       row.position.set(0, yPos);
 
@@ -4028,7 +4028,7 @@ export class GameScene {
       const rowBg = new Graphics()
         .roundRect(-165, -32, 330, 64, 15)
         .fill({ color: 0xffffff }) // Warm creamy beige
-        .stroke({ color: 0xddeaff, width: 2 });
+        .stroke({ color: strokeColor, width: 3 });
       row.addChild(rowBg);
 
       // Left label (enlarged cartoon text)
@@ -4085,8 +4085,8 @@ export class GameScene {
     };
 
     // Add Music and SFX rows (spaced out for cardH = 300)
-    const musicRowY = -75;
-    const sfxRowY = 0;
+    const musicRowY = -80;
+    const sfxRowY = -10;
 
     const musicRow = createToggleRow(
       "NHẠC NỀN",
@@ -4095,7 +4095,8 @@ export class GameScene {
       () => {
         soundManager.toggleMusic();
         return !soundManager.musicEnabled;
-      }
+      },
+      0x00ccff // Cyan border
     );
     const sfxRow = createToggleRow(
       "HIỆU ỨNG",
@@ -4104,7 +4105,8 @@ export class GameScene {
       () => {
         soundManager.enabled = !soundManager.enabled;
         return !soundManager.enabled;
-      }
+      },
+      0xff66cc // Pink border
     );
 
     this.settingsModal.addChild(musicRow);
@@ -4132,7 +4134,7 @@ export class GameScene {
     this.createCircularButton(
       "🏠",
       -80,
-      45,
+      85,
       async () => {
         closePopup();
         const { MainMenuScene } = await import("./MainMenuScene.js");
@@ -4145,7 +4147,7 @@ export class GameScene {
     this.createCircularButton(
       "🔄",
       0,
-      45,
+      85,
       async () => {
         closePopup();
         await sceneManager.switchTo(GameScene);
@@ -4157,7 +4159,7 @@ export class GameScene {
     this.createCircularButton(
       "▶️",
       80,
-      45,
+      85,
       closePopup,
       this.settingsModal,
       32
@@ -4172,7 +4174,7 @@ export class GameScene {
       },
     });
     versionText.anchor.set(0.5);
-    versionText.position.set(0, 130);
+    versionText.position.set(0, 150);
     this.settingsModal.addChild(versionText);
 
     // Apply responsive layout immediately to compute target scale
