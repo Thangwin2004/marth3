@@ -293,7 +293,7 @@ html, body {
 #splash-screen {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: #070714;
+  background: radial-gradient(circle at center, #3c1e70 0%, #170b2e 100%);
   display: flex;
   justify-content: center;
   align-items: center;

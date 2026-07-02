@@ -293,7 +293,7 @@ export class GameScene {
     // Background to cover the transition
     this.loadingBg = new Graphics();
     this.loadingBg.rect(0, 0, App.app.screen.width, App.app.screen.height);
-    this.loadingBg.fill(0x0f0f1a); // Dark harmonious background
+    this.loadingBg.fill(0x241442); // Deep vibrant purple matching game aesthetic
     this.container.addChild(this.loadingBg);
 
     this.loadingText = new Text({
