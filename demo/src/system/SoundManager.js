@@ -69,7 +69,6 @@ class SoundManager {
     // BGM
     if (!this.musicEnabled || window.__GLOBAL_MUTE__) {
       this.bgmGain.gain.value = 0;
-      if (this.bgm) this.bgm.pause();
     } else {
       this.bgmGain.gain.value = 1;
       if (this.bgm && this.bgm.paused) {
