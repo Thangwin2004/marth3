@@ -213,11 +213,11 @@ function killTweensRecursive(obj) {
 
 const palettes = {
   yellow: { top: 0xFFE500, bottom: 0xFF9900, shadow: 0x8A4500, stroke: 0xFFF8B3 },
-  green:  { top: 0x7FFF00, bottom: 0x00CC00, shadow: 0x006600, stroke: 0xD4FFD4 },
-  pink:   { top: 0xFF66B2, bottom: 0xCC0066, shadow: 0x800040, stroke: 0xFFE6F2 },
-  blue:   { top: 0x33CCFF, bottom: 0x0088CC, shadow: 0x004466, stroke: 0xE6F9FF },
+  green: { top: 0x7FFF00, bottom: 0x00CC00, shadow: 0x006600, stroke: 0xD4FFD4 },
+  pink: { top: 0xFF66B2, bottom: 0xCC0066, shadow: 0x800040, stroke: 0xFFE6F2 },
+  blue: { top: 0x33CCFF, bottom: 0x0088CC, shadow: 0x004466, stroke: 0xE6F9FF },
   purple: { top: 0xB266FF, bottom: 0x5900B3, shadow: 0x330066, stroke: 0xF2E6FF },
-  red:    { top: 0xF95E8B, bottom: 0xD93955, shadow: 0x92233F, stroke: 0xFFD4E2 }
+  red: { top: 0xF95E8B, bottom: 0xD93955, shadow: 0x92233F, stroke: 0xFFD4E2 }
 };
 
 const getColorStyle = (colorValue, label = "") => {
@@ -226,12 +226,12 @@ const getColorStyle = (colorValue, label = "") => {
   if (lbl.includes("TIẾP TỤC")) return "yellow";
   if (lbl.includes("QUAY LẠI") || lbl.includes("BACK") || lbl.includes("TRANG CHỦ")) return "blue";
   if (lbl.includes("XÓA") || lbl.includes("RESET")) return "red";
-  
+
   if (colorValue === 0x5c0612 || colorValue === 0xd32f2f) return "red";
   if (colorValue === 0x1b0103) return "blue";
   if (colorValue === 0x4caf50 || colorValue === 0x2ecc71) return "green";
   if (colorValue === 0xffaa00 || colorValue === 0xffea00) return "yellow";
-  
+
   return "purple";
 };
 
@@ -264,7 +264,7 @@ function createVectorIcon(emojiChar, size = 24) {
   const tex = getIconTexture(emojiChar);
   if (tex) {
     const sprite = new Sprite(tex);
-        sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
+    sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
     const finalSize = String(emojiChar).includes("🗑️") ? size * 1.55 : size;
     sprite.width = finalSize;
     sprite.height = finalSize;
@@ -475,7 +475,7 @@ export class GameScene {
     const theme = palettes.purple;
 
     this.boardBg = new Graphics();
-    
+
     // 1. 3D Shadow Base
     this.boardBg.roundRect(0, shadowOffset, w, h, 24);
     this.boardBg.fill({ color: theme.shadow });
@@ -554,8 +554,8 @@ export class GameScene {
         fontSize: 26,
         fontWeight: "bold",
         fill: "#ffdd57",
-        
-        
+
+
       },
     });
     floatText.anchor.set(0.5);
@@ -600,8 +600,8 @@ export class GameScene {
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
-        
-        
+
+
         padding: 24,
       },
     });
@@ -620,8 +620,8 @@ export class GameScene {
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
-        
-        
+
+
         padding: 24,
       },
     });
@@ -636,8 +636,8 @@ export class GameScene {
         fontSize: 42,
         fontWeight: "bold",
         fill: "#ff5252",
-        
-        
+
+
       },
     });
     this.comboText.anchor.set(0.5);
@@ -651,8 +651,8 @@ export class GameScene {
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
-        
-        
+
+
       },
     });
     this.tutorialText.anchor.set(0.5);
@@ -933,8 +933,8 @@ export class GameScene {
         otherTile.color !== "rainbow" && otherTile.color !== "stone"
           ? otherTile.color
           : this.sessionColors[
-              Math.floor(Math.random() * this.sessionColors.length)
-            ];
+          Math.floor(Math.random() * this.sessionColors.length)
+          ];
 
       comboTextStr =
         specialType === "drum"
@@ -1266,16 +1266,16 @@ export class GameScene {
       // Get screen coordinates
       const pX = centerTile.sprite
         ? centerTile.sprite.x * this.board.container.scale.x +
-          this.board.container.x
+        this.board.container.x
         : c * App.config.tileSize * this.board.container.scale.x +
-          this.board.container.x +
-          (App.config.tileSize * this.board.container.scale.x) / 2;
+        this.board.container.x +
+        (App.config.tileSize * this.board.container.scale.x) / 2;
       const pY = centerTile.sprite
         ? centerTile.sprite.y * this.board.container.scale.y +
-          this.board.container.y
+        this.board.container.y
         : r * App.config.tileSize * this.board.container.scale.y +
-          this.board.container.y +
-          (App.config.tileSize * this.board.container.scale.y) / 2;
+        this.board.container.y +
+        (App.config.tileSize * this.board.container.scale.y) / 2;
 
       pendingExplosions.push({
         match,
@@ -1408,11 +1408,11 @@ export class GameScene {
               : exp.col;
             const tX = specialTile.sprite
               ? specialTile.sprite.x * this.board.container.scale.x +
-                this.board.container.x
+              this.board.container.x
               : exp.x;
             const tY = specialTile.sprite
               ? specialTile.sprite.y * this.board.container.scale.y +
-                this.board.container.y
+              this.board.container.y
               : exp.y;
 
             if (specialTile.isDrum) {
@@ -1708,16 +1708,16 @@ export class GameScene {
         // Get screen coordinates of the tile/field
         const tX = field.tile.sprite
           ? field.tile.sprite.x * this.board.container.scale.x +
-            this.board.container.x
+          this.board.container.x
           : field.col * App.config.tileSize * this.board.container.scale.x +
-            this.board.container.x +
-            (App.config.tileSize * this.board.container.scale.x) / 2;
+          this.board.container.x +
+          (App.config.tileSize * this.board.container.scale.x) / 2;
         const tY = field.tile.sprite
           ? field.tile.sprite.y * this.board.container.scale.y +
-            this.board.container.y
+          this.board.container.y
           : field.row * App.config.tileSize * this.board.container.scale.y +
-            this.board.container.y +
-            (App.config.tileSize * this.board.container.scale.y) / 2;
+          this.board.container.y +
+          (App.config.tileSize * this.board.container.scale.y) / 2;
 
         if (spawn.type === "rune") {
           field.tile.isRune = true;
@@ -2878,7 +2878,7 @@ export class GameScene {
           ]
         })
       })
-      
+
     this.gameOverModal.addChild(borderBg);
 
     // 3. Bright Cream Card Face
@@ -2907,7 +2907,7 @@ export class GameScene {
         fontSize: 34,
         fill: 0xffea00,
         fontWeight: "900",
-        
+
       },
     });
     glowText.anchor.set(0.5);
@@ -2924,8 +2924,8 @@ export class GameScene {
         fontSize: 34,
         fill: titleGrad,
         fontWeight: "900",
-        
-        
+
+
       },
     });
     victoryText.anchor.set(0.5);
@@ -3101,8 +3101,8 @@ export class GameScene {
           fontSize: 10,
           fill: "#ffffff",
           fontWeight: "bold",
-          
-          
+
+
           padding: 8,
         },
       });
@@ -3119,7 +3119,7 @@ export class GameScene {
         fontSize: 26,
         fontWeight: "bold",
         fill: "#241d4f",
-        
+
       },
     });
     scoreLabel.anchor.set(0.5);
@@ -3141,7 +3141,7 @@ export class GameScene {
           fontSize: 20,
           fontWeight: "bold",
           fill: "#e91e63",
-          
+
         },
       });
       rankText.anchor.set(0.5);
@@ -3170,7 +3170,7 @@ export class GameScene {
           fontFamily: '"Nunito", sans-serif',
           fontSize: 14,
           fill: "#7c73a1",
-          
+
         },
       });
       normalLabel.anchor.set(0.5);
@@ -3380,12 +3380,12 @@ export class GameScene {
         fontWeight: "bold",
         fill: "#ffea00",
         align: "center",
-        
-        
+
+
       },
     });
     text.anchor.set(0.5);
-        text.y = -2; // Optical center correction
+    text.y = -2; // Optical center correction
     this.deadlockModal.addChild(text);
 
     // Apply responsive layout immediately
@@ -3513,18 +3513,18 @@ export class GameScene {
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
-          
-          }),
+
+        }),
       });
       text.anchor.set(0.5);
-        text.y = -2; // Optical center correction
+      text.y = -2; // Optical center correction
       content.addChild(text);
       textObj = text;
 
       const gap = isSmall ? 6 : 12;
       const totalW = emojiIcon.width + gap + text.width;
       emojiIcon.x = -totalW / 2 + emojiIcon.width / 2;
-        emojiIcon.y = -1;
+      emojiIcon.y = -1;
       text.x = totalW / 2 - text.width / 2;
     } else {
       const textSize = isSmall ? 11 : (label.length > 2 ? 15 : 22);
@@ -3535,25 +3535,25 @@ export class GameScene {
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
-          
-          }),
+
+        }),
       });
       text.anchor.set(0.5);
-        text.y = -2; // Optical center correction
+      text.y = -2; // Optical center correction
       content.addChild(text);
       textObj = text;
     }
 
     // Interactivity
     btn.on("pointerover", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-        
+      if (window.matchMedia("(hover: none)").matches) return;
+
       gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
       // soundManager.playClick();
     });
     btn.on("pointerout", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-        
+      if (window.matchMedia("(hover: none)").matches) return;
+
       gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
     });
@@ -3580,24 +3580,24 @@ export class GameScene {
       if (parent) {
         parent.addChild(btn);
       }
- 
+
       btn.eventMode = "static";
       btn.cursor = "pointer";
- 
+
       const content = new Container();
       btn.addChild(content);
- 
+
       const sprite = new Sprite(tex);
-        sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
+      sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
       sprite.width = customRadius * 2;
       sprite.height = customRadius * 2;
-      const drawOverlays = (r) => {};
+      const drawOverlays = (r) => { };
       content.addChild(sprite);
 
 
 
       drawOverlays(customRadius);
- 
+
       btn.r = customRadius;
       btn.updateStyle = (r) => {
         btn.r = r;
@@ -3605,36 +3605,36 @@ export class GameScene {
         sprite.height = r * 2;
         drawOverlays(r);
       };
- 
+
       btn.on("pointerover", (e) => {
         if (window.matchMedia("(hover: none)").matches) return;
-        
+
         gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.12 });
         // soundManager.playClick();
       });
- 
+
       btn.on("pointerout", (e) => {
         if (window.matchMedia("(hover: none)").matches) return;
-        
+
         gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
       });
- 
+
       btn.on("pointerdown", () => {
         gsap.to(content, { y: 4, duration: 0.05 });
       });
- 
+
       btn.on("pointerup", () => {
         gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
         onClick();
       });
- 
+
       btn.on("pointerupoutside", () => {
         gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
       });
- 
+
       // Entrance animation
       btn.alpha = 0;
       gsap.to(btn, {
@@ -3643,7 +3643,7 @@ export class GameScene {
         delay: 0.4,
         ease: "power2.out",
       });
- 
+
       return btn;
     }
     return null;
@@ -3834,8 +3834,8 @@ export class GameScene {
           boardBottom =
             this.board.container.y +
             this.board.rows *
-              App.config.tileSize *
-              scale;
+            App.config.tileSize *
+            scale;
         }
         // Visual bottom of the board background (includes outline padding 16px)
         const boardBgBottom = boardBottom + 16 * scale;
@@ -3858,22 +3858,22 @@ export class GameScene {
 
         this.tutorialText.style.fontSize = 14;
         this.tutorialText.x = width / 2;
-        
+
         // Calculate the top of the board visually
         let boardTop = 115;
         if (this.boardBg && this.board) {
-            boardTop = this.board.container.y - 16 * this.board.container.scale.x;
+          boardTop = this.board.container.y - 16 * this.board.container.scale.x;
         }
-        
+
         const isMobileLandscape = width > height && height < 500;
         if (isMobileLandscape) {
-            // Hide on squished mobile landscape to save space
-            this.tutorialText.visible = false;
+          // Hide on squished mobile landscape to save space
+          this.tutorialText.visible = false;
         } else {
-            // On PC, HUD ends at y = 85 (25 + 60). Center the text between HUD and Board.
-            const hudBottom = 85;
-            this.tutorialText.y = hudBottom + (boardTop - hudBottom) / 2;
-            this.tutorialText.visible = true;
+          // On PC, HUD ends at y = 85 (25 + 60). Center the text between HUD and Board.
+          const hudBottom = 85;
+          this.tutorialText.y = hudBottom + (boardTop - hudBottom) / 2;
+          this.tutorialText.visible = true;
         }
       }
     }
@@ -3988,7 +3988,7 @@ export class GameScene {
           ]
         })
       })
-      
+
     this.settingsModal.addChild(borderBg);
 
     // 3. Bright Cream Card Face
@@ -4023,7 +4023,7 @@ export class GameScene {
 
     // Title text inside ribbon
     const titleText = new Text({
-      text: "CÀI ĐẶT GAME",
+      text: "CÀI ĐẶT",
       style: new TextStyle({
         fontFamily: '"Nunito", sans-serif',
         fontSize: 22,
