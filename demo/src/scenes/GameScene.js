@@ -2815,470 +2815,151 @@ export class GameScene {
       soundManager.playGameOver();
     }
 
-    this.gameOverScreen = new Container();
-    this.gameOverScreen.zIndex = 100;
-    this.container.addChild(this.gameOverScreen);
+    const overlay = document.createElement("div");
+    overlay.id = "game-over-overlay-id";
+    overlay.className = "game-popup-overlay";
 
-    // Overlay transparent background
-    this.gameOverOverlay = new Graphics();
-    this.gameOverOverlay.rect(
-      0,
-      0,
-      App.app.screen.width,
-      App.app.screen.height,
-    );
-    this.gameOverOverlay.fill({ color: 0x000000, alpha: 0.8 });
-    this.gameOverScreen.addChild(this.gameOverOverlay);
+    // Starburst rotation effect (pure CSS)
+    const starburst = document.createElement("div");
+    starburst.className = "game-over-starburst";
+    overlay.appendChild(starburst);
 
-    // Premium modal container
-    this.gameOverModal = new Container();
-    this.gameOverModal.x = App.app.screen.width / 2;
-    this.gameOverModal.y = App.app.screen.height / 2;
-    this.gameOverScreen.addChild(this.gameOverModal);
+    const card = document.createElement("div");
+    card.className = "game-popup-card";
 
-    // Hào quang vàng xoay nhẹ đằng sau modal Game Over
-    const starburst = new Graphics();
-    const rays = 12;
-    for (let i = 0; i < rays; i++) {
-      const angle1 = (i * Math.PI * 2) / rays - 0.1;
-      const angle2 = (i * Math.PI * 2) / rays + 0.1;
-      starburst.moveTo(0, 0);
-      starburst.arc(0, 0, 420, angle1, angle2);
-      starburst.fill({ color: 0xffdd57, alpha: 0.05 });
-    }
-    this.gameOverModal.addChild(starburst);
-    gsap.to(starburst, {
-      rotation: Math.PI * 2,
-      duration: 25,
-      repeat: -1,
-      ease: "none",
-    });
+    const title = document.createElement("div");
+    title.className = "game-popup-title";
+    title.innerText = "KẾT QUẢ";
+    card.appendChild(title);
 
-    const cardW = 480;
-    const cardH = 480;
+    // Score display
+    const scoreLabel = document.createElement("div");
+    scoreLabel.className = "game-over-stats";
+    scoreLabel.innerText = `ĐIỂM SỐ: ${this.score.toLocaleString()}`;
+    card.appendChild(scoreLabel);
 
-    // 1. Soft Card Shadow
-    const cardShadow = new Graphics()
-      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 24)
-      .fill({ color: 0x000000, alpha: 0.25 });
-    this.gameOverModal.addChild(cardShadow);
-
-    // 2. Thick 3D Cyan-Blue Border
-    const borderBg = new Graphics()
-      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24)
-      .fill({ color: 0x004466 }) // Shadow Base
-      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
-      .fill({
-        fill: new FillGradient({
-          start: { x: 0, y: -cardH / 2 },
-          end: { x: 0, y: cardH / 2 },
-          colorStops: [
-            { offset: 0, color: 0x33ccff },
-            { offset: 1, color: 0x0088cc }
-          ]
-        })
-      })
-
-    this.gameOverModal.addChild(borderBg);
-
-    // 3. Bright Cream Card Face
-    const cardFace = new Graphics()
-      .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 18)
-      .fill({ color: 0xfbfaf5 });
-    this.gameOverModal.addChild(cardFace);
-
-    // 1. Glowing neon & floating title
-    const titleContainer = new Container();
-    titleContainer.position.set(0, -185);
-    this.gameOverModal.addChild(titleContainer);
-
-    const titleGrad = new FillGradient({
-      end: { x: 0, y: 44 },
-      colorStops: [
-        { offset: 0, color: 0xffea00 },
-        { offset: 1, color: 0xff3300 },
-      ],
-    });
-
-    const glowText = new Text({
-      text: "TRÒ CHƠI KẾT THÚC",
-      style: {
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 34,
-        fill: 0xffea00,
-        fontWeight: "900",
-
-      },
-    });
-    glowText.anchor.set(0.5);
-    titleContainer.addChild(glowText);
-
-    const glowFilter = new BlurFilter();
-    glowFilter.blur = 5;
-    glowText.filters = [glowFilter];
-
-    const victoryText = new Text({
-      text: "TRÒ CHƠI KẾT THÚC",
-      style: {
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 34,
-        fill: titleGrad,
-        fontWeight: "900",
-
-
-      },
-    });
-    victoryText.anchor.set(0.5);
-    titleContainer.addChild(victoryText);
-
-    // Title animations
-    gsap.to(glowText, {
-      alpha: 0.35,
-      duration: 1.2,
-      yoyo: true,
-      repeat: -1,
-      ease: "sine.inOut",
-    });
-
-    gsap.to(titleContainer, {
-      y: "-=6",
-      duration: 1.5,
-      yoyo: true,
-      repeat: -1,
-      ease: "sine.inOut",
-    });
-
-    // 2. Central Vietnamese Emblem Badge (rotating trống đồng and detailed chim lạc birds!)
-    const badgeContainer = new Container();
-    badgeContainer.position.set(0, -68);
-    badgeContainer.scale.set(1.45);
-    this.gameOverModal.addChild(badgeContainer);
-
-    const lacBirdCtx = new GraphicsContext()
-      // --- Base Silhouette ---
-      .moveTo(35, -4)
-      .lineTo(10, -2)
-      .quadraticCurveTo(12, -7, 8, -8)
-      .quadraticCurveTo(-2, -16, -20, -14)
-      .quadraticCurveTo(-22, -13, -20, -12)
-      .quadraticCurveTo(-4, -10, 4, -5)
-      .quadraticCurveTo(-4, 2, -12, 8)
-      .quadraticCurveTo(-25, 14, -40, 10)
-      .quadraticCurveTo(-55, 15, -68, 22)
-      .quadraticCurveTo(-54, 11, -44, 5)
-      .quadraticCurveTo(-58, 12, -70, 14)
-      .quadraticCurveTo(-48, 5, -38, 2)
-      .lineTo(-32, -3)
-      .quadraticCurveTo(-18, -4, -4, -3)
-      .lineTo(10, -4.5)
-      .lineTo(35, -4)
-      .closePath()
-      .fill({ color: 0xd4af37, alpha: 0.25 })
-      .stroke({ width: 1.5, color: 0xd4af37 })
-
-      // --- Wings with Traditional Comb Feathers ---
-      .moveTo(-22, 0)
-      .bezierCurveTo(-15, -20, -5, -36, 10, -45)
-      .bezierCurveTo(-2, -30, -8, -18, -12, -10)
-      .quadraticCurveTo(-16, -18, -20, 0)
-      .closePath()
-      .fill({ color: 0xd4af37, alpha: 0.3 })
-      .stroke({ width: 1.5, color: 0xd4af37 })
-
-      .moveTo(0, -20)
-      .lineTo(4, -32)
-      .moveTo(-4, -16)
-      .lineTo(-1, -26)
-      .moveTo(-8, -12)
-      .lineTo(-5, -20)
-      .moveTo(-12, -8)
-      .lineTo(-9, -15)
-      .moveTo(-16, -4)
-      .lineTo(-13, -10)
-
-      // --- Plumed Crest ---
-      .moveTo(8, -8)
-      .bezierCurveTo(12, -16, 25, -20, 38, -22)
-      .bezierCurveTo(24, -14, 18, -8, 10, -7)
-      .closePath()
-      .fill({ color: 0xd4af37, alpha: 0.35 })
-      .stroke({ width: 1, color: 0xd4af37 })
-
-      // --- Tail Feathers ---
-      .moveTo(-20, -14)
-      .bezierCurveTo(-38, -18, -55, -15, -72, -10)
-      .bezierCurveTo(-52, -8, -35, -10, -20, -12)
-      .closePath()
-      .fill({ color: 0xd4af37, alpha: 0.35 })
-      .stroke({ width: 1, color: 0xd4af37 })
-
-      .moveTo(-32, -11)
-      .lineTo(-52, -14)
-      .moveTo(-42, -10)
-      .lineTo(-62, -12)
-
-      // --- Internal Dong Son Carving Details ---
-      .moveTo(11, -3.2)
-      .lineTo(32, -4)
-      .stroke({ width: 1.0, color: 0xd4af37, alpha: 0.7 })
-
-      .circle(7, -5, 2.2)
-      .fill({ color: 0xffea00 })
-      .stroke({ width: 0.8, color: 0x3e2723 })
-      .circle(7, -5, 0.8)
-      .fill({ color: 0x000000 })
-
-      .circle(-18, 5, 2.8)
-      .stroke({ width: 1.0, color: 0xd4af37 })
-      .circle(-18, 5, 1.2)
-      .fill({ color: 0xffea00 })
-
-      .circle(-28, 4, 2.2)
-      .stroke({ width: 1.0, color: 0xd4af37 })
-      .circle(-28, 4, 0.8)
-      .fill({ color: 0xffea00 })
-
-      .moveTo(-35, 6)
-      .quadraticCurveTo(-48, 15, -58, 18)
-      .stroke({ width: 1.2, color: 0xd4af37 })
-      .moveTo(-32, 7)
-      .quadraticCurveTo(-45, 17, -55, 20)
-      .stroke({ width: 1.2, color: 0xd4af37 });
-
-    const leftBird = new Graphics(lacBirdCtx);
-    leftBird.position.set(-82, -5);
-    leftBird.scale.set(-1.1, 1.1); // flip horizontally
-    badgeContainer.addChild(leftBird);
-
-    const rightBird = new Graphics(lacBirdCtx);
-    rightBird.position.set(82, -5);
-    rightBird.scale.set(1.1);
-    badgeContainer.addChild(rightBird);
-
-    // Rotating Drum (trống đồng, radius 42)
-    const drum = new Graphics()
-      .circle(0, 0, 42)
-      .fill(
-        new FillGradient({
-          start: { x: -42, y: -42 },
-          end: { x: 42, y: 42 },
-          colorStops: [
-            { offset: 0, color: 0xaa7c11 },
-            { offset: 0.5, color: 0x8a6d20 },
-            { offset: 1, color: 0x4a3b10 },
-          ],
-        }),
-      )
-      .stroke({ width: 2.2, color: 0xffea00 })
-      .circle(0, 0, 35)
-      .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.6 })
-      .circle(0, 0, 28)
-      .stroke({ width: 1, color: 0xd4af37, alpha: 0.5 })
-      .circle(0, 0, 20)
-      .stroke({ width: 0.8, color: 0xd4af37, alpha: 0.4 })
-      .star(0, 0, 12, 12, 5)
-      .fill({ color: 0xffea00 })
-      .stroke({ width: 1, color: 0xb89326 });
-    badgeContainer.addChild(drum);
-
-    gsap.to(drum, {
-      rotation: Math.PI * 2,
-      duration: 16,
-      repeat: -1,
-      ease: "none",
-    });
-
-    // Record Ribbon (relocated down)
+    // Record / Rank Banner
     if (rank) {
-      const ribbon = new Graphics()
-        .roundRect(-60, 30, 120, 20, 5)
-        .fill({ color: 0xd32f2f })
-        .stroke({ width: 1.2, color: 0xffea00 });
-      const ribbonText = new Text({
-        text: "KỶ LỤC MỚI!",
-        style: {
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: 10,
-          fill: "#ffffff",
-          fontWeight: "bold",
-
-
-          padding: 8,
-        },
-      });
-      ribbonText.anchor.set(0.5);
-      ribbonText.position.set(0, 40);
-      badgeContainer.addChild(ribbon, ribbonText);
-    }
-
-    // 3. Stats Labels (Relocated below the badge)
-    const scoreLabel = new Text({
-      text: `ĐIỂM SỐ: ${this.score}`,
-      style: {
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 26,
-        fontWeight: "bold",
-        fill: "#241d4f",
-
-      },
-    });
-    scoreLabel.anchor.set(0.5);
-    scoreLabel.y = 35;
-    this.gameOverModal.addChild(scoreLabel);
-
-    if (rank) {
-      const rankContainer = new Container();
-      rankContainer.y = 85;
-      this.gameOverModal.addChild(rankContainer);
-
-      const trophyL = createVectorIcon("🏆", 24);
-      rankContainer.addChild(trophyL);
-
-      const rankText = new Text({
-        text: ` KỶ LỤC MỚI! HẠNG #${rank} `,
-        style: {
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: 20,
-          fontWeight: "bold",
-          fill: "#e91e63",
-
-        },
-      });
-      rankText.anchor.set(0.5);
-      rankText.position.set(20, 0);
-      rankContainer.addChild(rankText);
-
-      // Center the elements in rankContainer
-      const gap = 8;
-      const totalW = trophyL.width + gap + rankText.width;
-      trophyL.x = -totalW / 2 + trophyL.width / 2;
-      rankText.x = totalW / 2 - rankText.width / 2;
-
-      rankContainer.scale.set(1.0);
-      gsap.to(rankContainer.scale, {
-        x: 1.06,
-        y: 1.06,
-        duration: 0.6,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
+      const rankBanner = document.createElement("div");
+      rankBanner.className = "game-over-record-banner";
+      rankBanner.innerHTML = `🏆 KỶ LỤC MỚI! HẠNG #${rank}`;
+      card.appendChild(rankBanner);
     } else {
-      const normalLabel = new Text({
-        text: "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!",
-        style: {
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: 14,
-          fill: "#7c73a1",
-
-        },
-      });
-      normalLabel.anchor.set(0.5);
-      normalLabel.y = 85;
-      this.gameOverModal.addChild(normalLabel);
+      const normalLabel = document.createElement("div");
+      normalLabel.className = "game-over-normal-text";
+      normalLabel.innerText = "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!";
+      card.appendChild(normalLabel);
     }
 
-    // 4. Action Buttons (Circular Icon style in a single row)
-    const btnY = 165;
-    const btnRadius = 32;
+    // Action buttons row
+    const btnRow = document.createElement("div");
+    btnRow.style.display = "flex";
+    btnRow.style.justifyContent = "center";
+    btnRow.style.alignItems = "center";
+    btnRow.style.gap = "15px";
+    btnRow.style.marginTop = "20px";
 
     // Revive button (heart icon)
-    const reviveBtn = this.createCircularButton(
-      "heart",
-      -135,
-      btnY,
-      async () => {
-        if (this.hasContinued) return;
-        const success = await AdManager.showRewardedVideo();
-        if (success) {
-          if (this.gameOverIntervalId) {
-            clearInterval(this.gameOverIntervalId);
-            this.gameOverIntervalId = null;
-          }
-          this.hasContinued = true;
-          this.moves = 5;
-          this.isGameOver = false;
-          this.disabled = false;
-          gsap.to(this.gameOverScreen, {
-            alpha: 0,
-            duration: 0.3,
-            onComplete: () => {
-              killTweensRecursive(this.gameOverScreen);
-              this.gameOverScreen.destroy({ children: true });
-              this.gameOverScreen = null;
-              soundManager.stopBGM();
-              soundManager.playBGM();
-            },
-          });
-        }
-      },
-      this.gameOverModal,
-      btnRadius
-    );
+    const reviveBtn = document.createElement("button");
+    reviveBtn.className = "game-over-button";
+    reviveBtn.style.backgroundImage = "url(/assets/revive_btn.png)";
     if (this.hasContinued) {
-      reviveBtn.alpha = 0.5;
-      reviveBtn.eventMode = "none";
+      reviveBtn.className += " disabled";
     }
-
-    // Double Reward button (star x2 icon)
-    let hasDoubled = false;
-    const doubleBtn = this.createCircularButton(
-      "star",
-      -45,
-      btnY,
-      async () => {
-        if (hasDoubled) return;
-        const success = await AdManager.showRewardedVideo();
-        if (success) {
-          hasDoubled = true;
-          doubleBtn.alpha = 0.5;
-          doubleBtn.eventMode = "none";
-          this.score = this.score * 2;
-          scoreLabel.text = `ĐIỂM SỐ: ${this.score}`;
-          await gameAlert("🎉 Điểm số của bạn đã được x2!");
-        }
-      },
-      this.gameOverModal,
-      btnRadius
-    );
-
-    // PLAY AGAIN Button (replay arrow icon)
-    this.createCircularButton(
-      "🔄",
-      45,
-      btnY,
-      async () => {
+    reviveBtn.addEventListener("click", async () => {
+      if (this.hasContinued) return;
+      soundManager.playClick();
+      const success = await AdManager.showRewardedVideo();
+      if (success) {
         if (this.gameOverIntervalId) {
           clearInterval(this.gameOverIntervalId);
           this.gameOverIntervalId = null;
         }
-        window.defeatCount_marth3 = (window.defeatCount_marth3 || 0) + 1;
-        if (window.defeatCount_marth3 >= 3) {
-          window.defeatCount_marth3 = 0;
-          await AdManager.showInterstitial();
-        }
-        await sceneManager.switchTo(GameScene);
-      },
-      this.gameOverModal,
-      btnRadius
-    );
+        this.hasContinued = true;
+        this.moves = 5;
+        this.isGameOver = false;
+        this.disabled = false;
+        overlay.style.opacity = "0";
+        card.style.transform = "scale(0.85)";
+        setTimeout(() => {
+          overlay.remove();
+          this.gameOverScreen = null;
+          soundManager.stopBGM();
+          soundManager.playBGM();
+        }, 250);
+      }
+    });
+    btnRow.appendChild(reviveBtn);
+
+    // Double Reward button (x2 icon)
+    let hasDoubled = false;
+    const doubleBtn = document.createElement("button");
+    doubleBtn.className = "game-over-button";
+    doubleBtn.style.backgroundImage = "url(/assets/x2_btn.png)";
+    doubleBtn.addEventListener("click", async () => {
+      if (hasDoubled) return;
+      soundManager.playClick();
+      const success = await AdManager.showRewardedVideo();
+      if (success) {
+        hasDoubled = true;
+        doubleBtn.className += " disabled";
+        this.score = this.score * 2;
+        scoreLabel.innerText = `ĐIỂM SỐ: ${this.score.toLocaleString()}`;
+        await gameAlert("🎉 Điểm số của bạn đã được x2!");
+      }
+    });
+    btnRow.appendChild(doubleBtn);
+
+    // PLAY AGAIN Button (replay icon)
+    const replayBtn = document.createElement("button");
+    replayBtn.className = "game-over-button";
+    replayBtn.style.backgroundImage = "url(/assets/replay_btn.png)";
+    replayBtn.addEventListener("click", async () => {
+      soundManager.playClick();
+      if (this.gameOverIntervalId) {
+        clearInterval(this.gameOverIntervalId);
+        this.gameOverIntervalId = null;
+      }
+      window.defeatCount_marth3 = (window.defeatCount_marth3 || 0) + 1;
+      if (window.defeatCount_marth3 >= 3) {
+        window.defeatCount_marth3 = 0;
+        await AdManager.showInterstitial();
+      }
+      overlay.remove();
+      this.gameOverScreen = null;
+      await sceneManager.switchTo(GameScene);
+    });
+    btnRow.appendChild(replayBtn);
 
     // MAIN MENU Button (home icon)
-    this.createCircularButton(
-      "🏠",
-      135,
-      btnY,
-      async () => {
-        if (this.gameOverIntervalId) {
-          clearInterval(this.gameOverIntervalId);
-          this.gameOverIntervalId = null;
-        }
-        const { MainMenuScene } = await import("./MainMenuScene.js");
-        await sceneManager.switchTo(MainMenuScene);
-      },
-      this.gameOverModal,
-      btnRadius
-    );
+    const homeBtn = document.createElement("button");
+    homeBtn.className = "game-over-button";
+    homeBtn.style.backgroundImage = "url(/assets/home_btn.png)";
+    homeBtn.addEventListener("click", async () => {
+      soundManager.playClick();
+      if (this.gameOverIntervalId) {
+        clearInterval(this.gameOverIntervalId);
+        this.gameOverIntervalId = null;
+      }
+      overlay.remove();
+      this.gameOverScreen = null;
+      const { MainMenuScene } = await import("./MainMenuScene.js");
+      await sceneManager.switchTo(MainMenuScene);
+    });
+    btnRow.appendChild(homeBtn);
+
+    card.appendChild(btnRow);
+    overlay.appendChild(card);
+    const appContainer = document.getElementById("app") || document.body;
+    appContainer.appendChild(overlay);
+
+    this.gameOverScreen = {
+      isHTML: true,
+      destroy: () => {
+        overlay.remove();
+        this.gameOverScreen = null;
+      }
+    };
 
     // 5. Spawn Confetti Fireworks Loop
     this.gameOverIntervalId = setInterval(() => {
@@ -3307,20 +2988,10 @@ export class GameScene {
       });
     }
 
-    // Apply responsive layout immediately
-    this.resize();
-
-    const targetScale = this.gameOverModal.scale.x;
-    this.gameOverModal.scale.set(targetScale * 0.7);
-
-    // Entrance animation
-    this.gameOverScreen.alpha = 0;
-    gsap.to(this.gameOverScreen, { alpha: 1, duration: 0.4 });
-    gsap.to(this.gameOverModal.scale, {
-      x: targetScale,
-      y: targetScale,
-      duration: 0.5,
-      ease: "back.out(1.8)",
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.opacity = "1";
+      card.style.transform = "scale(1)";
     });
   }
 
@@ -3948,267 +3619,130 @@ export class GameScene {
     // Pause game logic by disabling interactions
     this.disabled = true;
 
-    const popup = new Container();
-    popup.zIndex = 150;
-    this.container.addChild(popup);
-    this.settingsPopup = popup;
+    const overlay = document.createElement("div");
+    overlay.id = "game-settings-overlay-id";
+    overlay.className = "game-popup-overlay";
 
-    this.settingsOverlayBg = new Graphics();
-    this.settingsOverlayBg.rect(0, 0, App.app.screen.width, App.app.screen.height);
-    this.settingsOverlayBg.fill({ color: 0x000000, alpha: 0.65 });
-    this.settingsOverlayBg.eventMode = "static";
-    popup.addChild(this.settingsOverlayBg);
+    const card = document.createElement("div");
+    card.className = "game-popup-card";
 
-    this.settingsModal = new Container();
-    this.settingsModal.x = App.app.screen.width / 2;
-    this.settingsModal.y = App.app.screen.height / 2;
-    popup.addChild(this.settingsModal);
-
-    const cardW = 420;
-    const cardH = 380;
-
-    // 1. Soft Card Shadow
-    const cardShadow = new Graphics()
-      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 20)
-      .fill({ color: 0x000000, alpha: 0.25 });
-    this.settingsModal.addChild(cardShadow);
-
-    // 2. Thick 3D Cyan-Blue Border
-    const borderBg = new Graphics()
-      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 20)
-      .fill({ color: 0x004466 }) // Shadow Base
-      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
-      .fill({
-        fill: new FillGradient({
-          start: { x: 0, y: -cardH / 2 },
-          end: { x: 0, y: cardH / 2 },
-          colorStops: [
-            { offset: 0, color: 0x33ccff },
-            { offset: 1, color: 0x0088cc }
-          ]
-        })
-      })
-
-    this.settingsModal.addChild(borderBg);
-
-    // 3. Bright Cream Card Face
-    const cardFace = new Graphics()
-      .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 14)
-      .fill({ color: 0xfbfaf5 });
-    this.settingsModal.addChild(cardFace);
-
-    // 4. Floating 3D Title Ribbon (Cyan-Blue)
-    const ribbonW = 210;
-    const ribbonH = 42;
-    const ribbonY = -cardH / 2;
-    const ribbonRadius = ribbonH / 2;
-    const ribbon = new Graphics()
-      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2 + 5, ribbonW, ribbonH, ribbonRadius)
-      .fill({ color: 0x004466 }) // Ribbon shadow
-      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2, ribbonW, ribbonH, ribbonRadius)
-      .fill({
-        fill: new FillGradient({
-          start: { x: 0, y: ribbonY - ribbonH / 2 },
-          end: { x: 0, y: ribbonY + ribbonH / 2 },
-          colorStops: [
-            { offset: 0, color: 0x33ccff },
-            { offset: 1, color: 0x0088cc }
-          ]
-        })
-      })
-      .stroke({ color: 0xffffff, width: 3.5 })
-      .ellipse(0, ribbonY - ribbonH / 4, ribbonW * 0.42, ribbonH * 0.2)
-      .fill({ color: 0xffffff, alpha: 0.25 });
-    this.settingsModal.addChild(ribbon);
-
-    // Title text inside ribbon
-    const titleText = new Text({
-      text: "CÀI ĐẶT",
-      style: new TextStyle({
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 22,
-        fill: 0xffffff,
-        fontWeight: "900",
-        letterSpacing: 2,
-      }),
-    });
-    titleText.anchor.set(0.5);
-    titleText.position.set(0, ribbonY);
-    this.settingsModal.addChild(titleText);
-
-    // Reusable Toggle Row Builder
-    const createToggleRow = (labelText, yPos, initialMuteState, onToggle, strokeColor = 0xddeaff) => {
-      const row = new Container();
-      row.position.set(0, yPos);
-
-      // Row background card panel to group label and toggle visually
-      const rowBg = new Graphics()
-        .roundRect(-165, -32, 330, 64, 15)
-        .fill({ color: 0xffffff }) // Warm creamy beige
-        .stroke({ color: strokeColor, width: 3 });
-      row.addChild(rowBg);
-
-      // Left label
-      const label = new Text({
-        text: labelText.toUpperCase(),
-        style: new TextStyle({
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: 20,
-          fill: "#360207",
-          fontWeight: "900",
-          letterSpacing: 1.2,
-        }),
-      });
-      label.anchor.set(0, 0.5);
-      label.position.set(-140, -2);
-      row.addChild(label);
-
-      // Right slider track
-      const track = new Sprite(Texture.from(initialMuteState ? "toggle_off" : "toggle_on"));
-      track.anchor.set(0.5);
-      track.height = 48;
-      track.width = 76;
-      track.eventMode = "static";
-      track.cursor = "pointer";
-      track.position.set(105, 0);
-      row.addChild(track);
-
-      // Draw dotted connector line dynamically between text and switch
-      const labelWidth = label.width;
-      const startX = -140 + labelWidth + 15;
-      const endX = 105 - (track.width / 2) - 15;
-      if (startX < endX) {
-        const dots = new Graphics();
-        for (let dx = startX; dx <= endX; dx += 8) {
-          dots.circle(dx, 0, 2);
-        }
-        dots.fill({ color: 0xccccdd });
-        row.addChild(dots);
-      }
-
-      const handleToggle = () => {
-        soundManager.playClick();
-        const isMuted = onToggle();
-        track.texture = Texture.from(isMuted ? "toggle_off" : "toggle_on");
-        track.width = 76;
-        track.height = 48;
-      };
-
-      track.on("pointertap", handleToggle);
-      label.eventMode = "static";
-      label.cursor = "pointer";
-      label.on("pointertap", handleToggle);
-
-      return row;
-    };
-
-    // Add Music and SFX rows (spaced out for cardH = 300)
-    const musicRowY = -90;
-    const sfxRowY = 5;
-
-    const musicRow = createToggleRow(
-      "NHẠC NỀN",
-      musicRowY,
-      !soundManager.musicEnabled,
-      () => {
-        soundManager.toggleMusic();
-        return !soundManager.musicEnabled;
-      },
-      0xddeaff // Subtle blue highlight
-    );
-    const sfxRow = createToggleRow(
-      "HIỆU ỨNG",
-      sfxRowY,
-      !soundManager.enabled,
-      () => {
-        soundManager.enabled = !soundManager.enabled;
-        return !soundManager.enabled;
-      },
-      0xddeaff // Subtle blue highlight
-    );
-
-    this.settingsModal.addChild(musicRow);
-    this.settingsModal.addChild(sfxRow);
+    const title = document.createElement("div");
+    title.className = "game-popup-title";
+    title.innerText = "CÀI ĐẶT";
+    card.appendChild(title);
 
     const closePopup = () => {
       soundManager.playClick();
-      gsap.to(this.settingsModal.scale, { x: 0.7, y: 0.7, duration: 0.2 });
-      gsap.to(popup, {
-        alpha: 0,
-        duration: 0.2,
-        onComplete: () => {
-          killTweensRecursive(popup);
-          popup.destroy({ children: true });
-          this.settingsPopup = null;
-          this.settingsOverlayBg = null;
-          this.settingsModal = null;
-          this.disabled = false; // resume game interactions
-        },
-      });
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => {
+        overlay.remove();
+        this.settingsPopup = null;
+        this.disabled = false;
+      }, 250);
     };
 
-    // Use the 3D circular buttons side-by-side at y = 45!
-    // Enlarged to radius = 32 (diameter = 64) to match the Game Over screen
-    this.createCircularButton(
-      "🏠",
-      -80,
-      85,
-      async () => {
-        closePopup();
-        const { MainMenuScene } = await import("./MainMenuScene.js");
-        await sceneManager.switchTo(MainMenuScene);
-      },
-      this.settingsModal,
-      32
-    );
+    const rowContainer = document.createElement("div");
+    rowContainer.className = "game-settings-row-container";
 
-    this.createCircularButton(
-      "🔄",
-      0,
-      85,
-      async () => {
-        closePopup();
-        await sceneManager.switchTo(GameScene);
-      },
-      this.settingsModal,
-      32
-    );
+    // Music row
+    const musicRow = document.createElement("div");
+    musicRow.className = "game-settings-row";
+    const musicLabel = document.createElement("span");
+    musicLabel.className = "game-settings-label";
+    musicLabel.innerText = "🎵 Nhạc nền";
+    musicRow.appendChild(musicLabel);
 
-    this.createCircularButton(
-      "▶️",
-      80,
-      85,
-      closePopup,
-      this.settingsModal,
-      32
-    );
-
-    const versionText = new Text({
-      text: "Phiên bản: 1.0.0",
-      style: {
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 11,
-        fill: "#7c73a1",
-      },
+    const musicToggle = document.createElement("button");
+    musicToggle.className = "game-settings-toggle-btn";
+    musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    musicToggle.addEventListener("click", () => {
+      soundManager.playClick();
+      soundManager.toggleMusic();
+      musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
     });
-    versionText.anchor.set(0.5);
-    versionText.position.set(0, 150);
-    this.settingsModal.addChild(versionText);
+    musicRow.appendChild(musicToggle);
+    rowContainer.appendChild(musicRow);
 
-    // Apply responsive layout immediately to compute target scale
-    this.resize();
+    // SFX row
+    const sfxRow = document.createElement("div");
+    sfxRow.className = "game-settings-row";
+    const sfxLabel = document.createElement("span");
+    sfxLabel.className = "game-settings-label";
+    sfxLabel.innerText = "🔊 Hiệu ứng";
+    sfxRow.appendChild(sfxLabel);
 
-    const targetScale = this.settingsModal.scale.x;
-    this.settingsModal.scale.set(targetScale * 0.7);
+    const sfxToggle = document.createElement("button");
+    sfxToggle.className = "game-settings-toggle-btn";
+    sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    sfxToggle.addEventListener("click", () => {
+      soundManager.playClick();
+      soundManager.enabled = !soundManager.enabled;
+      sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    });
+    sfxRow.appendChild(sfxToggle);
+    rowContainer.appendChild(sfxRow);
 
-    // Entrance animation
-    popup.alpha = 0;
-    gsap.to(popup, { alpha: 1, duration: 0.3 });
-    gsap.to(this.settingsModal.scale, {
-      x: targetScale,
-      y: targetScale,
-      duration: 0.35,
-      ease: "back.out(1.8)",
+    card.appendChild(rowContainer);
+
+    // Ingame Buttons: Home, Replay, Continue
+    const actionContainer = document.createElement("div");
+    actionContainer.className = "game-paused-action-container";
+
+    const homeBtn = document.createElement("button");
+    homeBtn.className = "game-paused-btn";
+    homeBtn.style.backgroundImage = "url(/assets/home_btn.png)";
+    homeBtn.addEventListener("click", async () => {
+      overlay.remove();
+      this.settingsPopup = null;
+      const { MainMenuScene } = await import("./MainMenuScene.js");
+      await sceneManager.switchTo(MainMenuScene);
+    });
+    actionContainer.appendChild(homeBtn);
+
+    const replayBtn = document.createElement("button");
+    replayBtn.className = "game-paused-btn";
+    replayBtn.style.backgroundImage = "url(/assets/replay_btn.png)";
+    replayBtn.addEventListener("click", async () => {
+      overlay.remove();
+      this.settingsPopup = null;
+      await sceneManager.switchTo(GameScene);
+    });
+    actionContainer.appendChild(replayBtn);
+
+    const continueBtn = document.createElement("button");
+    continueBtn.className = "game-paused-btn";
+    continueBtn.style.backgroundImage = "url(/assets/continue_btn.png)";
+    continueBtn.addEventListener("click", closePopup);
+    actionContainer.appendChild(continueBtn);
+
+    card.appendChild(actionContainer);
+
+    // Version
+    const versionText = document.createElement("div");
+    versionText.style.fontSize = "11px";
+    versionText.style.color = "#7c73a1";
+    versionText.style.marginTop = "20px";
+    versionText.innerText = "Phiên bản: 1.0.0";
+    card.appendChild(versionText);
+
+    overlay.appendChild(card);
+    const appContainer = document.getElementById("app") || document.body;
+    appContainer.appendChild(overlay);
+
+    this.settingsPopup = {
+      isHTML: true,
+      destroy: () => {
+        overlay.remove();
+        this.settingsPopup = null;
+        this.disabled = false;
+      }
+    };
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.opacity = "1";
+      card.style.transform = "scale(1)";
     });
   }
 
@@ -4221,6 +3755,13 @@ export class GameScene {
       clearInterval(this.gameOverIntervalId);
       this.gameOverIntervalId = null;
     }
+
+    // Clean up HTML popups
+    const settingsOverlay = document.getElementById("game-settings-overlay-id");
+    if (settingsOverlay) settingsOverlay.remove();
+
+    const gameOverOverlay = document.getElementById("game-over-overlay-id");
+    if (gameOverOverlay) gameOverOverlay.remove();
 
     // Show the user profile widget again when exiting GameScene
     const profileWidget = document.getElementById("user-profile");

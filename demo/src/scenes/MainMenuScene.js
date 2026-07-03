@@ -88,6 +88,24 @@ function getAvatarAlias(name) {
   return spriteAlias;
 }
 
+function getAvatarUrl(name) {
+  let idx = 0;
+  if (!name) idx = 0;
+  else if (name.includes("Bơ Lạc")) idx = 0;
+  else if (name.includes("Đậu Phộng")) idx = 14;
+  else if (name.includes("Ếch Xanh")) idx = 9;
+  else if (name.includes("Gấu Trúc")) idx = 21;
+  else if (name.includes("Mèo Lười")) idx = 1;
+  else {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    idx = Math.abs(hash) % ALL_AVATAR_FILES.length;
+  }
+  return `/assets/imagebldp/${ALL_AVATAR_FILES[idx]}`;
+}
+
 function gameConfirm(message) {
   return new Promise((resolve) => {
     if (!document.getElementById("game-alert-styles")) {
@@ -1094,109 +1112,33 @@ export class MainMenuScene {
 
     soundManager.playClick();
 
-    const popup = new Container();
-    popup.zIndex = 200;
-    this.container.addChild(popup);
-    this.leaderboardPopup = popup;
+    const overlay = document.createElement("div");
+    overlay.id = "game-leaderboard-overlay-id";
+    overlay.className = "game-popup-overlay";
 
-    // Dark modal overlay to capture clicks
-    this.leaderboardOverlay = new Graphics();
-    this.leaderboardOverlay.rect(0, 0, App.app.screen.width, App.app.screen.height);
-    this.leaderboardOverlay.fill({ color: 0x000000, alpha: 0.75 });
-    this.leaderboardOverlay.eventMode = "static";
-    popup.addChild(this.leaderboardOverlay);
+    const card = document.createElement("div");
+    card.className = "game-popup-card wide";
 
-    this.leaderboardModal = new Container();
-    this.leaderboardModal.x = App.app.screen.width / 2;
-    this.leaderboardModal.y = App.app.screen.height / 2;
-    popup.addChild(this.leaderboardModal);
+    const title = document.createElement("div");
+    title.className = "game-popup-title";
+    title.innerText = "BẢNG VÀNG";
+    card.appendChild(title);
 
-    const cardW = 500;
-    const cardH = 580;
+    const closePopup = () => {
+      soundManager.playClick();
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => {
+        overlay.remove();
+        this.leaderboardPopup = null;
+      }, 250);
+    };
 
-    // 1. Soft Card Shadow
-    const cardShadow = new Graphics()
-      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 24)
-      .fill({ color: 0x000000, alpha: 0.25 });
-    this.leaderboardModal.addChild(cardShadow);
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "game-popup-close-btn";
+    closeBtn.addEventListener("click", closePopup);
+    card.appendChild(closeBtn);
 
-    // 2. Thick 3D Cyan-Blue Border
-    const borderBg = new Graphics()
-      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24)
-      .fill({ color: 0x004466 }) // Shadow Base
-      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
-      .fill({
-        fill: new FillGradient({
-          start: { x: 0, y: -cardH / 2 },
-          end: { x: 0, y: cardH / 2 },
-          colorStops: [
-            { offset: 0, color: 0x33ccff },
-            { offset: 1, color: 0x0088cc }
-          ]
-        })
-      })
-
-    this.leaderboardModal.addChild(borderBg);
-
-    // 3. Bright Cream Card Face
-    const cardFace = new Graphics()
-      .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 18)
-      .fill({ color: 0xfbfaf5 });
-    this.leaderboardModal.addChild(cardFace);
-
-    // 4. Floating 3D Title Ribbon (Pink/Magenta)
-    const ribbonW = 430;
-    const ribbonH = 48;
-    const ribbonY = -cardH / 2;
-    const ribbonRadius = ribbonH / 2;
-    const ribbon = new Graphics()
-      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2 + 5, ribbonW, ribbonH, ribbonRadius)
-      .fill({ color: 0x800040 }) // Ribbon shadow
-      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2, ribbonW, ribbonH, ribbonRadius)
-      .fill({
-        fill: new FillGradient({
-          start: { x: 0, y: ribbonY - ribbonH / 2 },
-          end: { x: 0, y: ribbonY + ribbonH / 2 },
-          colorStops: [
-            { offset: 0, color: 0xff66b2 },
-            { offset: 1, color: 0xcc0066 }
-          ]
-        })
-      })
-      .stroke({ color: 0xffffff, width: 3.5 })
-      .ellipse(0, ribbonY - ribbonH / 4, ribbonW * 0.42, ribbonH * 0.2)
-      .fill({ color: 0xffffff, alpha: 0.25 });
-    this.leaderboardModal.addChild(ribbon);
-
-    // Header Title centered inside ribbon
-    const titleContainer = new Container();
-    titleContainer.position.set(0, ribbonY);
-    this.leaderboardModal.addChild(titleContainer);
-
-    const titleIcon = createVectorIcon("🏆", 28);
-    titleContainer.addChild(titleIcon);
-
-    const titleText = new Text({
-      text: " BẢNG VÀNG THÀNH TÍCH",
-      style: new TextStyle({
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 22,
-        fill: 0xffffff, // white on pink ribbon
-        fontWeight: "900",
-        letterSpacing: 2,
-        align: "center",
-      }),
-    });
-    titleText.anchor.set(0.5);
-    titleContainer.addChild(titleText);
-
-    // Layout
-    const titleGap = 8;
-    const titleTotalW = titleIcon.width + titleGap + titleText.width;
-    titleIcon.x = -titleTotalW / 2 + titleIcon.width / 2;
-    titleText.x = titleTotalW / 2 - titleText.width / 2;
-
-    // Active User Profile Display
     let currentUser = null;
     try {
       const savedUser = localStorage.getItem("google_user");
@@ -1206,220 +1148,67 @@ export class MainMenuScene {
     } catch (e) {
       console.error(e);
     }
-    const userTextStr = currentUser
+
+    const userText = document.createElement("div");
+    userText.className = "game-leaderboard-user-text";
+    userText.innerText = currentUser
       ? `Tài khoản: ${currentUser.name} (Google)`
       : `Tài khoản: Khách (Điểm lưu thiết bị)`;
-    const userText = new Text({
-      text: userTextStr,
-      style: new TextStyle({
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 13,
-        fontWeight: "bold",
-        fill: currentUser ? "#e91e63" : "#7c73a1",
+    card.appendChild(userText);
 
-      }),
-    });
-    userText.anchor.set(0.5);
-    userText.y = -cardH / 2 + 65;
-    this.leaderboardModal.addChild(userText);
-
-    // Columns Header row
-    const headerY = -160;
-    const colRankX = -140;
-    const colScoreX = 130;
-
-    const rankHeader = new Text({
-      text: "HẠNG",
-      style: new TextStyle({
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 20,
-        fontWeight: "bold",
-        fill: 0x004466,
-
-      }),
-    });
-    rankHeader.anchor.set(0.5);
-    rankHeader.position.set(colRankX, headerY);
-    this.leaderboardModal.addChild(rankHeader);
-
-    const scoreHeader = new Text({
-      text: "ĐIỂM",
-      style: new TextStyle({
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 20,
-        fontWeight: "bold",
-        fill: 0x004466,
-
-      }),
-    });
-    scoreHeader.anchor.set(0.5);
-    scoreHeader.position.set(colScoreX, headerY);
-    this.leaderboardModal.addChild(scoreHeader);
-
-    // Divider line below headers (using clean bright blue)
-    const headerDivider = new Graphics()
-      .moveTo(-225, headerY + 18)
-      .lineTo(225, headerY + 18)
-      .stroke({ color: 0x0088cc, width: 2, alpha: 0.35 });
-    this.leaderboardModal.addChild(headerDivider);
-
-    // Fetch top scores (unique profiles + default competitors bot integration)
     const list = saveManager.getLeaderboard();
 
+    const tableContainer = document.createElement("div");
+    tableContainer.className = "game-leaderboard-table-container";
+
     if (list.length === 0) {
-      const emptyText = new Text({
-        text: "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀",
-        style: new TextStyle({
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: 16,
-          fill: "#7c73a1",
-          align: "center",
-          lineHeight: 22,
-        }),
-      });
-      emptyText.anchor.set(0.5);
-      emptyText.y = 10;
-      this.leaderboardModal.addChild(emptyText);
+      const emptyText = document.createElement("div");
+      emptyText.style.padding = "24px";
+      emptyText.style.color = "#7c73a1";
+      emptyText.style.fontSize = "16px";
+      emptyText.style.fontWeight = "bold";
+      emptyText.innerText = "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀";
+      tableContainer.appendChild(emptyText);
     } else {
-      // Draw list items
-      const startY = -110;
-      const rowHeight = 52;
+      const table = document.createElement("table");
+      table.className = "game-leaderboard-table";
 
+      const thead = document.createElement("thead");
+      thead.innerHTML = `
+        <tr>
+          <th>HẠNG</th>
+          <th>THÀNH VIÊN</th>
+          <th>ĐIỂM SỐ</th>
+        </tr>
+      `;
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
       list.forEach((entry, idx) => {
-        const rowY = startY + idx * rowHeight;
-        const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
-        const rankIcon = medals[idx] || `${idx + 1}`;
-
-        // Row background highlight for top 3 or player highlighted using 3D lacquer colors
-        const rowW = 450;
-        const rowH = rowHeight - 12; // Gap of 12px
-        const rowRadius = 8;
-        const rowShadowOffset = 3;
-
-        let rTop, rBottom, rShadow, rStroke;
-        if (idx === 0) {
-          // Gold
-          rTop = 0xFFE500; rBottom = 0xFF9900; rShadow = 0x8A4500; rStroke = 0xFFF8B3;
-        } else if (idx === 1) {
-          // Silver
-          rTop = 0xf0f4f8; rBottom = 0xb0bec5; rShadow = 0x455a64; rStroke = 0xffffff;
-        } else if (idx === 2) {
-          // Bronze
-          rTop = 0xffebe6; rBottom = 0xa1887f; rShadow = 0x5d4037; rStroke = 0xfff3e0;
-        } else {
-          // Others (Brightened up to clean white-gray)
-          rTop = 0xffffff; rBottom = 0xf2f2f2; rShadow = 0xbdbdbd; rStroke = 0xffffff;
-        }
-
-        const rowBg = new Graphics()
-          // 3D Shadow Base
-          .roundRect(-rowW / 2, rowY - rowH / 2 + rowShadowOffset, rowW, rowH, rowRadius)
-          .fill({ color: rShadow })
-          // Main Face
-          .roundRect(-rowW / 2, rowY - rowH / 2, rowW, rowH, rowRadius)
-          .fill({
-            fill: new FillGradient({
-              start: { x: 0, y: rowY - rowH / 2 },
-              end: { x: 0, y: rowY + rowH / 2 },
-              colorStops: [
-                { offset: 0, color: rTop },
-                { offset: 1, color: rBottom }
-              ]
-            })
-          })
-          .stroke({ color: rStroke, width: 2 });
-        this.leaderboardModal.addChild(rowBg);
-
-        // --- Rank/Medal ---
-        const rankCell = new Container();
-        rankCell.position.set(-170, rowY);
-        this.leaderboardModal.addChild(rankCell);
-
-        let rankNode;
-        if (idx === 0) rankNode = createVectorIcon("🥇", 28);
-        else if (idx === 1) rankNode = createVectorIcon("🥈", 28);
-        else if (idx === 2) rankNode = createVectorIcon("🥉", 28);
-        else {
-          rankNode = new Text({
-            text: `${idx + 1}`,
-            style: new TextStyle({
-              fontFamily: '"Nunito", sans-serif',
-              fontSize: 24,
-              fontWeight: "bold",
-              fill: "#241d4f",
-
-            }),
-          });
-          rankNode.anchor.set(0.5);
-        }
-        rankCell.addChild(rankNode);
-
-        // --- Avatar ---
-        const avatarCell = new Container();
-        avatarCell.position.set(-120, rowY);
-        this.leaderboardModal.addChild(avatarCell);
-
-        let borderCol;
-        if (idx === 0) borderCol = 0xffea00;
-        else if (idx === 1) borderCol = 0xb0bec5;
-        else if (idx === 2) borderCol = 0xa1887f;
-        else borderCol = 0xd7ccc8;
-
-        const avatarFrame = new Graphics()
-          .roundRect(-16, -16, 32, 32, 6)
-          .fill({ color: 0x120103, alpha: 0.9 })
-          .stroke({ color: borderCol, width: 1.5 });
-        avatarCell.addChild(avatarFrame);
-
-        const avatarMask = new Graphics()
-          .roundRect(-14, -14, 28, 28, 5)
-          .fill({ color: 0xffffff });
-        avatarCell.addChild(avatarMask);
-
-        // Map avatar dynamically based on user/bot name
+        const row = document.createElement("tr");
+        if (idx < 3) row.className = `rank-${idx}`;
+        
+        const medalText = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}`;
         const name = entry.userName || "";
-        const spriteAlias = getAvatarAlias(name);
+        const avatarUrl = getAvatarUrl(name);
 
-        const avatarSprite = Sprite.from(spriteAlias);
-        avatarSprite.anchor.set(0.5);
-        avatarSprite.width = 28;
-        avatarSprite.height = 28;
-        avatarSprite.mask = avatarMask;
-        avatarCell.addChild(avatarSprite);
-
-        // --- Name ---
-        const nameText = new Text({
-          text: name,
-          style: new TextStyle({
-            fontFamily: '"Nunito", sans-serif',
-            fontSize: 18,
-            fontWeight: "bold",
-            fill: "#241d4f",
-
-          }),
-        });
-        nameText.anchor.set(0, 0.5);
-        nameText.position.set(-90, rowY);
-        this.leaderboardModal.addChild(nameText);
-
-        // --- Score ---
-        const scoreText = new Text({
-          text: entry.score.toLocaleString(),
-          style: new TextStyle({
-            fontFamily: '"Nunito", sans-serif',
-            fontSize: 24,
-            fontWeight: "bold",
-            fill: "#241d4f",
-
-          }),
-        });
-        scoreText.anchor.set(1, 0.5);
-        scoreText.position.set(160, rowY);
-        this.leaderboardModal.addChild(scoreText);
+        row.innerHTML = `
+          <td>${medalText}</td>
+          <td style="text-align: left; display: flex; align-items: center; gap: 8px;">
+            <img src="${avatarUrl}" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #d4af37; background: #fff;" alt="" />
+            <span>${name}</span>
+          </td>
+          <td>${entry.score.toLocaleString()}</td>
+        `;
+        tbody.appendChild(row);
       });
+      table.appendChild(tbody);
+      tableContainer.appendChild(table);
     }
 
-    // Determine active player's personal best score and rank
+    card.appendChild(tableContainer);
+
+    // Personal Best Footer
     const personalList = saveManager.load().leaderboard || [];
     const personalBest = personalList.length > 0 ? personalList[0].score : 0;
 
@@ -1436,134 +1225,52 @@ export class MainMenuScene {
 
     const activeRankIdx = list.findIndex(entry => entry.profileKey === activeKey);
     const activeRankVal = activeRankIdx !== -1 ? (activeRankIdx + 1) : null;
-
-    // Pinned Best Record Banner at the bottom (Vibrant 3D style)
-    const footerBg = new Graphics()
-      .roundRect(-225, 143, 450, 44, 8)
-      .fill({ color: 0xfff275, alpha: 1.0 })
-      .stroke({ color: 0xffa200, width: 3, alpha: 1.0 });
-    this.leaderboardModal.addChild(footerBg);
-
-    // Footer Rank cell at -170
-    const footerRankCell = new Container();
-    footerRankCell.position.set(-170, 165);
-    this.leaderboardModal.addChild(footerRankCell);
-
-    let footerRankNode;
-    if (activeRankVal === 1) footerRankNode = createVectorIcon("🥇", 28);
-    else if (activeRankVal === 2) footerRankNode = createVectorIcon("🥈", 28);
-    else if (activeRankVal === 3) footerRankNode = createVectorIcon("🥉", 28);
-    else {
-      footerRankNode = new Text({
-        text: activeRankVal ? String(activeRankVal) : "-",
-        style: new TextStyle({
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: 24,
-          fontWeight: "bold",
-          fill: "#241d4f",
-        })
-      });
-      footerRankNode.anchor.set(0.5);
-    }
-    footerRankCell.addChild(footerRankNode);
-
-    // Footer Avatar at -120
-    const footerAvatar = new Container();
-    footerAvatar.position.set(-120, 165);
-    this.leaderboardModal.addChild(footerAvatar);
-
-    const footerFrame = new Graphics()
-      .roundRect(-16, -16, 32, 32, 6)
-      .fill({ color: 0x120103, alpha: 0.9 })
-      .stroke({ color: 0xffea00, width: 1.5 });
-    footerAvatar.addChild(footerFrame);
-
-    const footerMask = new Graphics()
-      .roundRect(-14, -14, 28, 28, 5)
-      .fill({ color: 0xffffff });
-    footerAvatar.addChild(footerMask);
-
-    // Resolve avatar for active user
     const activeName = currentUser ? currentUser.name : "Khách";
-    const activeAvatarAlias = getAvatarAlias(activeName);
+    const activeAvatarUrl = getAvatarUrl(activeName);
 
-    const footerSprite = Sprite.from(activeAvatarAlias);
-    footerSprite.anchor.set(0.5);
-    footerSprite.width = 28;
-    footerSprite.height = 28;
-    footerSprite.mask = footerMask;
-    footerAvatar.addChild(footerSprite);
+    const footer = document.createElement("div");
+    footer.className = "game-leaderboard-footer";
 
-    // Footer Name text at -90
-    const footerName = new Text({
-      text: activeName,
-      style: new TextStyle({
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 18,
-        fontWeight: "bold",
-        fill: "#241d4f",
+    const rankItem = document.createElement("div");
+    rankItem.className = "game-leaderboard-footer-item";
+    rankItem.innerText = activeRankVal ? `Hạng: #${activeRankVal}` : "Hạng: -";
+    footer.appendChild(rankItem);
 
-      }),
-    });
-    footerName.anchor.set(0, 0.5);
-    footerName.position.set(-90, 165);
-    this.leaderboardModal.addChild(footerName);
+    const nameItem = document.createElement("div");
+    nameItem.className = "game-leaderboard-footer-item";
+    nameItem.style.display = "flex";
+    nameItem.style.alignItems = "center";
+    nameItem.style.justifyContent = "center";
+    nameItem.style.gap = "6px";
+    nameItem.innerHTML = `
+      <img src="${activeAvatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #ffea00;" alt="" />
+      <span>${activeName}</span>
+    `;
+    footer.appendChild(nameItem);
 
-    // Footer Score text at 160 (right aligned)
-    const footerScore = new Text({
-      text: personalBest.toLocaleString(),
-      style: new TextStyle({
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 24,
-        fontWeight: "bold",
-        fill: "#241d4f",
+    const scoreItem = document.createElement("div");
+    scoreItem.className = "game-leaderboard-footer-item";
+    scoreItem.innerText = `Điểm: ${personalBest.toLocaleString()}`;
+    footer.appendChild(scoreItem);
 
-      }),
-    });
-    footerScore.anchor.set(1, 0.5);
-    footerScore.position.set(160, 165);
-    this.leaderboardModal.addChild(footerScore);
+    card.appendChild(footer);
 
-    // CLOSE Button (3D circular back button at bottom center)
-    const closePopup = () => {
-      soundManager.playClick();
-      gsap.to(this.leaderboardModal.scale, { x: 0.7, y: 0.7, duration: 0.25 });
-      gsap.to(popup, {
-        alpha: 0,
-        duration: 0.25,
-        onComplete: () => {
-          killTweensRecursive(popup);
-          popup.destroy({ children: true });
-          this.leaderboardPopup = null;
-          this.leaderboardOverlay = null;
-          this.leaderboardModal = null;
-        },
-      });
+    overlay.appendChild(card);
+    const appContainer = document.getElementById("app") || document.body;
+    appContainer.appendChild(overlay);
+
+    this.leaderboardPopup = {
+      isHTML: true,
+      destroy: () => {
+        overlay.remove();
+        this.leaderboardPopup = null;
+      }
     };
 
-    const closeBtn = this.createCircularButton(
-      "↩️",
-      0,
-      235,
-      closePopup,
-      this.leaderboardModal,
-      32
-    );
-
-    // Apply responsive layout immediately to compute target scale
-    this.resize();
-
-    const targetScale = this.leaderboardModal.scale.x;
-    this.leaderboardModal.scale.set(targetScale * 0.7);
-
-    // Entrance animation
-    popup.alpha = 0;
-    gsap.to(popup, { alpha: 1, duration: 0.3 });
-    gsap.to(this.leaderboardModal.scale, {
-      x: targetScale,
-      y: targetScale,
-      duration: 0.35,
-      ease: "back.out(1.8)",
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.opacity = "1";
+      card.style.transform = "scale(1)";
     });
   }
 
@@ -1572,263 +1279,81 @@ export class MainMenuScene {
 
     soundManager.playClick();
 
-    const popup = new Container();
-    popup.zIndex = 150;
-    this.container.addChild(popup);
-    this.settingsPopup = popup;
+    const overlay = document.createElement("div");
+    overlay.id = "game-settings-overlay-id";
+    overlay.className = "game-popup-overlay";
 
-    this.settingsOverlayBg = new Graphics();
-    this.settingsOverlayBg.rect(0, 0, App.app.screen.width, App.app.screen.height);
-    this.settingsOverlayBg.fill({ color: 0x000000, alpha: 0.65 });
-    this.settingsOverlayBg.eventMode = "static";
-    popup.addChild(this.settingsOverlayBg);
+    const card = document.createElement("div");
+    card.className = "game-popup-card";
 
-    this.settingsModal = new Container();
-    this.settingsModal.x = App.app.screen.width / 2;
-    this.settingsModal.y = App.app.screen.height / 2;
-    popup.addChild(this.settingsModal);
-
-    const cardW = 420;
-    const cardH = 380;
-
-    // 1. Soft Card Shadow
-    const cardShadow = new Graphics()
-      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 20)
-      .fill({ color: 0x000000, alpha: 0.25 });
-    this.settingsModal.addChild(cardShadow);
-
-    // 2. Thick 3D Cyan-Blue Border
-    const borderBg = new Graphics()
-      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 20)
-      .fill({ color: 0x004466 }) // Shadow Base
-      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
-      .fill({
-        fill: new FillGradient({
-          start: { x: 0, y: -cardH / 2 },
-          end: { x: 0, y: cardH / 2 },
-          colorStops: [
-            { offset: 0, color: 0x33ccff },
-            { offset: 1, color: 0x0088cc }
-          ]
-        })
-      })
-
-    this.settingsModal.addChild(borderBg);
-
-    // 3. Bright Cream Card Face
-    const cardFace = new Graphics()
-      .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 14)
-      .fill({ color: 0xfbfaf5 });
-    this.settingsModal.addChild(cardFace);
-
-    // 4. Floating 3D Title Ribbon (Cyan-Blue)
-    const ribbonW = 210;
-    const ribbonH = 42;
-    const ribbonY = -cardH / 2;
-    const ribbonRadius = ribbonH / 2;
-    const ribbon = new Graphics()
-      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2 + 5, ribbonW, ribbonH, ribbonRadius)
-      .fill({ color: 0x004466 }) // Ribbon shadow
-      .roundRect(-ribbonW / 2, ribbonY - ribbonH / 2, ribbonW, ribbonH, ribbonRadius)
-      .fill({
-        fill: new FillGradient({
-          start: { x: 0, y: ribbonY - ribbonH / 2 },
-          end: { x: 0, y: ribbonY + ribbonH / 2 },
-          colorStops: [
-            { offset: 0, color: 0x33ccff },
-            { offset: 1, color: 0x0088cc }
-          ]
-        })
-      })
-      .stroke({ color: 0xffffff, width: 3.5 })
-      .ellipse(0, ribbonY - ribbonH / 4, ribbonW * 0.42, ribbonH * 0.2)
-      .fill({ color: 0xffffff, alpha: 0.25 });
-    this.settingsModal.addChild(ribbon);
-
-    // Title text inside ribbon
-    const titleText = new Text({
-      text: "CÀI ĐẶT",
-      style: new TextStyle({
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 22,
-        fill: 0xffffff,
-        fontWeight: "900",
-        letterSpacing: 2,
-      }),
-    });
-    titleText.anchor.set(0.5);
-    titleText.position.set(0, ribbonY);
-    this.settingsModal.addChild(titleText);
+    const title = document.createElement("div");
+    title.className = "game-popup-title";
+    title.innerText = "CÀI ĐẶT";
+    card.appendChild(title);
 
     const closePopup = () => {
       soundManager.playClick();
-      gsap.to(this.settingsModal.scale, { x: 0.7, y: 0.7, duration: 0.2 });
-      gsap.to(popup, {
-        alpha: 0,
-        duration: 0.2,
-        onComplete: () => {
-          killTweensRecursive(popup);
-          popup.destroy({ children: true });
-          this.settingsPopup = null;
-          this.settingsOverlayBg = null;
-          this.settingsModal = null;
-        },
-      });
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => {
+        overlay.remove();
+        this.settingsPopup = null;
+      }, 250);
     };
 
-    // Circular close btn (✕) in top right using standard bubble button style
-    const closeBtn = this.createCircularButton("✕", cardW / 2 - 20, -cardH / 2 + 20, closePopup, this.settingsModal);
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "game-popup-close-btn";
+    closeBtn.addEventListener("click", closePopup);
+    card.appendChild(closeBtn);
 
-    // Reusable Toggle Row Builder
-    const createToggleRow = (labelText, yPos, initialMuteState, onToggle, strokeColor = 0xddeaff) => {
-      const row = new Container();
-      row.position.set(0, yPos);
+    const rowContainer = document.createElement("div");
+    rowContainer.className = "game-settings-row-container";
 
-      // Row background card panel to group label and toggle visually
-      // Enlarged height to 56 to fit the 50-height toggle switch
-      const rowBg = new Graphics()
-        .roundRect(-165, -32, 330, 64, 15)
-        .fill({ color: 0xffffff }) // Warm creamy beige
-        .stroke({ color: strokeColor, width: 3 });
-      row.addChild(rowBg);
+    // Music row
+    const musicRow = document.createElement("div");
+    musicRow.className = "game-settings-row";
+    const musicLabel = document.createElement("span");
+    musicLabel.className = "game-settings-label";
+    musicLabel.innerText = "🎵 Nhạc nền";
+    musicRow.appendChild(musicLabel);
 
-      // Left label (enlarged cartoon text)
-      const label = new Text({
-        text: labelText.toUpperCase(),
-        style: new TextStyle({
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: 20,
-          fill: "#360207",
-          fontWeight: "900",
-          letterSpacing: 1.2,
-        }),
-      });
-      label.anchor.set(0, 0.5);
-      label.position.set(-140, -2);
-      row.addChild(label);
-
-      // Right slider track (using preloaded 3D toggle texture)
-      const track = new Sprite(Texture.from(initialMuteState ? "toggle_off" : "toggle_on"));
-      track.anchor.set(0.5);
-      track.height = 48;
-      track.width = 76;
-      track.eventMode = "static";
-      track.cursor = "pointer";
-      track.position.set(105, 0);
-      row.addChild(track);
-
-      // Draw dotted connector line dynamically between text and switch
-      const labelWidth = label.width;
-      const startX = -140 + labelWidth + 15;
-      const endX = 105 - (track.width / 2) - 15;
-      if (startX < endX) {
-        const dots = new Graphics();
-        for (let dx = startX; dx <= endX; dx += 8) {
-          dots.circle(dx, 0, 2);
-        }
-        dots.fill({ color: 0xccccdd });
-        row.addChild(dots);
-      }
-
-      const handleToggle = () => {
-        soundManager.playClick();
-        const isMuted = onToggle();
-        track.texture = Texture.from(isMuted ? "toggle_off" : "toggle_on");
-        track.width = 76;
-        track.height = 48;
-      };
-
-      track.on("pointertap", handleToggle);
-      label.eventMode = "static";
-      label.cursor = "pointer";
-      label.on("pointertap", handleToggle);
-
-      return row;
-    };
-
-    // Add Music and SFX rows (spaced out for cardH = 300)
-    const musicRowY = -90;
-    const sfxRowY = 5;
-
-    const musicRow = createToggleRow(
-      "NHẠC NỀN",
-      musicRowY,
-      !soundManager.musicEnabled,
-      () => {
-        soundManager.toggleMusic();
-        return !soundManager.musicEnabled;
-      },
-      0xddeaff // Subtle blue highlight
-    );
-    const sfxRow = createToggleRow(
-      "HIỆU ỨNG",
-      sfxRowY,
-      !soundManager.enabled,
-      () => {
-        soundManager.enabled = !soundManager.enabled;
-        return !soundManager.enabled;
-      },
-      0xddeaff // Subtle blue highlight
-    );
-
-    this.settingsModal.addChild(musicRow);
-    this.settingsModal.addChild(sfxRow);
-
-    // Reset Data button styled as a white card like the settings rows
-    const resetBtn = new Container();
-    resetBtn.x = 0;
-    resetBtn.y = 85;
-    resetBtn.eventMode = "static";
-    resetBtn.cursor = "pointer";
-
-    const btnBg = new Graphics()
-      .roundRect(-165, -32, 330, 64, 15)
-      .fill({ color: 0xffffff }) // Warm creamy white
-      .stroke({ color: 0xffd4e2, width: 3 }); // Subtle red/pink highlight to indicate warning
-    resetBtn.addChild(btnBg);
-
-    const btnLabel = new Text({
-      text: "XÓA LỊCH SỬ",
-      style: new TextStyle({
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 20,
-        fill: "#360207", // Dark brown like NHẠC NỀN
-        fontWeight: "900",
-        letterSpacing: 1.2,
-      }),
+    const musicToggle = document.createElement("button");
+    musicToggle.className = "game-settings-toggle-btn";
+    musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    musicToggle.addEventListener("click", () => {
+      soundManager.playClick();
+      soundManager.toggleMusic();
+      musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
     });
-    btnLabel.anchor.set(0.5);
-    resetBtn.addChild(btnLabel);
+    musicRow.appendChild(musicToggle);
+    rowContainer.appendChild(musicRow);
 
-    const emojiIcon = createVectorIcon("🗑️", 28); // Matches the 26-28 size from game settings buttons
-    resetBtn.addChild(emojiIcon);
+    // SFX row
+    const sfxRow = document.createElement("div");
+    sfxRow.className = "game-settings-row";
+    const sfxLabel = document.createElement("span");
+    sfxLabel.className = "game-settings-label";
+    sfxLabel.innerText = "🔊 Hiệu ứng";
+    sfxRow.appendChild(sfxLabel);
 
-    // Center both the icon and text together side by side
-    const gap = 10;
-    const totalW = emojiIcon.width + gap + btnLabel.width;
-    emojiIcon.x = -totalW / 2 + emojiIcon.width / 2;
-    emojiIcon.y = -1;
-    btnLabel.x = totalW / 2 - btnLabel.width / 2;
-    btnLabel.y = -2; // Optical center correction
+    const sfxToggle = document.createElement("button");
+    sfxToggle.className = "game-settings-toggle-btn";
+    sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    sfxToggle.addEventListener("click", () => {
+      soundManager.playClick();
+      soundManager.enabled = !soundManager.enabled;
+      sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    });
+    sfxRow.appendChild(sfxToggle);
+    rowContainer.appendChild(sfxRow);
 
-    resetBtn.on("pointerover", () => {
-      if (window.matchMedia("(hover: none)").matches) return;
-      gsap.to(resetBtn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
-    });
-    resetBtn.on("pointerout", () => {
-      if (window.matchMedia("(hover: none)").matches) return;
-      gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-    });
-    resetBtn.on("pointerdown", () => {
-      gsap.to(resetBtn.scale, { x: 0.95, y: 0.95, duration: 0.05 });
-    });
-    resetBtn.on("pointerup", () => {
-      gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.1 });
-    });
-    resetBtn.on("pointerupoutside", () => {
-      gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.1 });
-    });
-    resetBtn.on("pointertap", async () => {
+    card.appendChild(rowContainer);
+
+    // Reset Data Button
+    const resetBtn = document.createElement("button");
+    resetBtn.className = "game-settings-reset-btn";
+    resetBtn.innerHTML = `<img src="/assets/delete_btn.png" class="game-settings-reset-icon" alt="" /> XÓA LỊCH SỬ`;
+    resetBtn.addEventListener("click", async () => {
       soundManager.playClick();
       const confirmDelete = await gameConfirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu thành tích không?");
       if (confirmDelete) {
@@ -1837,43 +1362,48 @@ export class MainMenuScene {
         await sceneManager.switchTo(MainMenuScene);
       }
     });
+    card.appendChild(resetBtn);
 
-    this.settingsModal.addChild(resetBtn);
+    // Version
+    const versionText = document.createElement("div");
+    versionText.style.fontSize = "12px";
+    versionText.style.color = "#aaaaaa";
+    versionText.style.marginTop = "20px";
+    versionText.innerText = "Phiên bản: 1.0.0";
+    card.appendChild(versionText);
 
-    const versionText = new Text({
-      text: "Phiên bản: 1.0.0",
-      style: {
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 12,
-        fill: "#aaaaaa",
-      },
-    });
-    versionText.anchor.set(0.5);
-    versionText.position.set(0, 150);
-    this.settingsModal.addChild(versionText);
+    overlay.appendChild(card);
+    const appContainer = document.getElementById("app") || document.body;
+    appContainer.appendChild(overlay);
 
-    // Apply responsive layout immediately to compute target scale
-    this.resize();
+    this.settingsPopup = {
+      isHTML: true,
+      destroy: () => {
+        overlay.remove();
+        this.settingsPopup = null;
+      }
+    };
 
-    const targetScale = this.settingsModal.scale.x;
-    this.settingsModal.scale.set(targetScale * 0.7);
-
-    // Entrance animation
-    popup.alpha = 0;
-    gsap.to(popup, { alpha: 1, duration: 0.3 });
-    gsap.to(this.settingsModal.scale, {
-      x: targetScale,
-      y: targetScale,
-      duration: 0.35,
-      ease: "back.out(1.8)",
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.opacity = "1";
+      card.style.transform = "scale(1)";
     });
   }
+
 
   destroy() {
     // Stop ticker function on destroy to avoid memory leak
     if (this.tickerFn && App.app && App.app.ticker) {
       App.app.ticker.remove(this.tickerFn);
     }
+
+    // Clean up HTML popups
+    const settingsOverlay = document.getElementById("game-settings-overlay-id");
+    if (settingsOverlay) settingsOverlay.remove();
+
+    const leaderboardOverlay = document.getElementById("game-leaderboard-overlay-id");
+    if (leaderboardOverlay) leaderboardOverlay.remove();
 
     killTweensRecursive(this.container);
 
