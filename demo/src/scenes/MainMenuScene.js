@@ -1788,7 +1788,7 @@ export class MainMenuScene {
     resetBtn.addChild(btnBg);
 
     const btnLabel = new Text({
-      text: "🗑️ XÓA LỊCH SỬ",
+      text: "XÓA LỊCH SỬ",
       style: new TextStyle({
         fontFamily: '"Nunito", sans-serif',
         fontSize: 20,
@@ -1798,8 +1798,18 @@ export class MainMenuScene {
       }),
     });
     btnLabel.anchor.set(0.5);
-    btnLabel.position.set(0, -2);
     resetBtn.addChild(btnLabel);
+
+    const emojiIcon = createVectorIcon("🗑️", 28); // Matches the 26-28 size from game settings buttons
+    resetBtn.addChild(emojiIcon);
+
+    // Center both the icon and text together side by side
+    const gap = 10;
+    const totalW = emojiIcon.width + gap + btnLabel.width;
+    emojiIcon.x = -totalW / 2 + emojiIcon.width / 2;
+    emojiIcon.y = -1;
+    btnLabel.x = totalW / 2 - btnLabel.width / 2;
+    btnLabel.y = -2; // Optical center correction
 
     resetBtn.on("pointerover", () => {
       if (window.matchMedia("(hover: none)").matches) return;
