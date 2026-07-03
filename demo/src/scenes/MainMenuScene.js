@@ -261,7 +261,7 @@ function createVectorIcon(emojiChar, size = 24) {
   const tex = getIconTexture(emojiChar);
   if (tex) {
     const sprite = new Sprite(tex);
-        sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
+    sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
     const finalSize = String(emojiChar).includes("🗑️") ? size * 1.55 : size;
     sprite.width = finalSize;
     sprite.height = finalSize;
@@ -775,7 +775,7 @@ export class MainMenuScene {
         }),
       });
       text.anchor.set(0.5);
-        text.y = -2; // Optical center correction
+      text.y = -2; // Optical center correction
       content.addChild(text);
       textObj = text;
 
@@ -851,14 +851,14 @@ export class MainMenuScene {
 
     // Interactivity
     btn.on("pointerover", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-        
+      if (window.matchMedia("(hover: none)").matches) return;
+
       gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
       // soundManager.playClick();
     });
     btn.on("pointerout", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-        
+      if (window.matchMedia("(hover: none)").matches) return;
+
       gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
     });
@@ -964,15 +964,15 @@ export class MainMenuScene {
     };
 
     btn.on("pointerover", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-        
+      if (window.matchMedia("(hover: none)").matches) return;
+
       gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
       // soundManager.playClick();
     });
 
     btn.on("pointerout", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-        
+      if (window.matchMedia("(hover: none)").matches) return;
+
       gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
     });
@@ -1019,7 +1019,7 @@ export class MainMenuScene {
       btn.addChild(content);
 
       const sprite = new Sprite(tex);
-        sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
+      sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
       const ratio = (tex.width && tex.height) ? (tex.width / tex.height) : 1;
       if (ratio > 1.2 || ratio < 0.8) {
         sprite.height = customRadius * 2;
@@ -1045,14 +1045,14 @@ export class MainMenuScene {
 
       btn.on("pointerover", (e) => {
         if (window.matchMedia("(hover: none)").matches) return;
-        
+
         gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.12 });
         // soundManager.playClick();
       });
 
       btn.on("pointerout", (e) => {
         if (window.matchMedia("(hover: none)").matches) return;
-        
+
         gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
       });
@@ -1647,7 +1647,7 @@ export class MainMenuScene {
 
     // Title text inside ribbon
     const titleText = new Text({
-      text: "CÀI ĐẶT GAME",
+      text: "CÀI ĐẶT",
       style: new TextStyle({
         fontFamily: '"Nunito", sans-serif',
         fontSize: 22,
@@ -1774,25 +1774,61 @@ export class MainMenuScene {
     this.settingsModal.addChild(musicRow);
     this.settingsModal.addChild(sfxRow);
 
-    // Reset Data button styled as a single Red 3D capsule button with icon and text
-    const resetBtn = this.createMenuButton(
-      "🗑️ Xóa lịch sử",
-      0,
-      85,
-      "red",
-      260,
-      async () => {
-        soundManager.playClick();
-        const confirmDelete = await gameConfirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu thành tích không?");
-        if (confirmDelete) {
-          saveManager.reset();
-          closePopup();
-          await sceneManager.switchTo(MainMenuScene);
-        }
-      },
-      this.settingsModal,
-      44
-    );
+    // Reset Data button styled as a white card like the settings rows
+    const resetBtn = new Container();
+    resetBtn.x = 0;
+    resetBtn.y = 85;
+    resetBtn.eventMode = "static";
+    resetBtn.cursor = "pointer";
+
+    const btnBg = new Graphics()
+      .roundRect(-165, -32, 330, 64, 15)
+      .fill({ color: 0xffffff }) // Warm creamy white
+      .stroke({ color: 0xffd4e2, width: 3 }); // Subtle red/pink highlight to indicate warning
+    resetBtn.addChild(btnBg);
+
+    const btnLabel = new Text({
+      text: "🗑️ XÓA LỊCH SỬ",
+      style: new TextStyle({
+        fontFamily: '"Nunito", sans-serif',
+        fontSize: 20,
+        fill: "#360207", // Dark brown like NHẠC NỀN
+        fontWeight: "900",
+        letterSpacing: 1.2,
+      }),
+    });
+    btnLabel.anchor.set(0.5);
+    btnLabel.position.set(0, -2);
+    resetBtn.addChild(btnLabel);
+
+    resetBtn.on("pointerover", () => {
+      if (window.matchMedia("(hover: none)").matches) return;
+      gsap.to(resetBtn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
+    });
+    resetBtn.on("pointerout", () => {
+      if (window.matchMedia("(hover: none)").matches) return;
+      gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
+    });
+    resetBtn.on("pointerdown", () => {
+      gsap.to(resetBtn.scale, { x: 0.95, y: 0.95, duration: 0.05 });
+    });
+    resetBtn.on("pointerup", () => {
+      gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.1 });
+    });
+    resetBtn.on("pointerupoutside", () => {
+      gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.1 });
+    });
+    resetBtn.on("pointertap", async () => {
+      soundManager.playClick();
+      const confirmDelete = await gameConfirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu thành tích không?");
+      if (confirmDelete) {
+        saveManager.reset();
+        closePopup();
+        await sceneManager.switchTo(MainMenuScene);
+      }
+    });
+
+    this.settingsModal.addChild(resetBtn);
 
     const versionText = new Text({
       text: "Phiên bản: 1.0.0",
