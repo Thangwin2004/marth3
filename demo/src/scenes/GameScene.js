@@ -53,7 +53,7 @@ function gameAlert(message) {
           text-align: center;
           transform: scale(0.85);
           transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          font-family: 'Be Vietnam Pro', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .game-alert-text {
           color: #360207;
@@ -550,7 +550,7 @@ export class GameScene {
     const floatText = new Text({
       text: textString,
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 26,
         fontWeight: "bold",
         fill: "#ffdd57",
@@ -596,7 +596,7 @@ export class GameScene {
     this.scoreText = new Text({
       text: "ĐIỂM: 0",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
@@ -616,7 +616,7 @@ export class GameScene {
     this.movesText = new Text({
       text: `LƯỢT ĐI: ${this.moves}`,
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
@@ -632,7 +632,7 @@ export class GameScene {
     this.comboText = new Text({
       text: "",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 42,
         fontWeight: "bold",
         fill: "#ff5252",
@@ -647,7 +647,7 @@ export class GameScene {
     this.tutorialText = new Text({
       text: "👉 Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
@@ -2903,7 +2903,7 @@ export class GameScene {
     const glowText = new Text({
       text: "TRÒ CHƠI KẾT THÚC",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 34,
         fill: 0xffea00,
         fontWeight: "900",
@@ -2920,7 +2920,7 @@ export class GameScene {
     const victoryText = new Text({
       text: "TRÒ CHƠI KẾT THÚC",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 34,
         fill: titleGrad,
         fontWeight: "900",
@@ -3097,7 +3097,7 @@ export class GameScene {
       const ribbonText = new Text({
         text: "KỶ LỤC MỚI!",
         style: {
-          fontFamily: '"Be Vietnam Pro", sans-serif',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: 10,
           fill: "#ffffff",
           fontWeight: "bold",
@@ -3115,7 +3115,7 @@ export class GameScene {
     const scoreLabel = new Text({
       text: `ĐIỂM SỐ: ${this.score}`,
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 26,
         fontWeight: "bold",
         fill: "#241d4f",
@@ -3137,7 +3137,7 @@ export class GameScene {
       const rankText = new Text({
         text: ` KỶ LỤC MỚI! HẠNG #${rank} `,
         style: {
-          fontFamily: '"Be Vietnam Pro", sans-serif',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: 20,
           fontWeight: "bold",
           fill: "#e91e63",
@@ -3167,7 +3167,7 @@ export class GameScene {
       const normalLabel = new Text({
         text: "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!",
         style: {
-          fontFamily: '"Be Vietnam Pro", sans-serif',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: 14,
           fill: "#7c73a1",
           
@@ -3375,7 +3375,7 @@ export class GameScene {
     const text = new Text({
       text: "HẾT NƯỚC ĐI!\nĐANG TRÁO BÀN NGỌC...",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
         fill: "#ffea00",
@@ -3509,7 +3509,7 @@ export class GameScene {
       const text = new Text({
         text: textStr.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Be Vietnam Pro", sans-serif',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
@@ -3531,7 +3531,7 @@ export class GameScene {
       const text = new Text({
         text: label.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Be Vietnam Pro", sans-serif',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
@@ -4025,7 +4025,7 @@ export class GameScene {
     const titleText = new Text({
       text: "CÀI ĐẶT GAME",
       style: new TextStyle({
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 22,
         fill: 0xffffff,
         fontWeight: "900",
@@ -4042,47 +4042,45 @@ export class GameScene {
       row.position.set(0, yPos);
 
       // Row background card panel to group label and toggle visually
-      // Enlarged height to 56 to fit the 50-height toggle switch
       const rowBg = new Graphics()
         .roundRect(-165, -32, 330, 64, 15)
         .fill({ color: 0xffffff }) // Warm creamy beige
         .stroke({ color: strokeColor, width: 3 });
       row.addChild(rowBg);
 
-      // Left label (enlarged cartoon text)
+      // Left label
       const label = new Text({
         text: labelText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Be Vietnam Pro", sans-serif',
-          fontSize: 18,
+          fontFamily: '"Nunito", sans-serif',
+          fontSize: 20,
           fill: "#360207",
-          fontWeight: "bold",
-          letterSpacing: 0.8,
-          }),
+          fontWeight: "900",
+          letterSpacing: 1.2,
+        }),
       });
       label.anchor.set(0, 0.5);
-      label.position.set(-140, 0);
+      label.position.set(-140, -2);
       row.addChild(label);
 
-      // Right slider track (using preloaded 3D toggle texture)
-      // Enlarged to width = 100, height = 50 to make it visually matching and prominent
+      // Right slider track
       const track = new Sprite(Texture.from(initialMuteState ? "toggle_off" : "toggle_on"));
       track.anchor.set(0.5);
-      track.width = 100;
-      track.height = 50;
+      track.height = 48;
+      track.width = 76;
       track.eventMode = "static";
       track.cursor = "pointer";
-      track.position.set(110, 0);
+      track.position.set(105, 0);
       row.addChild(track);
 
       // Draw dotted connector line dynamically between text and switch
       const labelWidth = label.width;
       const startX = -140 + labelWidth + 15;
-      const endX = 110 - 50 - 15;
+      const endX = 105 - (track.width / 2) - 15;
       if (startX < endX) {
         const dots = new Graphics();
-        for (let dx = startX; dx <= endX; dx += 6) {
-          dots.circle(dx, 0, 1.5);
+        for (let dx = startX; dx <= endX; dx += 8) {
+          dots.circle(dx, 0, 2);
         }
         dots.fill({ color: 0xccccdd });
         row.addChild(dots);
@@ -4092,6 +4090,8 @@ export class GameScene {
         soundManager.playClick();
         const isMuted = onToggle();
         track.texture = Texture.from(isMuted ? "toggle_off" : "toggle_on");
+        track.width = 76;
+        track.height = 48;
       };
 
       track.on("pointertap", handleToggle);
@@ -4186,7 +4186,7 @@ export class GameScene {
     const versionText = new Text({
       text: "Phiên bản: 1.0.0",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 11,
         fill: "#7c73a1",
       },

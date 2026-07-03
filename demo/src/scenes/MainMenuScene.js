@@ -422,7 +422,7 @@ export class MainMenuScene {
     const title = new Text({
       text: "Bộ Lạc CRUSH",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 48,
         fontWeight: "bold",
         fill: titleGrad,
@@ -436,7 +436,7 @@ export class MainMenuScene {
     const subtitle = new Text({
       text: "DỄ THƯƠNG MATCH-3",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
@@ -469,7 +469,7 @@ export class MainMenuScene {
           ? `🏆 KỶ LỤC ĐIỂM: ${topScore}`
           : `🎯 Hãy thiết lập kỷ lục điểm số ngay hôm nay!`,
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 18,
         fontWeight: "bold",
         fill: "#ffdd57",
@@ -767,7 +767,7 @@ export class MainMenuScene {
       const text = new Text({
         text: displayText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Be Vietnam Pro", sans-serif',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: 14,
           fontWeight: "bold",
           fill: "#ffffff",
@@ -813,7 +813,7 @@ export class MainMenuScene {
         const text = new Text({
           text: textStr.toUpperCase(),
           style: new TextStyle({
-            fontFamily: '"Be Vietnam Pro", sans-serif',
+            fontFamily: '"Nunito", sans-serif',
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
@@ -835,7 +835,7 @@ export class MainMenuScene {
         const text = new Text({
           text: label.toUpperCase(),
           style: new TextStyle({
-            fontFamily: '"Be Vietnam Pro", sans-serif',
+            fontFamily: '"Nunito", sans-serif',
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
@@ -911,7 +911,7 @@ export class MainMenuScene {
     const label = new Text({
       text: "CHƠI NGAY",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 22,
         fontWeight: "900",
         fill: 0xFFFFFF,
@@ -936,17 +936,17 @@ export class MainMenuScene {
         // Soft black drop shadow
         .roundRect(-width / 2, -r + r * 0.22, width, height, radius)
         .fill({ color: 0x000000, alpha: 0.45 })
-        // Dark green 3D base
+        // Dark blue 3D base
         .roundRect(-width / 2, -r + r * 0.15, width, height, radius)
-        .fill({ color: 0x087903 });
+        .fill({ color: 0x004466 });
 
-      // 2. Main Face Background (vibrant green gradient)
+      // 2. Main Face Background (vibrant blue gradient)
       const btnGrad = new FillGradient({
         start: { x: 0, y: -r },
         end: { x: 0, y: r },
         colorStops: [
-          { offset: 0, color: 0x95ED39 }, // Bright green
-          { offset: 1, color: 0x4EAC0C }  // Medium green
+          { offset: 0, color: 0x33ccff }, // Bright cyan
+          { offset: 1, color: 0x0088cc }  // Medium blue
         ]
       });
       bg.clear()
@@ -1179,7 +1179,7 @@ export class MainMenuScene {
     const titleText = new Text({
       text: " BẢNG VÀNG THÀNH TÍCH",
       style: new TextStyle({
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 22,
         fill: 0xffffff, // white on pink ribbon
         fontWeight: "900",
@@ -1212,7 +1212,7 @@ export class MainMenuScene {
     const userText = new Text({
       text: userTextStr,
       style: new TextStyle({
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 13,
         fontWeight: "bold",
         fill: currentUser ? "#e91e63" : "#7c73a1",
@@ -1231,7 +1231,7 @@ export class MainMenuScene {
     const rankHeader = new Text({
       text: "HẠNG",
       style: new TextStyle({
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
@@ -1245,7 +1245,7 @@ export class MainMenuScene {
     const scoreHeader = new Text({
       text: "ĐIỂM",
       style: new TextStyle({
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
@@ -1270,7 +1270,7 @@ export class MainMenuScene {
       const emptyText = new Text({
         text: "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀",
         style: new TextStyle({
-          fontFamily: '"Be Vietnam Pro", sans-serif',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: 16,
           fill: "#7c73a1",
           align: "center",
@@ -1343,7 +1343,7 @@ export class MainMenuScene {
           rankNode = new Text({
             text: `${idx + 1}`,
             style: new TextStyle({
-              fontFamily: '"Be Vietnam Pro", sans-serif',
+              fontFamily: '"Nunito", sans-serif',
               fontSize: 24,
               fontWeight: "bold",
               fill: "#241d4f",
@@ -1391,7 +1391,7 @@ export class MainMenuScene {
         const nameText = new Text({
           text: name,
           style: new TextStyle({
-            fontFamily: '"Be Vietnam Pro", sans-serif',
+            fontFamily: '"Nunito", sans-serif',
             fontSize: 18,
             fontWeight: "bold",
             fill: "#241d4f",
@@ -1406,7 +1406,7 @@ export class MainMenuScene {
         const scoreText = new Text({
           text: entry.score.toLocaleString(),
           style: new TextStyle({
-            fontFamily: '"Be Vietnam Pro", sans-serif',
+            fontFamily: '"Nunito", sans-serif',
             fontSize: 24,
             fontWeight: "bold",
             fill: "#241d4f",
@@ -1457,7 +1457,7 @@ export class MainMenuScene {
       footerRankNode = new Text({
         text: activeRankVal ? String(activeRankVal) : "-",
         style: new TextStyle({
-          fontFamily: '"Be Vietnam Pro", sans-serif',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: 24,
           fontWeight: "bold",
           fill: "#241d4f",
@@ -1498,7 +1498,7 @@ export class MainMenuScene {
     const footerName = new Text({
       text: activeName,
       style: new TextStyle({
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 18,
         fontWeight: "bold",
         fill: "#241d4f",
@@ -1513,7 +1513,7 @@ export class MainMenuScene {
     const footerScore = new Text({
       text: personalBest.toLocaleString(),
       style: new TextStyle({
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
         fill: "#241d4f",
@@ -1649,7 +1649,7 @@ export class MainMenuScene {
     const titleText = new Text({
       text: "CÀI ĐẶT GAME",
       style: new TextStyle({
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 22,
         fill: 0xffffff,
         fontWeight: "900",
@@ -1696,36 +1696,35 @@ export class MainMenuScene {
       const label = new Text({
         text: labelText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Be Vietnam Pro", sans-serif',
-          fontSize: 18,
+          fontFamily: '"Nunito", sans-serif',
+          fontSize: 20,
           fill: "#360207",
-          fontWeight: "bold",
-          letterSpacing: 0.8,
+          fontWeight: "900",
+          letterSpacing: 1.2,
         }),
       });
       label.anchor.set(0, 0.5);
-      label.position.set(-140, 0);
+      label.position.set(-140, -2);
       row.addChild(label);
 
       // Right slider track (using preloaded 3D toggle texture)
-      // Enlarged to width = 100, height = 50 to make it visually matching and prominent
       const track = new Sprite(Texture.from(initialMuteState ? "toggle_off" : "toggle_on"));
       track.anchor.set(0.5);
-      track.width = 100;
-      track.height = 50;
+      track.height = 48;
+      track.width = 76;
       track.eventMode = "static";
       track.cursor = "pointer";
-      track.position.set(110, 0);
+      track.position.set(105, 0);
       row.addChild(track);
 
       // Draw dotted connector line dynamically between text and switch
       const labelWidth = label.width;
       const startX = -140 + labelWidth + 15;
-      const endX = 110 - 50 - 15;
+      const endX = 105 - (track.width / 2) - 15;
       if (startX < endX) {
         const dots = new Graphics();
-        for (let dx = startX; dx <= endX; dx += 6) {
-          dots.circle(dx, 0, 1.5);
+        for (let dx = startX; dx <= endX; dx += 8) {
+          dots.circle(dx, 0, 2);
         }
         dots.fill({ color: 0xccccdd });
         row.addChild(dots);
@@ -1735,6 +1734,8 @@ export class MainMenuScene {
         soundManager.playClick();
         const isMuted = onToggle();
         track.texture = Texture.from(isMuted ? "toggle_off" : "toggle_on");
+        track.width = 76;
+        track.height = 48;
       };
 
       track.on("pointertap", handleToggle);
@@ -1796,7 +1797,7 @@ export class MainMenuScene {
     const versionText = new Text({
       text: "Phiên bản: 1.0.0",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: 12,
         fill: "#aaaaaa",
       },
