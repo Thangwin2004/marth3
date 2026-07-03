@@ -53,7 +53,7 @@ function gameAlert(message) {
           text-align: center;
           transform: scale(0.85);
           transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: 'Be Vietnam Pro', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .game-alert-text {
           color: #360207;
@@ -264,7 +264,7 @@ function createVectorIcon(emojiChar, size = 24) {
   const tex = getIconTexture(emojiChar);
   if (tex) {
     const sprite = new Sprite(tex);
-    sprite.anchor.set(0.5);
+        sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
     const finalSize = String(emojiChar).includes("🗑️") ? size * 1.55 : size;
     sprite.width = finalSize;
     sprite.height = finalSize;
@@ -550,7 +550,7 @@ export class GameScene {
     const floatText = new Text({
       text: textString,
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 26,
         fontWeight: "bold",
         fill: "#ffdd57",
@@ -596,7 +596,7 @@ export class GameScene {
     this.scoreText = new Text({
       text: "ĐIỂM: 0",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
@@ -616,7 +616,7 @@ export class GameScene {
     this.movesText = new Text({
       text: `LƯỢT ĐI: ${this.moves}`,
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
@@ -632,7 +632,7 @@ export class GameScene {
     this.comboText = new Text({
       text: "",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 42,
         fontWeight: "bold",
         fill: "#ff5252",
@@ -647,7 +647,7 @@ export class GameScene {
     this.tutorialText = new Text({
       text: "👉 Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
@@ -2903,7 +2903,7 @@ export class GameScene {
     const glowText = new Text({
       text: "TRÒ CHƠI KẾT THÚC",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 34,
         fill: 0xffea00,
         fontWeight: "900",
@@ -2920,7 +2920,7 @@ export class GameScene {
     const victoryText = new Text({
       text: "TRÒ CHƠI KẾT THÚC",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 34,
         fill: titleGrad,
         fontWeight: "900",
@@ -3097,7 +3097,7 @@ export class GameScene {
       const ribbonText = new Text({
         text: "KỶ LỤC MỚI!",
         style: {
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 10,
           fill: "#ffffff",
           fontWeight: "bold",
@@ -3115,7 +3115,7 @@ export class GameScene {
     const scoreLabel = new Text({
       text: `ĐIỂM SỐ: ${this.score}`,
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 26,
         fontWeight: "bold",
         fill: "#241d4f",
@@ -3137,7 +3137,7 @@ export class GameScene {
       const rankText = new Text({
         text: ` KỶ LỤC MỚI! HẠNG #${rank} `,
         style: {
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 20,
           fontWeight: "bold",
           fill: "#e91e63",
@@ -3167,7 +3167,7 @@ export class GameScene {
       const normalLabel = new Text({
         text: "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!",
         style: {
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 14,
           fill: "#7c73a1",
           
@@ -3375,7 +3375,7 @@ export class GameScene {
     const text = new Text({
       text: "HẾT NƯỚC ĐI!\nĐANG TRÁO BÀN NGỌC...",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
         fill: "#ffea00",
@@ -3385,6 +3385,7 @@ export class GameScene {
       },
     });
     text.anchor.set(0.5);
+        text.y = -2; // Optical center correction
     this.deadlockModal.addChild(text);
 
     // Apply responsive layout immediately
@@ -3508,7 +3509,7 @@ export class GameScene {
       const text = new Text({
         text: textStr.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
@@ -3516,19 +3517,21 @@ export class GameScene {
           }),
       });
       text.anchor.set(0.5);
+        text.y = -2; // Optical center correction
       content.addChild(text);
       textObj = text;
 
       const gap = isSmall ? 6 : 12;
       const totalW = emojiIcon.width + gap + text.width;
       emojiIcon.x = -totalW / 2 + emojiIcon.width / 2;
+        emojiIcon.y = -1;
       text.x = totalW / 2 - text.width / 2;
     } else {
       const textSize = isSmall ? 11 : (label.length > 2 ? 15 : 22);
       const text = new Text({
         text: label.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
@@ -3536,16 +3539,21 @@ export class GameScene {
           }),
       });
       text.anchor.set(0.5);
+        text.y = -2; // Optical center correction
       content.addChild(text);
       textObj = text;
     }
 
     // Interactivity
-    btn.on("pointerover", () => {
+    btn.on("pointerover", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
       gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
       // soundManager.playClick();
     });
-    btn.on("pointerout", () => {
+    btn.on("pointerout", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
       gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
     });
@@ -3553,10 +3561,12 @@ export class GameScene {
       gsap.to(content, { y: shadowOffset - 1, duration: 0.05 });
     });
     btn.on("pointerup", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
       onClick();
     });
     btn.on("pointerupoutside", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
     });
   }
@@ -3578,7 +3588,7 @@ export class GameScene {
       btn.addChild(content);
  
       const sprite = new Sprite(tex);
-      sprite.anchor.set(0.5);
+        sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
       sprite.width = customRadius * 2;
       sprite.height = customRadius * 2;
       const drawOverlays = (r) => {};
@@ -3596,12 +3606,16 @@ export class GameScene {
         drawOverlays(r);
       };
  
-      btn.on("pointerover", () => {
+      btn.on("pointerover", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
         gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.12 });
         // soundManager.playClick();
       });
  
-      btn.on("pointerout", () => {
+      btn.on("pointerout", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
         gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
       });
@@ -3611,11 +3625,13 @@ export class GameScene {
       });
  
       btn.on("pointerup", () => {
+        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
         onClick();
       });
  
       btn.on("pointerupoutside", () => {
+        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
       });
  
@@ -4009,7 +4025,7 @@ export class GameScene {
     const titleText = new Text({
       text: "CÀI ĐẶT GAME",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 22,
         fill: 0xffffff,
         fontWeight: "900",
@@ -4037,7 +4053,7 @@ export class GameScene {
       const label = new Text({
         text: labelText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 18,
           fill: "#360207",
           fontWeight: "bold",
@@ -4098,7 +4114,7 @@ export class GameScene {
         soundManager.toggleMusic();
         return !soundManager.musicEnabled;
       },
-      0xc2a3ff // Light purple border
+      0xddeaff // Subtle blue highlight
     );
     const sfxRow = createToggleRow(
       "HIỆU ỨNG",
@@ -4108,7 +4124,7 @@ export class GameScene {
         soundManager.enabled = !soundManager.enabled;
         return !soundManager.enabled;
       },
-      0xc2a3ff // Light purple border
+      0xddeaff // Subtle blue highlight
     );
 
     this.settingsModal.addChild(musicRow);
@@ -4170,7 +4186,7 @@ export class GameScene {
     const versionText = new Text({
       text: "Phiên bản: 1.0.0",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 11,
         fill: "#7c73a1",
       },

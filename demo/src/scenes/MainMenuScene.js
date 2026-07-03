@@ -121,7 +121,7 @@ function gameConfirm(message) {
           text-align: center;
           transform: scale(0.85);
           transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: 'Be Vietnam Pro', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .game-alert-text {
           color: #360207;
@@ -261,7 +261,7 @@ function createVectorIcon(emojiChar, size = 24) {
   const tex = getIconTexture(emojiChar);
   if (tex) {
     const sprite = new Sprite(tex);
-    sprite.anchor.set(0.5);
+        sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
     const finalSize = String(emojiChar).includes("🗑️") ? size * 1.55 : size;
     sprite.width = finalSize;
     sprite.height = finalSize;
@@ -422,7 +422,7 @@ export class MainMenuScene {
     const title = new Text({
       text: "Bộ Lạc CRUSH",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 48,
         fontWeight: "bold",
         fill: titleGrad,
@@ -436,7 +436,7 @@ export class MainMenuScene {
     const subtitle = new Text({
       text: "DỄ THƯƠNG MATCH-3",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
@@ -469,7 +469,7 @@ export class MainMenuScene {
           ? `🏆 KỶ LỤC ĐIỂM: ${topScore}`
           : `🎯 Hãy thiết lập kỷ lục điểm số ngay hôm nay!`,
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 18,
         fontWeight: "bold",
         fill: "#ffdd57",
@@ -482,6 +482,7 @@ export class MainMenuScene {
 
     // === MENU BUTTONS ===
     this.playBtn = this.createPlayNowButton(0, 0, async () => {
+      soundManager.playClick();
       await sceneManager.switchTo(GameScene);
     });
 
@@ -766,7 +767,7 @@ export class MainMenuScene {
       const text = new Text({
         text: displayText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 14,
           fontWeight: "bold",
           fill: "#ffffff",
@@ -774,6 +775,7 @@ export class MainMenuScene {
         }),
       });
       text.anchor.set(0.5);
+        text.y = -2; // Optical center correction
       content.addChild(text);
       textObj = text;
 
@@ -790,6 +792,7 @@ export class MainMenuScene {
           const gap = 12;
           const totalW = icon.width + gap + text.width;
           icon.x = -totalW / 2 + icon.width / 2;
+          icon.y = -1;
           text.x = totalW / 2 - text.width / 2;
         })
         .catch((err) => {
@@ -810,7 +813,7 @@ export class MainMenuScene {
         const text = new Text({
           text: textStr.toUpperCase(),
           style: new TextStyle({
-            fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+            fontFamily: '"Be Vietnam Pro", sans-serif',
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
@@ -818,19 +821,21 @@ export class MainMenuScene {
           }),
         });
         text.anchor.set(0.5);
+        text.y = -2; // Optical center correction
         content.addChild(text);
         textObj = text;
 
         const gap = isSmall ? 6 : 12;
         const totalW = emojiIcon.width + gap + text.width;
         emojiIcon.x = -totalW / 2 + emojiIcon.width / 2;
+        emojiIcon.y = -1;
         text.x = totalW / 2 - text.width / 2;
       } else {
         const textSize = isSmall ? 11 : (label.length > 2 ? 15 : 22);
         const text = new Text({
           text: label.toUpperCase(),
           style: new TextStyle({
-            fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+            fontFamily: '"Be Vietnam Pro", sans-serif',
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
@@ -838,17 +843,22 @@ export class MainMenuScene {
           }),
         });
         text.anchor.set(0.5);
+        text.y = -2; // Optical center correction
         content.addChild(text);
         textObj = text;
       }
     }
 
     // Interactivity
-    btn.on("pointerover", () => {
+    btn.on("pointerover", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
       gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
       // soundManager.playClick();
     });
-    btn.on("pointerout", () => {
+    btn.on("pointerout", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
       gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
     });
@@ -856,10 +866,12 @@ export class MainMenuScene {
       gsap.to(content, { y: shadowOffset - 1, duration: 0.05 });
     });
     btn.on("pointerup", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
       onClick();
     });
     btn.on("pointerupoutside", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
     });
 
@@ -899,7 +911,7 @@ export class MainMenuScene {
     const label = new Text({
       text: "CHƠI NGAY",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 22,
         fontWeight: "900",
         fill: 0xFFFFFF,
@@ -951,12 +963,16 @@ export class MainMenuScene {
       label.y = -r * 0.08;
     };
 
-    btn.on("pointerover", () => {
+    btn.on("pointerover", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
       gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
       // soundManager.playClick();
     });
 
-    btn.on("pointerout", () => {
+    btn.on("pointerout", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
       gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
     });
@@ -966,11 +982,13 @@ export class MainMenuScene {
     });
 
     btn.on("pointerup", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
       onClick();
     });
 
     btn.on("pointerupoutside", () => {
+      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
       gsap.to(content, { y: 0, duration: 0.1 });
     });
 
@@ -1001,7 +1019,7 @@ export class MainMenuScene {
       btn.addChild(content);
 
       const sprite = new Sprite(tex);
-      sprite.anchor.set(0.5);
+        sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
       const ratio = (tex.width && tex.height) ? (tex.width / tex.height) : 1;
       if (ratio > 1.2 || ratio < 0.8) {
         sprite.height = customRadius * 2;
@@ -1025,12 +1043,16 @@ export class MainMenuScene {
         }
       };
 
-      btn.on("pointerover", () => {
+      btn.on("pointerover", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
         gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.12 });
         // soundManager.playClick();
       });
 
-      btn.on("pointerout", () => {
+      btn.on("pointerout", (e) => {
+        if (window.matchMedia("(hover: none)").matches) return;
+        
         gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
       });
@@ -1040,11 +1062,13 @@ export class MainMenuScene {
       });
 
       btn.on("pointerup", () => {
+        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
         onClick();
       });
 
       btn.on("pointerupoutside", () => {
+        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
         gsap.to(content, { y: 0, duration: 0.1 });
       });
 
@@ -1155,7 +1179,7 @@ export class MainMenuScene {
     const titleText = new Text({
       text: " BẢNG VÀNG THÀNH TÍCH",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 22,
         fill: 0xffffff, // white on pink ribbon
         fontWeight: "900",
@@ -1188,7 +1212,7 @@ export class MainMenuScene {
     const userText = new Text({
       text: userTextStr,
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 13,
         fontWeight: "bold",
         fill: currentUser ? "#e91e63" : "#7c73a1",
@@ -1207,7 +1231,7 @@ export class MainMenuScene {
     const rankHeader = new Text({
       text: "HẠNG",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
@@ -1221,7 +1245,7 @@ export class MainMenuScene {
     const scoreHeader = new Text({
       text: "ĐIỂM",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
@@ -1246,7 +1270,7 @@ export class MainMenuScene {
       const emptyText = new Text({
         text: "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀",
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 16,
           fill: "#7c73a1",
           align: "center",
@@ -1319,7 +1343,7 @@ export class MainMenuScene {
           rankNode = new Text({
             text: `${idx + 1}`,
             style: new TextStyle({
-              fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+              fontFamily: '"Be Vietnam Pro", sans-serif',
               fontSize: 24,
               fontWeight: "bold",
               fill: "#241d4f",
@@ -1367,7 +1391,7 @@ export class MainMenuScene {
         const nameText = new Text({
           text: name,
           style: new TextStyle({
-            fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+            fontFamily: '"Be Vietnam Pro", sans-serif',
             fontSize: 18,
             fontWeight: "bold",
             fill: "#241d4f",
@@ -1382,7 +1406,7 @@ export class MainMenuScene {
         const scoreText = new Text({
           text: entry.score.toLocaleString(),
           style: new TextStyle({
-            fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+            fontFamily: '"Be Vietnam Pro", sans-serif',
             fontSize: 24,
             fontWeight: "bold",
             fill: "#241d4f",
@@ -1433,7 +1457,7 @@ export class MainMenuScene {
       footerRankNode = new Text({
         text: activeRankVal ? String(activeRankVal) : "-",
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 24,
           fontWeight: "bold",
           fill: "#241d4f",
@@ -1474,7 +1498,7 @@ export class MainMenuScene {
     const footerName = new Text({
       text: activeName,
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 18,
         fontWeight: "bold",
         fill: "#241d4f",
@@ -1489,7 +1513,7 @@ export class MainMenuScene {
     const footerScore = new Text({
       text: personalBest.toLocaleString(),
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
         fill: "#241d4f",
@@ -1625,7 +1649,7 @@ export class MainMenuScene {
     const titleText = new Text({
       text: "CÀI ĐẶT GAME",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 22,
         fill: 0xffffff,
         fontWeight: "900",
@@ -1672,7 +1696,7 @@ export class MainMenuScene {
       const label = new Text({
         text: labelText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 18,
           fill: "#360207",
           fontWeight: "bold",
@@ -1733,7 +1757,7 @@ export class MainMenuScene {
         soundManager.toggleMusic();
         return !soundManager.musicEnabled;
       },
-      0xc2a3ff // Light purple border
+      0xddeaff // Subtle blue highlight
     );
     const sfxRow = createToggleRow(
       "HIỆU ỨNG",
@@ -1743,7 +1767,7 @@ export class MainMenuScene {
         soundManager.enabled = !soundManager.enabled;
         return !soundManager.enabled;
       },
-      0xc2a3ff // Light purple border
+      0xddeaff // Subtle blue highlight
     );
 
     this.settingsModal.addChild(musicRow);
@@ -1772,7 +1796,7 @@ export class MainMenuScene {
     const versionText = new Text({
       text: "Phiên bản: 1.0.0",
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 12,
         fill: "#aaaaaa",
       },
