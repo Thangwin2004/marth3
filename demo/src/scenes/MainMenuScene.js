@@ -426,8 +426,8 @@ export class MainMenuScene {
         fontSize: 48,
         fontWeight: "bold",
         fill: titleGrad,
-        
-        
+
+
       },
     });
     title.anchor.set(0.5);
@@ -440,9 +440,9 @@ export class MainMenuScene {
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
-        
+
         letterSpacing: 4,
-        
+
       },
     });
     subtitle.anchor.set(0.5);
@@ -473,8 +473,8 @@ export class MainMenuScene {
         fontSize: 18,
         fontWeight: "bold",
         fill: "#ffdd57",
-        
-        
+
+
       },
     });
     this.infoText.anchor.set(0.5);
@@ -624,16 +624,16 @@ export class MainMenuScene {
 
     const circR = Math.max(34, Math.min(42, 42 * scale));
     const circGap = 28 * scale;
-    
+
     // Parade top bound is roughly (height - 85) - 30 = height - 115
-    const maxCircY = height - 115 - 15 - circR; 
+    const maxCircY = height - 115 - 15 - circR;
 
     // Determine circY, spacing it nicely below playBtn but avoiding parade
     let circY = Math.max(playY + 110 * scale, height * 0.75);
     if (circY > maxCircY) {
       circY = maxCircY;
     }
-    
+
     // If circY was pushed up too high, ensure it doesn't overlap playBtn
     const minCircY = playY + playH / 2 + circR + 15;
     if (circY < minCircY) {
@@ -699,7 +699,7 @@ export class MainMenuScene {
         this.settingsModal.y = height / 2;
         const modalScale =
           width < 600 || height > width
-            ? Math.min(1.0, (width - 40) / 380)
+            ? Math.min(1.0, (width - 20) / 420)
             : 1.0;
         this.settingsModal.scale.set(modalScale);
       }
@@ -770,8 +770,8 @@ export class MainMenuScene {
           fontSize: 14,
           fontWeight: "bold",
           fill: "#ffffff",
-          
-          }),
+
+        }),
       });
       text.anchor.set(0.5);
       content.addChild(text);
@@ -814,8 +814,8 @@ export class MainMenuScene {
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
-            
-            }),
+
+          }),
         });
         text.anchor.set(0.5);
         content.addChild(text);
@@ -834,8 +834,8 @@ export class MainMenuScene {
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
-            
-            }),
+
+          }),
         });
         text.anchor.set(0.5);
         content.addChild(text);
@@ -904,8 +904,8 @@ export class MainMenuScene {
         fontWeight: "900",
         fill: 0xFFFFFF,
         align: 'center',
-        
-        }
+
+      }
     });
     label.anchor.set(0.5);
     content.addChild(label);
@@ -1111,7 +1111,7 @@ export class MainMenuScene {
           ]
         })
       })
-      
+
     this.leaderboardModal.addChild(borderBg);
 
     // 3. Bright Cream Card Face
@@ -1192,7 +1192,7 @@ export class MainMenuScene {
         fontSize: 13,
         fontWeight: "bold",
         fill: currentUser ? "#e91e63" : "#7c73a1",
-        
+
       }),
     });
     userText.anchor.set(0.5);
@@ -1211,7 +1211,7 @@ export class MainMenuScene {
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
-        
+
       }),
     });
     rankHeader.anchor.set(0.5);
@@ -1225,7 +1225,7 @@ export class MainMenuScene {
         fontSize: 20,
         fontWeight: "bold",
         fill: 0x004466,
-        
+
       }),
     });
     scoreHeader.anchor.set(0.5);
@@ -1323,7 +1323,7 @@ export class MainMenuScene {
               fontSize: 24,
               fontWeight: "bold",
               fill: "#241d4f",
-              
+
             }),
           });
           rankNode.anchor.set(0.5);
@@ -1371,7 +1371,7 @@ export class MainMenuScene {
             fontSize: 18,
             fontWeight: "bold",
             fill: "#241d4f",
-            
+
           }),
         });
         nameText.anchor.set(0, 0.5);
@@ -1386,7 +1386,7 @@ export class MainMenuScene {
             fontSize: 24,
             fontWeight: "bold",
             fill: "#241d4f",
-            
+
           }),
         });
         scoreText.anchor.set(1, 0.5);
@@ -1437,7 +1437,7 @@ export class MainMenuScene {
           fontSize: 24,
           fontWeight: "bold",
           fill: "#241d4f",
-          })
+        })
       });
       footerRankNode.anchor.set(0.5);
     }
@@ -1478,7 +1478,7 @@ export class MainMenuScene {
         fontSize: 18,
         fontWeight: "bold",
         fill: "#241d4f",
-        
+
       }),
     });
     footerName.anchor.set(0, 0.5);
@@ -1493,7 +1493,7 @@ export class MainMenuScene {
         fontSize: 24,
         fontWeight: "bold",
         fill: "#241d4f",
-        
+
       }),
     });
     footerScore.anchor.set(1, 0.5);
@@ -1573,22 +1573,22 @@ export class MainMenuScene {
       .fill({ color: 0x000000, alpha: 0.25 });
     this.settingsModal.addChild(cardShadow);
 
-    // 2. Thick 3D Purple-Violet Border
+    // 2. Thick 3D Cyan-Blue Border
     const borderBg = new Graphics()
       .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 20)
-      .fill({ color: 0x330066 }) // Shadow Base
+      .fill({ color: 0x004466 }) // Shadow Base
       .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
       .fill({
         fill: new FillGradient({
           start: { x: 0, y: -cardH / 2 },
           end: { x: 0, y: cardH / 2 },
           colorStops: [
-            { offset: 0, color: 0xd2a6ff },
-            { offset: 1, color: 0x9933ff }
+            { offset: 0, color: 0x33ccff },
+            { offset: 1, color: 0x0088cc }
           ]
         })
       })
-      
+
     this.settingsModal.addChild(borderBg);
 
     // 3. Bright Cream Card Face
@@ -1677,7 +1677,7 @@ export class MainMenuScene {
           fill: "#360207",
           fontWeight: "bold",
           letterSpacing: 0.8,
-          }),
+        }),
       });
       label.anchor.set(0, 0.5);
       label.position.set(-140, 0);

@@ -3913,7 +3913,7 @@ export class GameScene {
         this.settingsModal.y = height / 2;
         const modalScale =
           width < 600 || height > width
-            ? Math.min(1.0, (width - 40) / 380)
+            ? Math.min(1.0, (width - 40) / 420)
             : 1.0;
         this.settingsModal.scale.set(modalScale);
       }
@@ -3957,18 +3957,18 @@ export class GameScene {
       .fill({ color: 0x000000, alpha: 0.25 });
     this.settingsModal.addChild(cardShadow);
 
-    // 2. Thick 3D Purple-Violet Border
+    // 2. Thick 3D Cyan-Blue Border
     const borderBg = new Graphics()
       .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 20)
-      .fill({ color: 0x330066 }) // Shadow Base
+      .fill({ color: 0x004466 }) // Shadow Base
       .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
       .fill({
         fill: new FillGradient({
           start: { x: 0, y: -cardH / 2 },
           end: { x: 0, y: cardH / 2 },
           colorStops: [
-            { offset: 0, color: 0xd2a6ff },
-            { offset: 1, color: 0x9933ff }
+            { offset: 0, color: 0x33ccff },
+            { offset: 1, color: 0x0088cc }
           ]
         })
       })
