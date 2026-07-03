@@ -1,4 +1,14 @@
-import { Container, Graphics, Sprite, Texture, Text, Assets, TextStyle, FillGradient, Rectangle } from "pixi.js";
+import {
+  Container,
+  Graphics,
+  Sprite,
+  Texture,
+  Text,
+  Assets,
+  TextStyle,
+  FillGradient,
+  Rectangle,
+} from "pixi.js";
 import gsap from "gsap";
 import { Config } from "../config.js";
 import { App } from "../system/App.js";
@@ -6,7 +16,12 @@ import { sceneManager } from "../system/SceneManager.js";
 import { saveManager } from "../system/SaveManager.js";
 import { GameScene } from "./GameScene.js";
 import { soundManager } from "../system/SoundManager.js";
-import { Colorful3DCircleButton, Colorful3DButton, createVectorIcon as createVectorIconFromUI, mapEmojiToIconType } from "../system/UIComponents.js";
+import {
+  Colorful3DCircleButton,
+  Colorful3DButton,
+  createVectorIcon as createVectorIconFromUI,
+  mapEmojiToIconType,
+} from "../system/UIComponents.js";
 
 const ALL_AVATAR_FILES = [
   "001_avatar_laclac.png",
@@ -229,12 +244,27 @@ function gameConfirm(message) {
 }
 
 const palettes = {
-  yellow: { top: 0xFFE500, bottom: 0xFF9900, shadow: 0x8A4500, stroke: 0xFFF8B3 },
-  green: { top: 0x7FFF00, bottom: 0x00CC00, shadow: 0x006600, stroke: 0xD4FFD4 },
-  pink: { top: 0xFF66B2, bottom: 0xCC0066, shadow: 0x800040, stroke: 0xFFE6F2 },
-  blue: { top: 0x33CCFF, bottom: 0x0088CC, shadow: 0x004466, stroke: 0xE6F9FF },
-  purple: { top: 0xB266FF, bottom: 0x5900B3, shadow: 0x330066, stroke: 0xF2E6FF },
-  red: { top: 0xF95E8B, bottom: 0xD93955, shadow: 0x92233F, stroke: 0xFFD4E2 }
+  yellow: {
+    top: 0xffe500,
+    bottom: 0xff9900,
+    shadow: 0x8a4500,
+    stroke: 0xfff8b3,
+  },
+  green: {
+    top: 0x7fff00,
+    bottom: 0x00cc00,
+    shadow: 0x006600,
+    stroke: 0xd4ffd4,
+  },
+  pink: { top: 0xff66b2, bottom: 0xcc0066, shadow: 0x800040, stroke: 0xffe6f2 },
+  blue: { top: 0x33ccff, bottom: 0x0088cc, shadow: 0x004466, stroke: 0xe6f9ff },
+  purple: {
+    top: 0xb266ff,
+    bottom: 0x5900b3,
+    shadow: 0x330066,
+    stroke: 0xf2e6ff,
+  },
+  red: { top: 0xf95e8b, bottom: 0xd93955, shadow: 0x92233f, stroke: 0xffd4e2 },
 };
 
 const getColorStyle = (colorValue, label = "") => {
@@ -263,7 +293,7 @@ function getIconTexture(emojiChar) {
     "▶️": "play_btn",
     "🏆": "trophy_btn",
     "🔄": "replay_btn",
-    "🗑️": "delete_btn"
+    "🗑️": "delete_btn",
   };
 
   const charStr = String(emojiChar);
@@ -444,8 +474,6 @@ export class MainMenuScene {
         fontSize: 48,
         fontWeight: "bold",
         fill: titleGrad,
-
-
       },
     });
     title.anchor.set(0.5);
@@ -460,7 +488,6 @@ export class MainMenuScene {
         fill: "#ffecb3",
 
         letterSpacing: 4,
-
       },
     });
     subtitle.anchor.set(0.5);
@@ -491,8 +518,6 @@ export class MainMenuScene {
         fontSize: 18,
         fontWeight: "bold",
         fill: "#ffdd57",
-
-
       },
     });
     this.infoText.anchor.set(0.5);
@@ -637,7 +662,11 @@ export class MainMenuScene {
 
     // 4. Play Button & Circular buttons below it (Memory Card style layout)
     // Distribute dynamically to avoid overlap and fill empty space
-    const titleBottomY = this.infoText ? this.infoText.y : (this.titleContainer ? this.titleContainer.y + 115 * scale : height * 0.35);
+    const titleBottomY = this.infoText
+      ? this.infoText.y
+      : this.titleContainer
+        ? this.titleContainer.y + 115 * scale
+        : height * 0.35;
     let playY = Math.max(titleBottomY + 80 * scale, height * 0.55);
     const playH = Math.max(68, Math.min(84, 84 * scale));
 
@@ -725,7 +754,16 @@ export class MainMenuScene {
     }
   }
 
-  createMenuButton(label, x, y, color, width = 220, onClick, parent = this.container, btnHeight = 56) {
+  createMenuButton(
+    label,
+    x,
+    y,
+    color,
+    width = 220,
+    onClick,
+    parent = this.container,
+    btnHeight = 56,
+  ) {
     const btn = new Container();
     btn.x = x;
     btn.y = y;
@@ -755,7 +793,9 @@ export class MainMenuScene {
     const theme = palettes[colorStyle] || palettes.blue;
 
     // 1. 3D Base Shadow
-    shadow.roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius).fill({ color: theme.shadow });
+    shadow
+      .roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius)
+      .fill({ color: theme.shadow });
 
     // 2. Main Face Background (gradient)
     const btnGrad = new FillGradient({
@@ -763,15 +803,16 @@ export class MainMenuScene {
       end: { x: 0, y: hh },
       colorStops: [
         { offset: 0, color: theme.top },
-        { offset: 1, color: theme.bottom }
-      ]
+        { offset: 1, color: theme.bottom },
+      ],
     });
     bg.roundRect(-width / 2, -hh, width, btnHeight, radius)
       .fill({ fill: btnGrad })
       .stroke({ width: 2.5, color: theme.stroke });
 
     // 3. Glossy highlight sheen on top (ellipse highlight)
-    highlight.ellipse(0, -hh / 2, width * 0.42, btnHeight * 0.2)
+    highlight
+      .ellipse(0, -hh / 2, width * 0.42, btnHeight * 0.2)
       .fill({ color: 0xffffff, alpha: 0.25 });
 
     // Add Label / Icon
@@ -789,7 +830,6 @@ export class MainMenuScene {
           fontSize: 14,
           fontWeight: "bold",
           fill: "#ffffff",
-
         }),
       });
       text.anchor.set(0.5);
@@ -835,7 +875,6 @@ export class MainMenuScene {
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
-
           }),
         });
         text.anchor.set(0.5);
@@ -849,7 +888,7 @@ export class MainMenuScene {
         emojiIcon.y = -1;
         text.x = totalW / 2 - text.width / 2;
       } else {
-        const textSize = isSmall ? 11 : (label.length > 2 ? 15 : 22);
+        const textSize = isSmall ? 11 : label.length > 2 ? 15 : 22;
         const text = new Text({
           text: label.toUpperCase(),
           style: new TextStyle({
@@ -857,7 +896,6 @@ export class MainMenuScene {
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
-
           }),
         });
         text.anchor.set(0.5);
@@ -932,10 +970,9 @@ export class MainMenuScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 22,
         fontWeight: "900",
-        fill: 0xFFFFFF,
-        align: 'center',
-
-      }
+        fill: 0xffffff,
+        align: "center",
+      },
     });
     label.anchor.set(0.5);
     content.addChild(label);
@@ -950,7 +987,8 @@ export class MainMenuScene {
       const radius = r;
 
       // 1. Draw 3D Base Shadow (Combined bottom shadow and 3D base)
-      shadow.clear()
+      shadow
+        .clear()
         // Soft black drop shadow
         .roundRect(-width / 2, -r + r * 0.22, width, height, radius)
         .fill({ color: 0x000000, alpha: 0.45 })
@@ -964,16 +1002,17 @@ export class MainMenuScene {
         end: { x: 0, y: r },
         colorStops: [
           { offset: 0, color: 0x33ccff }, // Bright cyan
-          { offset: 1, color: 0x0088cc }  // Medium blue
-        ]
+          { offset: 1, color: 0x0088cc }, // Medium blue
+        ],
       });
       bg.clear()
         .roundRect(-width / 2, -r, width, height, radius)
         .fill({ fill: btnGrad })
-        .stroke({ width: Math.max(2.5, r * 0.15), color: 0xFFFFFF }); // Thick white border!
+        .stroke({ width: Math.max(2.5, r * 0.15), color: 0xffffff }); // Thick white border!
 
       // 3. Glossy highlight sheen on top (ellipse highlight)
-      highlight.clear()
+      highlight
+        .clear()
         .ellipse(0, -r / 2, width * 0.42, height * 0.2)
         .fill({ color: 0xffffff, alpha: 0.25 });
 
@@ -1022,7 +1061,14 @@ export class MainMenuScene {
     return btn;
   }
 
-  createCircularButton(emojiText, x, y, onClick, parent = this.container, customRadius = 26) {
+  createCircularButton(
+    emojiText,
+    x,
+    y,
+    onClick,
+    parent = this.container,
+    customRadius = 26,
+  ) {
     const tex = getIconTexture(emojiText);
     if (tex) {
       const btn = new Container();
@@ -1038,7 +1084,7 @@ export class MainMenuScene {
 
       const sprite = new Sprite(tex);
       sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
-      const ratio = (tex.width && tex.height) ? (tex.width / tex.height) : 1;
+      const ratio = tex.width && tex.height ? tex.width / tex.height : 1;
       if (ratio > 1.2 || ratio < 0.8) {
         sprite.height = customRadius * 2;
         sprite.width = customRadius * 2 * ratio;
@@ -1051,7 +1097,8 @@ export class MainMenuScene {
       btn.r = customRadius;
       btn.updateStyle = (r) => {
         btn.r = r;
-        const currentRatio = (tex.width && tex.height) ? (tex.width / tex.height) : 1;
+        const currentRatio =
+          tex.width && tex.height ? tex.width / tex.height : 1;
         if (currentRatio > 1.2 || currentRatio < 0.8) {
           sprite.height = r * 2;
           sprite.width = r * 2 * currentRatio;
@@ -1167,7 +1214,8 @@ export class MainMenuScene {
       emptyText.style.color = "#7c73a1";
       emptyText.style.fontSize = "16px";
       emptyText.style.fontWeight = "bold";
-      emptyText.innerText = "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀";
+      emptyText.innerText =
+        "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀";
       tableContainer.appendChild(emptyText);
     } else {
       const table = document.createElement("table");
@@ -1187,8 +1235,9 @@ export class MainMenuScene {
       list.forEach((entry, idx) => {
         const row = document.createElement("tr");
         if (idx < 3) row.className = `rank-${idx}`;
-        
-        const medalText = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}`;
+
+        const medalText =
+          idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}`;
         const name = entry.userName || "";
         const avatarUrl = getAvatarUrl(name);
 
@@ -1223,8 +1272,10 @@ export class MainMenuScene {
       console.error(e);
     }
 
-    const activeRankIdx = list.findIndex(entry => entry.profileKey === activeKey);
-    const activeRankVal = activeRankIdx !== -1 ? (activeRankIdx + 1) : null;
+    const activeRankIdx = list.findIndex(
+      (entry) => entry.profileKey === activeKey,
+    );
+    const activeRankVal = activeRankIdx !== -1 ? activeRankIdx + 1 : null;
     const activeName = currentUser ? currentUser.name : "Khách";
     const activeAvatarUrl = getAvatarUrl(activeName);
 
@@ -1264,7 +1315,7 @@ export class MainMenuScene {
       destroy: () => {
         overlay.remove();
         this.leaderboardPopup = null;
-      }
+      },
     };
 
     requestAnimationFrame(() => {
@@ -1319,11 +1370,11 @@ export class MainMenuScene {
 
     const musicToggle = document.createElement("button");
     musicToggle.className = "game-settings-toggle-btn";
-    musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
     musicToggle.addEventListener("click", () => {
       soundManager.playClick();
       soundManager.toggleMusic();
-      musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+      musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
     });
     musicRow.appendChild(musicToggle);
     rowContainer.appendChild(musicRow);
@@ -1338,11 +1389,11 @@ export class MainMenuScene {
 
     const sfxToggle = document.createElement("button");
     sfxToggle.className = "game-settings-toggle-btn";
-    sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
     sfxToggle.addEventListener("click", () => {
       soundManager.playClick();
       soundManager.enabled = !soundManager.enabled;
-      sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+      sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
     });
     sfxRow.appendChild(sfxToggle);
     rowContainer.appendChild(sfxRow);
@@ -1355,7 +1406,9 @@ export class MainMenuScene {
     resetBtn.innerHTML = `<img src="/assets/delete_btn.png" class="game-settings-reset-icon" alt="" /> XÓA LỊCH SỬ`;
     resetBtn.addEventListener("click", async () => {
       soundManager.playClick();
-      const confirmDelete = await gameConfirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu thành tích không?");
+      const confirmDelete = await gameConfirm(
+        "Bạn có chắc chắn muốn xóa toàn bộ dữ liệu thành tích không?",
+      );
       if (confirmDelete) {
         saveManager.reset();
         closePopup();
@@ -1381,7 +1434,7 @@ export class MainMenuScene {
       destroy: () => {
         overlay.remove();
         this.settingsPopup = null;
-      }
+      },
     };
 
     requestAnimationFrame(() => {
@@ -1390,7 +1443,6 @@ export class MainMenuScene {
       card.style.transform = "scale(1)";
     });
   }
-
 
   destroy() {
     // Stop ticker function on destroy to avoid memory leak
@@ -1402,7 +1454,9 @@ export class MainMenuScene {
     const settingsOverlay = document.getElementById("game-settings-overlay-id");
     if (settingsOverlay) settingsOverlay.remove();
 
-    const leaderboardOverlay = document.getElementById("game-leaderboard-overlay-id");
+    const leaderboardOverlay = document.getElementById(
+      "game-leaderboard-overlay-id",
+    );
     if (leaderboardOverlay) leaderboardOverlay.remove();
 
     killTweensRecursive(this.container);
@@ -1415,7 +1469,6 @@ export class MainMenuScene {
   }
 
   initDOMOverlays() {
-
     // 2. Google Modal Account Items
     const modal = document.getElementById("google-login-modal");
     const accountItems = document.querySelectorAll(".google-account-item");

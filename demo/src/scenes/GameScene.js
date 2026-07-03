@@ -18,7 +18,12 @@ import { saveManager } from "../system/SaveManager.js";
 import { sceneManager } from "../system/SceneManager.js";
 import { soundManager } from "../system/SoundManager.js";
 import gsap from "gsap";
-import { Colorful3DCircleButton, Colorful3DButton, createVectorIcon as createVectorIconFromUI, mapEmojiToIconType } from "../system/UIComponents.js";
+import {
+  Colorful3DCircleButton,
+  Colorful3DButton,
+  createVectorIcon as createVectorIconFromUI,
+  mapEmojiToIconType,
+} from "../system/UIComponents.js";
 
 function gameAlert(message) {
   return new Promise((resolve) => {
@@ -212,19 +217,39 @@ function killTweensRecursive(obj) {
 }
 
 const palettes = {
-  yellow: { top: 0xFFE500, bottom: 0xFF9900, shadow: 0x8A4500, stroke: 0xFFF8B3 },
-  green: { top: 0x7FFF00, bottom: 0x00CC00, shadow: 0x006600, stroke: 0xD4FFD4 },
-  pink: { top: 0xFF66B2, bottom: 0xCC0066, shadow: 0x800040, stroke: 0xFFE6F2 },
-  blue: { top: 0x33CCFF, bottom: 0x0088CC, shadow: 0x004466, stroke: 0xE6F9FF },
-  purple: { top: 0xB266FF, bottom: 0x5900B3, shadow: 0x330066, stroke: 0xF2E6FF },
-  red: { top: 0xF95E8B, bottom: 0xD93955, shadow: 0x92233F, stroke: 0xFFD4E2 }
+  yellow: {
+    top: 0xffe500,
+    bottom: 0xff9900,
+    shadow: 0x8a4500,
+    stroke: 0xfff8b3,
+  },
+  green: {
+    top: 0x7fff00,
+    bottom: 0x00cc00,
+    shadow: 0x006600,
+    stroke: 0xd4ffd4,
+  },
+  pink: { top: 0xff66b2, bottom: 0xcc0066, shadow: 0x800040, stroke: 0xffe6f2 },
+  blue: { top: 0x33ccff, bottom: 0x0088cc, shadow: 0x004466, stroke: 0xe6f9ff },
+  purple: {
+    top: 0xb266ff,
+    bottom: 0x5900b3,
+    shadow: 0x330066,
+    stroke: 0xf2e6ff,
+  },
+  red: { top: 0xf95e8b, bottom: 0xd93955, shadow: 0x92233f, stroke: 0xffd4e2 },
 };
 
 const getColorStyle = (colorValue, label = "") => {
   const lbl = String(label).toUpperCase();
   if (lbl.includes("PLAY") || lbl.includes("CHƠI LẠI")) return "green";
   if (lbl.includes("TIẾP TỤC")) return "yellow";
-  if (lbl.includes("QUAY LẠI") || lbl.includes("BACK") || lbl.includes("TRANG CHỦ")) return "blue";
+  if (
+    lbl.includes("QUAY LẠI") ||
+    lbl.includes("BACK") ||
+    lbl.includes("TRANG CHỦ")
+  )
+    return "blue";
   if (lbl.includes("XÓA") || lbl.includes("RESET")) return "red";
 
   if (colorValue === 0x5c0612 || colorValue === 0xd32f2f) return "red";
@@ -247,8 +272,8 @@ function getIconTexture(emojiChar) {
     "🏆": "trophy_btn",
     "🔄": "replay_btn",
     "🗑️": "delete_btn",
-    "heart": "revive_btn",
-    "star": "x2_btn"
+    heart: "revive_btn",
+    star: "x2_btn",
   };
 
   const charStr = String(emojiChar);
@@ -299,27 +324,42 @@ export class GameScene {
     // Animated logo for loading screen (replacing text and tribal avatar)
     this.loadingAvatar = Sprite.from("/logo.png");
     this.loadingAvatar.anchor.set(0.5);
-    this.loadingAvatar.x = App.app.screen.width / 2;
-    this.loadingAvatar.y = App.app.screen.height / 2;
-    // Scale logo down slightly depending on its intrinsic size (adjusting scale)
-    this.loadingAvatar.scale.set(0.8);
     this.container.addChild(this.loadingAvatar);
 
-    // Animate the logo to make the loading screen feel alive
-    gsap.to(this.loadingAvatar.scale, {
-      x: 0.9,
-      y: 0.9,
+    // Call resize to apply initial layout and adaptive scaling
+    this.resize();
+
+    // Subtle scale pulsing using a multiplier to keep it responsive
+    this.avatarPulse = { val: 1.0 };
+    gsap.to(this.avatarPulse, {
+      val: 1.08,
       duration: 0.6,
       yoyo: true,
       repeat: -1,
-      ease: "sine.inOut"
+      ease: "sine.inOut",
+      onUpdate: () => {
+        if (this.loadingAvatar && !this.loadingAvatar.destroyed) {
+          const width = App.app.screen.width;
+          const height = App.app.screen.height;
+          const tex = this.loadingAvatar.texture;
+          let baseScale = 0.5;
+          if (tex && tex.width > 1) {
+            baseScale = Math.min(0.6, (width * 0.72) / tex.width, (height * 0.45) / tex.height);
+          } else {
+            baseScale = Math.min(0.6, (width * 0.72) / 512);
+          }
+          this.loadingAvatar.scale.set(baseScale * this.avatarPulse.val);
+        }
+      },
     });
+
+    // Bobbing y-position animation (relative)
     gsap.to(this.loadingAvatar, {
-      y: this.loadingAvatar.y - 10,
+      y: App.app.screen.height / 2 - 12,
       duration: 0.6,
       yoyo: true,
       repeat: -1,
-      ease: "sine.inOut"
+      ease: "sine.inOut",
     });
 
     // Load background and avatars, then start with smooth fade out
@@ -335,7 +375,7 @@ export class GameScene {
             duration: 0.3,
             onComplete: () => {
               this.loadingBg.destroy();
-            }
+            },
           });
         }
         if (this.loadingAvatar && !this.loadingAvatar.destroyed) {
@@ -347,7 +387,7 @@ export class GameScene {
             onComplete: () => {
               this.loadingAvatar.destroy();
               this.initGame();
-            }
+            },
           });
         } else {
           this.initGame();
@@ -486,8 +526,8 @@ export class GameScene {
       end: { x: 0, y: h },
       colorStops: [
         { offset: 0, color: theme.top },
-        { offset: 1, color: theme.bottom }
-      ]
+        { offset: 1, color: theme.bottom },
+      ],
     });
     this.boardBg.roundRect(0, 0, w, h, 24);
     this.boardBg.fill({ fill: bgGrad });
@@ -554,8 +594,6 @@ export class GameScene {
         fontSize: 26,
         fontWeight: "bold",
         fill: "#ffdd57",
-
-
       },
     });
     floatText.anchor.set(0.5);
@@ -601,7 +639,6 @@ export class GameScene {
         fontWeight: "900",
         fill: "#ffffff",
 
-
         padding: 24,
       },
     });
@@ -621,7 +658,6 @@ export class GameScene {
         fontWeight: "900",
         fill: "#ffffff",
 
-
         padding: 24,
       },
     });
@@ -636,8 +672,6 @@ export class GameScene {
         fontSize: 42,
         fontWeight: "bold",
         fill: "#ff5252",
-
-
       },
     });
     this.comboText.anchor.set(0.5);
@@ -651,22 +685,15 @@ export class GameScene {
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffecb3",
-
-
       },
     });
     this.tutorialText.anchor.set(0.5);
     this.uiContainer.addChild(this.tutorialText);
 
     // === SETTINGS BUTTON ===
-    this.settingsBtn = this.createCircularButton(
-      "⚙️",
-      0,
-      0,
-      () => {
-        this.showSettingsModal(true);
-      },
-    );
+    this.settingsBtn = this.createCircularButton("⚙️", 0, 0, () => {
+      this.showSettingsModal(true);
+    });
     this.uiContainer.addChild(this.settingsBtn);
   }
 
@@ -933,8 +960,8 @@ export class GameScene {
         otherTile.color !== "rainbow" && otherTile.color !== "stone"
           ? otherTile.color
           : this.sessionColors[
-          Math.floor(Math.random() * this.sessionColors.length)
-          ];
+              Math.floor(Math.random() * this.sessionColors.length)
+            ];
 
       comboTextStr =
         specialType === "drum"
@@ -1266,16 +1293,16 @@ export class GameScene {
       // Get screen coordinates
       const pX = centerTile.sprite
         ? centerTile.sprite.x * this.board.container.scale.x +
-        this.board.container.x
+          this.board.container.x
         : c * App.config.tileSize * this.board.container.scale.x +
-        this.board.container.x +
-        (App.config.tileSize * this.board.container.scale.x) / 2;
+          this.board.container.x +
+          (App.config.tileSize * this.board.container.scale.x) / 2;
       const pY = centerTile.sprite
         ? centerTile.sprite.y * this.board.container.scale.y +
-        this.board.container.y
+          this.board.container.y
         : r * App.config.tileSize * this.board.container.scale.y +
-        this.board.container.y +
-        (App.config.tileSize * this.board.container.scale.y) / 2;
+          this.board.container.y +
+          (App.config.tileSize * this.board.container.scale.y) / 2;
 
       pendingExplosions.push({
         match,
@@ -1408,11 +1435,11 @@ export class GameScene {
               : exp.col;
             const tX = specialTile.sprite
               ? specialTile.sprite.x * this.board.container.scale.x +
-              this.board.container.x
+                this.board.container.x
               : exp.x;
             const tY = specialTile.sprite
               ? specialTile.sprite.y * this.board.container.scale.y +
-              this.board.container.y
+                this.board.container.y
               : exp.y;
 
             if (specialTile.isDrum) {
@@ -1708,16 +1735,16 @@ export class GameScene {
         // Get screen coordinates of the tile/field
         const tX = field.tile.sprite
           ? field.tile.sprite.x * this.board.container.scale.x +
-          this.board.container.x
+            this.board.container.x
           : field.col * App.config.tileSize * this.board.container.scale.x +
-          this.board.container.x +
-          (App.config.tileSize * this.board.container.scale.x) / 2;
+            this.board.container.x +
+            (App.config.tileSize * this.board.container.scale.x) / 2;
         const tY = field.tile.sprite
           ? field.tile.sprite.y * this.board.container.scale.y +
-          this.board.container.y
+            this.board.container.y
           : field.row * App.config.tileSize * this.board.container.scale.y +
-          this.board.container.y +
-          (App.config.tileSize * this.board.container.scale.y) / 2;
+            this.board.container.y +
+            (App.config.tileSize * this.board.container.scale.y) / 2;
 
         if (spawn.type === "rune") {
           field.tile.isRune = true;
@@ -2958,7 +2985,7 @@ export class GameScene {
       destroy: () => {
         overlay.remove();
         this.gameOverScreen = null;
-      }
+      },
     };
 
     // 5. Spawn Confetti Fireworks Loop
@@ -3051,8 +3078,6 @@ export class GameScene {
         fontWeight: "bold",
         fill: "#ffea00",
         align: "center",
-
-
       },
     });
     text.anchor.set(0.5);
@@ -3144,7 +3169,9 @@ export class GameScene {
     const theme = palettes[colorStyle] || palettes.blue;
 
     // 1. 3D Base Shadow
-    shadow.roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius).fill({ color: theme.shadow });
+    shadow
+      .roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius)
+      .fill({ color: theme.shadow });
 
     // 2. Main Face Background (gradient)
     const btnGrad = new FillGradient({
@@ -3152,15 +3179,16 @@ export class GameScene {
       end: { x: 0, y: hh },
       colorStops: [
         { offset: 0, color: theme.top },
-        { offset: 1, color: theme.bottom }
-      ]
+        { offset: 1, color: theme.bottom },
+      ],
     });
     bg.roundRect(-width / 2, -hh, width, btnHeight, radius)
       .fill({ fill: btnGrad })
       .stroke({ width: 2.5, color: theme.stroke });
 
     // 3. Glossy highlight sheen on top (ellipse highlight)
-    highlight.ellipse(0, -hh / 2, width * 0.42, btnHeight * 0.2)
+    highlight
+      .ellipse(0, -hh / 2, width * 0.42, btnHeight * 0.2)
       .fill({ color: 0xffffff, alpha: 0.25 });
 
     // Add Label / Icon
@@ -3184,7 +3212,6 @@ export class GameScene {
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
-
         }),
       });
       text.anchor.set(0.5);
@@ -3198,7 +3225,7 @@ export class GameScene {
       emojiIcon.y = -1;
       text.x = totalW / 2 - text.width / 2;
     } else {
-      const textSize = isSmall ? 11 : (label.length > 2 ? 15 : 22);
+      const textSize = isSmall ? 11 : label.length > 2 ? 15 : 22;
       const text = new Text({
         text: label.toUpperCase(),
         style: new TextStyle({
@@ -3206,7 +3233,6 @@ export class GameScene {
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
-
         }),
       });
       text.anchor.set(0.5);
@@ -3242,7 +3268,14 @@ export class GameScene {
     });
   }
 
-  createCircularButton(emojiText, x, y, onClick, parent = null, customRadius = 26) {
+  createCircularButton(
+    emojiText,
+    x,
+    y,
+    onClick,
+    parent = null,
+    customRadius = 26,
+  ) {
     const tex = getIconTexture(emojiText);
     if (tex) {
       const btn = new Container();
@@ -3262,10 +3295,8 @@ export class GameScene {
       sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
       sprite.width = customRadius * 2;
       sprite.height = customRadius * 2;
-      const drawOverlays = (r) => { };
+      const drawOverlays = (r) => {};
       content.addChild(sprite);
-
-
 
       drawOverlays(customRadius);
 
@@ -3328,6 +3359,20 @@ export class GameScene {
     if (this.bg) {
       this.bg.width = width;
       this.bg.height = height;
+    }
+
+    // 2.5. Aspect-Ratio Aware Adaptive Loading Avatar Scaling
+    if (this.loadingAvatar && !this.loadingAvatar.destroyed) {
+      this.loadingAvatar.x = width / 2;
+      this.loadingAvatar.y = height / 2;
+      const tex = this.loadingAvatar.texture;
+      let baseScale = 0.5;
+      if (tex && tex.width > 1) {
+        baseScale = Math.min(0.6, (width * 0.72) / tex.width, (height * 0.45) / tex.height);
+      } else {
+        baseScale = Math.min(0.6, (width * 0.72) / 512);
+      }
+      this.loadingAvatar.scale.set(baseScale * (this.avatarPulse ? this.avatarPulse.val : 1.0));
     }
 
     // 2. Adjust Board Position and Scale
@@ -3409,7 +3454,8 @@ export class GameScene {
       // Vẽ lại khung cho 2 bảng (Dạng hộp 3D cartoon bubble!)
       const shadowOffset = 5;
 
-      this.scorePanel.clear()
+      this.scorePanel
+        .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
         .fill({ color: 0x004466 })
@@ -3420,17 +3466,23 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0x33CCFF },
-              { offset: 1, color: 0x0088CC }
-            ]
-          })
+              { offset: 0, color: 0x33ccff },
+              { offset: 1, color: 0x0088cc },
+            ],
+          }),
         })
-        .stroke({ width: 2.5, color: 0xE6F9FF })
+        .stroke({ width: 2.5, color: 0xe6f9ff })
         // Highlight Sheen
-        .ellipse(panelWidth / 2, panelHeight * 0.22, panelWidth * 0.42, panelHeight * 0.15)
+        .ellipse(
+          panelWidth / 2,
+          panelHeight * 0.22,
+          panelWidth * 0.42,
+          panelHeight * 0.15,
+        )
         .fill({ color: 0xffffff, alpha: 0.25 });
 
-      this.movesPanel.clear()
+      this.movesPanel
+        .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
         .fill({ color: 0x800040 })
@@ -3441,14 +3493,19 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0xFF66B2 },
-              { offset: 1, color: 0xCC0066 }
-            ]
-          })
+              { offset: 0, color: 0xff66b2 },
+              { offset: 1, color: 0xcc0066 },
+            ],
+          }),
         })
-        .stroke({ width: 2.5, color: 0xFFE6F2 })
+        .stroke({ width: 2.5, color: 0xffe6f2 })
         // Highlight Sheen
-        .ellipse(panelWidth / 2, panelHeight * 0.22, panelWidth * 0.42, panelHeight * 0.15)
+        .ellipse(
+          panelWidth / 2,
+          panelHeight * 0.22,
+          panelWidth * 0.42,
+          panelHeight * 0.15,
+        )
         .fill({ color: 0xffffff, alpha: 0.25 });
 
       // Định vị lại chữ vào giữa bảng tương ứng
@@ -3504,9 +3561,7 @@ export class GameScene {
           scale = this.board.container.scale.y;
           boardBottom =
             this.board.container.y +
-            this.board.rows *
-            App.config.tileSize *
-            scale;
+            this.board.rows * App.config.tileSize * scale;
         }
         // Visual bottom of the board background (includes outline padding 16px)
         const boardBgBottom = boardBottom + 16 * scale;
@@ -3515,7 +3570,8 @@ export class GameScene {
 
         // Position the tutorial text vertically centered in the safe gap
         if (settingsBtnTop > boardBgBottom) {
-          this.tutorialText.y = boardBgBottom + (settingsBtnTop - boardBgBottom) / 2;
+          this.tutorialText.y =
+            boardBgBottom + (settingsBtnTop - boardBgBottom) / 2;
         } else {
           // Fallback if screen is extremely squished: place it slightly above settings button
           this.tutorialText.y = settingsBtnTop - 20;
@@ -3655,11 +3711,11 @@ export class GameScene {
 
     const musicToggle = document.createElement("button");
     musicToggle.className = "game-settings-toggle-btn";
-    musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
     musicToggle.addEventListener("click", () => {
       soundManager.playClick();
       soundManager.toggleMusic();
-      musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+      musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
     });
     musicRow.appendChild(musicToggle);
     rowContainer.appendChild(musicRow);
@@ -3674,11 +3730,11 @@ export class GameScene {
 
     const sfxToggle = document.createElement("button");
     sfxToggle.className = "game-settings-toggle-btn";
-    sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+    sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
     sfxToggle.addEventListener("click", () => {
       soundManager.playClick();
       soundManager.enabled = !soundManager.enabled;
-      sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? '/assets/toggle_on.png' : '/assets/toggle_off.png'})`;
+      sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
     });
     sfxRow.appendChild(sfxToggle);
     rowContainer.appendChild(sfxRow);
@@ -3736,7 +3792,7 @@ export class GameScene {
         overlay.remove();
         this.settingsPopup = null;
         this.disabled = false;
-      }
+      },
     };
 
     requestAnimationFrame(() => {
