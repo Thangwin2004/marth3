@@ -133,25 +133,18 @@ function gameAlert(message) {
 export const AdManager = {
   showRewardedVideo: async () => {
     console.log("[AdManager] Requesting Rewarded Video Ad...");
-    await gameAlert(
-      "📺 Đang tải quảng cáo... Vui lòng xem hết để nhận phần thưởng!",
-    );
     return new Promise((resolve) => {
-      setTimeout(async () => {
-        await gameAlert(
-          "🎉 Cảm ơn bạn đã xem quảng cáo! Phần thưởng đã được mở khóa.",
-        );
+      setTimeout(() => {
         resolve(true);
-      }, 2000);
+      }, 500);
     });
   },
   showInterstitial: async () => {
     console.log("[AdManager] Showing Interstitial Ad...");
-    await gameAlert("📺 Đang hiển thị quảng cáo giữa màn hình...");
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(true);
-      }, 1000);
+      }, 500);
     });
   },
 };
@@ -960,8 +953,8 @@ export class GameScene {
         otherTile.color !== "rainbow" && otherTile.color !== "stone"
           ? otherTile.color
           : this.sessionColors[
-              Math.floor(Math.random() * this.sessionColors.length)
-            ];
+          Math.floor(Math.random() * this.sessionColors.length)
+          ];
 
       comboTextStr =
         specialType === "drum"
@@ -1293,16 +1286,16 @@ export class GameScene {
       // Get screen coordinates
       const pX = centerTile.sprite
         ? centerTile.sprite.x * this.board.container.scale.x +
-          this.board.container.x
+        this.board.container.x
         : c * App.config.tileSize * this.board.container.scale.x +
-          this.board.container.x +
-          (App.config.tileSize * this.board.container.scale.x) / 2;
+        this.board.container.x +
+        (App.config.tileSize * this.board.container.scale.x) / 2;
       const pY = centerTile.sprite
         ? centerTile.sprite.y * this.board.container.scale.y +
-          this.board.container.y
+        this.board.container.y
         : r * App.config.tileSize * this.board.container.scale.y +
-          this.board.container.y +
-          (App.config.tileSize * this.board.container.scale.y) / 2;
+        this.board.container.y +
+        (App.config.tileSize * this.board.container.scale.y) / 2;
 
       pendingExplosions.push({
         match,
@@ -1435,11 +1428,11 @@ export class GameScene {
               : exp.col;
             const tX = specialTile.sprite
               ? specialTile.sprite.x * this.board.container.scale.x +
-                this.board.container.x
+              this.board.container.x
               : exp.x;
             const tY = specialTile.sprite
               ? specialTile.sprite.y * this.board.container.scale.y +
-                this.board.container.y
+              this.board.container.y
               : exp.y;
 
             if (specialTile.isDrum) {
@@ -1735,16 +1728,16 @@ export class GameScene {
         // Get screen coordinates of the tile/field
         const tX = field.tile.sprite
           ? field.tile.sprite.x * this.board.container.scale.x +
-            this.board.container.x
+          this.board.container.x
           : field.col * App.config.tileSize * this.board.container.scale.x +
-            this.board.container.x +
-            (App.config.tileSize * this.board.container.scale.x) / 2;
+          this.board.container.x +
+          (App.config.tileSize * this.board.container.scale.x) / 2;
         const tY = field.tile.sprite
           ? field.tile.sprite.y * this.board.container.scale.y +
-            this.board.container.y
+          this.board.container.y
           : field.row * App.config.tileSize * this.board.container.scale.y +
-            this.board.container.y +
-            (App.config.tileSize * this.board.container.scale.y) / 2;
+          this.board.container.y +
+          (App.config.tileSize * this.board.container.scale.y) / 2;
 
         if (spawn.type === "rune") {
           field.tile.isRune = true;
@@ -2832,9 +2825,110 @@ export class GameScene {
   showGameOver() {
     this.isGameOver = true;
     this.disabled = true;
+    soundManager.stopBGM();
+
+    if (this.hasContinued) {
+      this.showFinalGameOverScreen();
+      return;
+    }
+
+    this.showReviveOffer(
+      async () => {
+        const success = await AdManager.showRewardedVideo();
+        if (success) {
+          if (this.gameOverIntervalId) {
+            clearInterval(this.gameOverIntervalId);
+            this.gameOverIntervalId = null;
+          }
+          this.hasContinued = true;
+          this.moves = 5;
+          this.isGameOver = false;
+          this.disabled = false;
+          soundManager.playBGM();
+        } else {
+          this.showFinalGameOverScreen();
+        }
+      },
+      () => {
+        this.showFinalGameOverScreen();
+      }
+    );
+  }
+
+  showReviveOffer(onRevive, onSkip) {
+    const existing = document.getElementById("game-revive-overlay-id");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "game-revive-overlay-id";
+    overlay.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+
+    const card = document.createElement("div");
+    card.style.cssText = "background:#fbfaf5;border:6px solid #0088cc;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 15px 30px rgba(0,0,0,0.5);";
+
+    const title = document.createElement("div");
+    title.innerText = "HỒI SINH";
+    title.style.cssText = "font-size:32px;font-weight:900;color:#0088cc;margin-bottom:20px;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
+
+    const heartIcon = document.createElement("div");
+    heartIcon.innerText = "💖";
+    heartIcon.style.cssText = "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,100,150,0.6);";
+    heartIcon.animate([
+      { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }
+    ], { duration: 1200, iterations: Infinity, easing: "ease-in-out" });
+
+    const yesBtn = document.createElement("button");
+    yesBtn.style.cssText = "background:linear-gradient(to bottom, #7CD41E, #62A816);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4C8210, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+
+    const tvIcon = document.createElement("img");
+    tvIcon.src = "/assest/iconbtn/images.png";
+    tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
+
+    const yesText = document.createElement("span");
+    yesText.innerText = "CÓ";
+    yesText.style.textShadow = "0 2px 4px rgba(0,0,0,0.3)";
+
+    yesBtn.appendChild(tvIcon);
+    yesBtn.appendChild(yesText);
+
+    const skipText = document.createElement("div");
+    skipText.innerText = "Không, cảm ơn";
+    skipText.style.cssText = "margin-top:15px;font-family:sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
+
+    card.appendChild(title);
+    card.appendChild(heartIcon);
+    card.appendChild(yesBtn);
+    card.appendChild(skipText);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const cleanup = () => {
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => overlay.remove(), 250);
+    };
+
+    yesBtn.addEventListener("click", () => {
+      cleanup();
+      onRevive();
+    });
+
+    skipText.addEventListener("click", () => {
+      cleanup();
+      onSkip();
+    });
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.transform = "scale(1)";
+    });
+  }
+
+  showFinalGameOverScreen() {
+    this.isGameOver = true;
+    this.disabled = true;
 
     // Dừng nhạc nền và phát nhạc kết quả tương ứng
-    soundManager.stopBGM();
     const rank = saveManager.addScore(this.score);
     if (rank) {
       soundManager.playVictory();
@@ -2886,37 +2980,7 @@ export class GameScene {
     btnRow.style.gap = "15px";
     btnRow.style.marginTop = "20px";
 
-    // Revive button (heart icon)
-    const reviveBtn = document.createElement("button");
-    reviveBtn.className = "game-over-button";
-    reviveBtn.style.backgroundImage = "url(/assets/revive_btn.png)";
-    if (this.hasContinued) {
-      reviveBtn.className += " disabled";
-    }
-    reviveBtn.addEventListener("click", async () => {
-      if (this.hasContinued) return;
-      soundManager.playClick();
-      const success = await AdManager.showRewardedVideo();
-      if (success) {
-        if (this.gameOverIntervalId) {
-          clearInterval(this.gameOverIntervalId);
-          this.gameOverIntervalId = null;
-        }
-        this.hasContinued = true;
-        this.moves = 5;
-        this.isGameOver = false;
-        this.disabled = false;
-        overlay.style.opacity = "0";
-        card.style.transform = "scale(0.85)";
-        setTimeout(() => {
-          overlay.remove();
-          this.gameOverScreen = null;
-          soundManager.stopBGM();
-          soundManager.playBGM();
-        }, 250);
-      }
-    });
-    btnRow.appendChild(reviveBtn);
+    // Revive button is now removed since it's handled in the Revive Offer popup
 
     // Double Reward button (x2 icon)
     let hasDoubled = false;
@@ -2932,7 +2996,6 @@ export class GameScene {
         doubleBtn.className += " disabled";
         this.score = this.score * 2;
         scoreLabel.innerText = `ĐIỂM SỐ: ${this.score.toLocaleString()}`;
-        await gameAlert("🎉 Điểm số của bạn đã được x2!");
       }
     });
     btnRow.appendChild(doubleBtn);
@@ -3295,7 +3358,7 @@ export class GameScene {
       sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
       sprite.width = customRadius * 2;
       sprite.height = customRadius * 2;
-      const drawOverlays = (r) => {};
+      const drawOverlays = (r) => { };
       content.addChild(sprite);
 
       drawOverlays(customRadius);
