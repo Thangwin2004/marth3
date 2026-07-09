@@ -2844,6 +2844,7 @@ export class GameScene {
           this.moves = 5;
           this.isGameOver = false;
           this.disabled = false;
+          this.updateUI();
           soundManager.playBGM();
         } else {
           this.showFinalGameOverScreen();
@@ -2867,12 +2868,12 @@ export class GameScene {
     card.style.cssText = "background:#fbfaf5;border:6px solid #0088cc;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 15px 30px rgba(0,0,0,0.5);";
 
     const title = document.createElement("div");
-    title.innerText = "HỒI SINH";
+    title.innerText = "THÊM LƯỢT";
     title.style.cssText = "font-size:32px;font-weight:900;color:#0088cc;margin-bottom:20px;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
 
     const heartIcon = document.createElement("div");
-    heartIcon.innerText = "💖";
-    heartIcon.style.cssText = "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,100,150,0.6);";
+    heartIcon.innerText = "🎁";
+    heartIcon.style.cssText = "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,200,50,0.6);";
     heartIcon.animate([
       { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }
     ], { duration: 1200, iterations: Infinity, easing: "ease-in-out" });
@@ -2885,7 +2886,7 @@ export class GameScene {
     tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
 
     const yesText = document.createElement("span");
-    yesText.innerText = "CÓ";
+    yesText.innerText = "+5 LƯỢT";
     yesText.style.textShadow = "0 2px 4px rgba(0,0,0,0.3)";
 
     yesBtn.appendChild(tvIcon);
