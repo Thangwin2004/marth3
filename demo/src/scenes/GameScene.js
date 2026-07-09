@@ -3314,7 +3314,7 @@ export class GameScene {
     const btnY = 165;
     const btnRadius = 32;
 
-    // We only show 3 buttons since the player already had their "Th�m L�?t" popup.
+    // We only show 3 buttons since the player already had their "Thêm Lượt" popup.
     let hasDoubled = false;
     const doubleBtn = this.createCircularButton(
       "star",
@@ -3328,8 +3328,8 @@ export class GameScene {
           doubleBtn.alpha = 0.5;
           doubleBtn.eventMode = "none";
           this.score = this.score * 2;
-          scoreLabel.text = `�I?M S?: ${this.score}`;
-          await gameAlert("?? �i?m s? c?a b?n �? ��?c x2!");
+          scoreLabel.text = `ĐIỂM SỐ: ${this.score}`;
+          await gameAlert("🎉 Điểm số của bạn đã được x2!");
         }
       },
       this.gameOverModal,
@@ -3337,7 +3337,7 @@ export class GameScene {
     );
 
     const replayBtn = this.createCircularButton(
-      "??",
+      "🔄",
       0,
       btnY,
       async () => {
@@ -3357,7 +3357,7 @@ export class GameScene {
     );
 
     const homeBtn = this.createCircularButton(
-      "??",
+      "🏠",
       80,
       btnY,
       async () => {
