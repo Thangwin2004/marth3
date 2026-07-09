@@ -584,36 +584,42 @@ export class GameScene {
   }
 
   spawnFloatingScore(x, y, textString) {
-    const floatText = new Text({
-      text: textString,
-      style: {
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: 26,
-        fontWeight: "bold",
-        fill: "#ffdd57",
-      },
-    });
-    floatText.anchor.set(0.5);
-    floatText.x = x;
-    floatText.y = y;
-    floatText.zIndex = 80;
-    this.container.addChild(floatText);
+    // Defer text creation to next frame to prevent synchronously blocking the main thread
+    // and causing GSAP tweens (like falling blocks) to skip frames.
+    setTimeout(() => {
+      if (!this.container || this.container.destroyed) return;
 
-    gsap.to(floatText, {
-      y: y - 70,
-      alpha: 0,
-      duration: 0.9,
-      ease: "power2.out",
-      onComplete: () => floatText.destroy(),
-    });
+      const floatText = new Text({
+        text: textString,
+        style: {
+          fontFamily: '"Nunito", sans-serif',
+          fontSize: 26,
+          fontWeight: "bold",
+          fill: "#ffdd57",
+        },
+      });
+      floatText.anchor.set(0.5);
+      floatText.x = x;
+      floatText.y = y;
+      floatText.zIndex = 80;
+      this.container.addChild(floatText);
 
-    floatText.scale.set(0.4);
-    gsap.to(floatText.scale, {
-      x: 1.15,
-      y: 1.15,
-      duration: 0.25,
-      ease: "back.out(2.5)",
-    });
+      gsap.to(floatText, {
+        y: y - 70,
+        alpha: 0,
+        duration: 0.9,
+        ease: "power2.out",
+        onComplete: () => floatText.destroy(),
+      });
+
+      floatText.scale.set(0.4);
+      gsap.to(floatText.scale, {
+        x: 1.0,
+        y: 1.0,
+        duration: 0.3,
+        ease: "back.out(2)",
+      });
+    }, 10);
   }
 
   /**
