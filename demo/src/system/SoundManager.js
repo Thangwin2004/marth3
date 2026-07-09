@@ -40,15 +40,20 @@ class SoundManager {
         this.musicEnabled &&
         !window.__GLOBAL_MUTE__
       ) {
-        this.bgm.play().catch(() => {});
+        this.bgm
+          .play()
+          .then(() => {
+            document.removeEventListener("touchend", unlockAudio);
+            document.removeEventListener("click", unlockAudio);
+          })
+          .catch(() => {});
+      } else if (this.bgm && !this.bgm.paused) {
+        document.removeEventListener("touchend", unlockAudio);
+        document.removeEventListener("click", unlockAudio);
       }
-      document.removeEventListener("pointerdown", unlockAudio);
-      document.removeEventListener("touchstart", unlockAudio);
-      document.removeEventListener("click", unlockAudio);
     };
-    document.addEventListener("pointerdown", unlockAudio, { once: true });
-    document.addEventListener("touchstart", unlockAudio, { once: true });
-    document.addEventListener("click", unlockAudio, { once: true });
+    document.addEventListener("touchend", unlockAudio);
+    document.addEventListener("click", unlockAudio);
   }
 
   /**
