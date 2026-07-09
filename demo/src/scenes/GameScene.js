@@ -1800,7 +1800,9 @@ export class GameScene {
           const field = this.board.getField(row, col);
           if (!field.tile) {
             ++started;
-            this.fallDownTo(field).then(() => {
+            // Stagger delay based on how low it is and column position
+            const staggerDelay = (this.board.rows - row) * 0.05 + col * 0.02;
+            this.fallDownTo(field, staggerDelay).then(() => {
               ++completed;
               if (completed >= started) resolve();
             });
@@ -1812,7 +1814,7 @@ export class GameScene {
     });
   }
 
-  fallDownTo(emptyField) {
+  fallDownTo(emptyField, delay = 0) {
     for (let row = emptyField.row - 1; row >= 0; row--) {
       const upperField = this.board.getField(row, emptyField.col);
       if (upperField.tile) {
@@ -1820,7 +1822,7 @@ export class GameScene {
         upperField.tile = null;
         emptyField.tile = tile;
         tile.field = emptyField;
-        return tile.fallDownTo(emptyField.position);
+        return tile.fallDownTo(emptyField.position, delay);
       }
     }
     return Promise.resolve();
@@ -1837,18 +1839,40 @@ export class GameScene {
         return;
       }
 
-      emptyFields.forEach((field) => {
-        const tile = this.board.createTile(field, null, true);
-        tile.sprite.y = -App.config.tileSize * 2;
-        if (tile.stateOverlay) {
-          tile.stateOverlay.y = tile.sprite.y;
-        }
+      // Group empty fields by column
+      const cols = {};
+      emptyFields.forEach((f) => {
+        if (!cols[f.col]) cols[f.col] = [];
+        cols[f.col].push(f);
+      });
 
-        const delay = Math.random() * 0.15 + 0.2 / (field.row + 1);
-        tile.fallDownTo(field.position, delay).then(() => {
-          ++completed;
-          if (completed >= total) resolve();
+      let colDelayIndex = 0;
+      Object.keys(cols).forEach((col) => {
+        const fieldsInCol = cols[col];
+        // Sort from bottom to top (highest row index to lowest)
+        fieldsInCol.sort((a, b) => b.row - a.row);
+
+        fieldsInCol.forEach((field, index) => {
+          // Distributed instantiation to prevent Main Thread freeze
+          const spawnDelayMs = colDelayIndex * 40 + index * 40;
+
+          setTimeout(() => {
+            if (!this.board || !this.board.fields) return;
+
+            const tile = this.board.createTile(field, null, true);
+            tile.sprite.y = -App.config.tileSize * 2;
+            if (tile.stateOverlay) {
+              tile.stateOverlay.y = tile.sprite.y;
+            }
+
+            // The fall animation delay is 0 here since we already delayed its creation time
+            tile.fallDownTo(field.position, 0).then(() => {
+              ++completed;
+              if (completed >= total) resolve();
+            });
+          }, spawnDelayMs);
         });
+        colDelayIndex++;
       });
     });
   }
