@@ -212,7 +212,7 @@ export class Board {
       customColor || colors[Math.floor(Math.random() * colors.length)];
 
     // 2. Tạo Tile
-    const tile = new Tile(color);
+    const tile = Tile.create(color);
 
     // Roll for random special tile drop
     if (allowSpecial && !customColor) {
@@ -249,6 +249,7 @@ export class Board {
     tile.sprite.cursor = "pointer"; // Con trỏ hình bàn tay
 
     // 7. Lắng nghe click → emit event lên container
+    tile.sprite.off("pointerdown");
     tile.sprite.on("pointerdown", () => {
       if (!this.inputEnabled) return; // Skip if input is disabled
       this.container.emit("tile-touch-start", tile);
@@ -430,35 +431,7 @@ export class Board {
    */
   _recolorTile(tile, newColor) {
     if (!tile || !tile.sprite) return;
-
-    const field = tile.field;
-    if (!field) return;
-
-    // Remove old sprite from container and destroy
-    this.container.removeChild(tile.sprite);
-    tile.sprite.destroy();
-
-    // Assign new color
-    tile.color = newColor;
-
-    // Create new sprite
-    tile.sprite = App.sprite(newColor);
-    tile.sprite.anchor.set(0.5);
-    tile.resizeSprite();
-
-    // Position
-    tile.setPosition(field.position);
-
-    // Add to container
-    this.container.addChild(tile.sprite);
-
-    // Re-attach interactivity
-    tile.sprite.eventMode = "static";
-    tile.sprite.cursor = "pointer";
-    tile.sprite.on("pointerdown", () => {
-      if (!this.inputEnabled) return;
-      this.container.emit("tile-touch-start", tile);
-    });
+    tile.changeColor(newColor);
   }
 
   // =========================================================================

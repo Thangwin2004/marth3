@@ -56,6 +56,7 @@ export class Tile {
     // === DỮ LIỆU ===
     this.color = color; // Tên màu (dùng để so sánh combo)
     this.field = null; // Field mà tile đang nằm trên (tham chiếu 2 chiều)
+    this.isRemoving = false; // Trạng thái đang xóa
 
     // === BOSS BATTLE STATES ===
     this.frozen = false; // Cannot be swapped for N turns
@@ -350,6 +351,37 @@ export class Tile {
   }
 
   /**
+   * Reset the tile to be reused from the pool
+   * @param {string} color - The new color
+   */
+  reset(color) {
+    this.color = color;
+    if (this.imageSprite) {
+      this.imageSprite.texture = Texture.from(color);
+    }
+    this.sprite.alpha = 1;
+    this.sprite.scale.set(1, 1);
+    this.sprite.visible = true;
+    this.isRemoving = false;
+
+    // Reset all states
+    this.frozen = false;
+    this.frozenDuration = 0;
+    this.corrupt = false;
+    this.poisoned = false;
+    this.isStone = false;
+    this.isVoid = false;
+    this.hidden = false;
+    this.hiddenDuration = 0;
+    this.isRune = false;
+    this.isRainbow = false;
+    this.isDrum = false;
+
+    this.resizeSprite();
+    this.updateStateOverlay();
+  }
+
+  /**
    * Change tile color (for shuffle, clone, rainbow abilities)
    * Replaces the sprite texture and resets corrupt/poisoned states.
    *
@@ -531,46 +563,44 @@ export class Tile {
    *                              (used during board initialization)
    */
   remove(immediate = false) {
-    if (!this.sprite) return; // Đã bị xóa rồi (tránh xóa 2 lần)
+    if (this.isRemoving || !this.sprite) return; // Đã bị xóa rồi
+    this.isRemoving = true;
 
-    // Capture sprite reference for the async GSAP callback.
-    // Prevents stale 'this.sprite' references if the tile is reused.
-    const spriteRef = this.sprite;
-    this.sprite = null; // Clear immediately to prevent double-removal
+    // Xóa tham chiếu 2 chiều ngay lập tức để logic game không dính lỗi
+    if (this.field) {
+      this.field.tile = null;
+      this.field = null;
+    }
 
     if (immediate) {
-      // Synchronous removal — no animation (used during board init)
-      if (spriteRef.parent) {
-        spriteRef.parent.removeChild(spriteRef);
+      if (this.sprite.parent) {
+        this.sprite.parent.removeChild(this.sprite);
       }
-      if (!spriteRef.destroyed) {
-        spriteRef.destroy();
-      }
+      this._cleanupAllOverlays();
+      Tile.pool.push(this);
     } else {
       // Animation biến mất
-      gsap.to(spriteRef.scale, {
-        x: 0.1, // Thu nhỏ theo X
-        y: 0.1, // Thu nhỏ theo Y
+      gsap.to(this.sprite.scale, {
+        x: 0.1,
+        y: 0.1,
         duration: 0.15,
       });
-      gsap.to(spriteRef, {
-        alpha: 0, // Mờ dần
+      gsap.to(this.sprite, {
+        alpha: 0,
         duration: 0.15,
-        ease: "power2.in", // Nhanh dần (tăng tốc)
+        ease: "power2.in",
         onComplete: () => {
-          // PixiJS v8 fix: removeChild BEFORE destroy to prevent
-          // "updateRenderable" errors from stale render group refs
-          if (spriteRef.parent) {
-            spriteRef.parent.removeChild(spriteRef);
+          if (this.sprite && this.sprite.parent) {
+            this.sprite.parent.removeChild(this.sprite);
           }
-          if (!spriteRef.destroyed) {
-            spriteRef.destroy(); // Giải phóng GPU memory
-          }
+          this._cleanupAllOverlays();
+          Tile.pool.push(this);
         },
       });
     }
+  }
 
-    // Destroy state overlay (managed by Tile.updateStateOverlay)
+  _cleanupAllOverlays() {
     if (this.stateOverlay) {
       if (this.stateOverlay.parent) {
         this.stateOverlay.parent.removeChild(this.stateOverlay);
@@ -580,15 +610,7 @@ export class Tile {
       }
       this.stateOverlay = null;
     }
-
-    // Clean up board-managed overlays (frozen, corrupt, poison)
     this._cleanupBoardOverlays();
-
-    // Xóa tham chiếu 2 chiều
-    if (this.field) {
-      this.field.tile = null; // Field không còn tile
-      this.field = null; // Tile không còn field
-    }
   }
 
   /**
@@ -612,3 +634,15 @@ export class Tile {
     }
   }
 }
+
+// Global Object Pool for Tiles
+Tile.pool = [];
+
+Tile.create = function (color) {
+  if (Tile.pool.length > 0) {
+    const tile = Tile.pool.pop();
+    tile.reset(color);
+    return tile;
+  }
+  return new Tile(color);
+};
