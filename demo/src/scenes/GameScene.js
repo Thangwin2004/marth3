@@ -337,7 +337,11 @@ export class GameScene {
           const tex = this.loadingAvatar.texture;
           let baseScale = 0.5;
           if (tex && tex.width > 1) {
-            baseScale = Math.min(0.6, (width * 0.72) / tex.width, (height * 0.45) / tex.height);
+            baseScale = Math.min(
+              0.6,
+              (width * 0.72) / tex.width,
+              (height * 0.45) / tex.height,
+            );
           } else {
             baseScale = Math.min(0.6, (width * 0.72) / 512);
           }
@@ -953,8 +957,8 @@ export class GameScene {
         otherTile.color !== "rainbow" && otherTile.color !== "stone"
           ? otherTile.color
           : this.sessionColors[
-          Math.floor(Math.random() * this.sessionColors.length)
-          ];
+              Math.floor(Math.random() * this.sessionColors.length)
+            ];
 
       comboTextStr =
         specialType === "drum"
@@ -1286,16 +1290,16 @@ export class GameScene {
       // Get screen coordinates
       const pX = centerTile.sprite
         ? centerTile.sprite.x * this.board.container.scale.x +
-        this.board.container.x
+          this.board.container.x
         : c * App.config.tileSize * this.board.container.scale.x +
-        this.board.container.x +
-        (App.config.tileSize * this.board.container.scale.x) / 2;
+          this.board.container.x +
+          (App.config.tileSize * this.board.container.scale.x) / 2;
       const pY = centerTile.sprite
         ? centerTile.sprite.y * this.board.container.scale.y +
-        this.board.container.y
+          this.board.container.y
         : r * App.config.tileSize * this.board.container.scale.y +
-        this.board.container.y +
-        (App.config.tileSize * this.board.container.scale.y) / 2;
+          this.board.container.y +
+          (App.config.tileSize * this.board.container.scale.y) / 2;
 
       pendingExplosions.push({
         match,
@@ -1428,11 +1432,11 @@ export class GameScene {
               : exp.col;
             const tX = specialTile.sprite
               ? specialTile.sprite.x * this.board.container.scale.x +
-              this.board.container.x
+                this.board.container.x
               : exp.x;
             const tY = specialTile.sprite
               ? specialTile.sprite.y * this.board.container.scale.y +
-              this.board.container.y
+                this.board.container.y
               : exp.y;
 
             if (specialTile.isDrum) {
@@ -1728,16 +1732,16 @@ export class GameScene {
         // Get screen coordinates of the tile/field
         const tX = field.tile.sprite
           ? field.tile.sprite.x * this.board.container.scale.x +
-          this.board.container.x
+            this.board.container.x
           : field.col * App.config.tileSize * this.board.container.scale.x +
-          this.board.container.x +
-          (App.config.tileSize * this.board.container.scale.x) / 2;
+            this.board.container.x +
+            (App.config.tileSize * this.board.container.scale.x) / 2;
         const tY = field.tile.sprite
           ? field.tile.sprite.y * this.board.container.scale.y +
-          this.board.container.y
+            this.board.container.y
           : field.row * App.config.tileSize * this.board.container.scale.y +
-          this.board.container.y +
-          (App.config.tileSize * this.board.container.scale.y) / 2;
+            this.board.container.y +
+            (App.config.tileSize * this.board.container.scale.y) / 2;
 
         if (spawn.type === "rune") {
           field.tile.isRune = true;
@@ -2852,7 +2856,7 @@ export class GameScene {
       },
       () => {
         this.showFinalGameOverScreen();
-      }
+      },
     );
   }
 
@@ -2862,24 +2866,36 @@ export class GameScene {
 
     const overlay = document.createElement("div");
     overlay.id = "game-revive-overlay-id";
-    overlay.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+    overlay.style.cssText =
+      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
 
     const card = document.createElement("div");
-    card.style.cssText = "background:#fbfaf5;border:6px solid #0088cc;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 15px 30px rgba(0,0,0,0.5);";
+    card.style.cssText =
+      "background:#fbfaf5;border:6px solid #0088cc;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 15px 30px rgba(0,0,0,0.5);";
 
     const title = document.createElement("div");
     title.innerText = "THÊM LƯỢT";
-    title.style.cssText = "font-size:32px;font-weight:900;color:#0088cc;margin-bottom:20px;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
+    title.style.cssText =
+      "font-size:32px;font-weight:900;color:#0088cc;margin-bottom:20px;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
 
     const heartIcon = document.createElement("div");
     heartIcon.innerText = "🎁";
-    heartIcon.style.cssText = "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,200,50,0.6);";
-    heartIcon.animate([
-      { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }
-    ], { duration: 1200, iterations: Infinity, easing: "ease-in-out" });
+    heartIcon.style.cssText =
+      "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,200,50,0.6);";
+    heartIcon.animate(
+      [
+        { transform: "scale(1)" },
+        { transform: "scale(1.2)" },
+        { transform: "scale(1)" },
+        { transform: "scale(1.2)" },
+        { transform: "scale(1)" },
+      ],
+      { duration: 1200, iterations: Infinity, easing: "ease-in-out" },
+    );
 
     const yesBtn = document.createElement("button");
-    yesBtn.style.cssText = "background:linear-gradient(to bottom, #7CD41E, #62A816);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4C8210, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+    yesBtn.style.cssText =
+      "background:linear-gradient(to bottom, #7CD41E, #62A816);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4C8210, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
 
     const tvIcon = document.createElement("img");
     tvIcon.src = "/assest/iconbtn/images.png";
@@ -2894,7 +2910,8 @@ export class GameScene {
 
     const skipText = document.createElement("div");
     skipText.innerText = "Không, cảm ơn";
-    skipText.style.cssText = "margin-top:15px;font-family:sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
+    skipText.style.cssText =
+      "margin-top:15px;font-family:sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
 
     card.appendChild(title);
     card.appendChild(heartIcon);
@@ -2930,6 +2947,7 @@ export class GameScene {
     this.disabled = true;
 
     // Dừng nhạc nền và phát nhạc kết quả tương ứng
+    soundManager.stopBGM();
     const rank = saveManager.addScore(this.score);
     if (rank) {
       soundManager.playVictory();
@@ -2937,120 +2955,424 @@ export class GameScene {
       soundManager.playGameOver();
     }
 
-    const overlay = document.createElement("div");
-    overlay.id = "game-over-overlay-id";
-    overlay.className = "game-popup-overlay";
+    this.gameOverScreen = new Container();
+    this.gameOverScreen.zIndex = 100;
+    this.container.addChild(this.gameOverScreen);
 
-    // Starburst rotation effect (pure CSS)
-    const starburst = document.createElement("div");
-    starburst.className = "game-over-starburst";
-    overlay.appendChild(starburst);
+    // Overlay transparent background
+    this.gameOverOverlay = new Graphics();
+    this.gameOverOverlay.rect(
+      0,
+      0,
+      App.app.screen.width,
+      App.app.screen.height,
+    );
+    this.gameOverOverlay.fill({ color: 0x000000, alpha: 0.8 });
+    this.gameOverScreen.addChild(this.gameOverOverlay);
 
-    const card = document.createElement("div");
-    card.className = "game-popup-card";
+    // Premium modal container
+    this.gameOverModal = new Container();
+    this.gameOverModal.x = App.app.screen.width / 2;
+    this.gameOverModal.y = App.app.screen.height / 2;
+    this.gameOverScreen.addChild(this.gameOverModal);
 
-    const title = document.createElement("div");
-    title.className = "game-popup-title";
-    title.innerText = "KẾT QUẢ";
-    card.appendChild(title);
+    // Hào quang vàng xoay nhẹ đằng sau modal Game Over
+    const starburst = new Graphics();
+    const rays = 12;
+    for (let i = 0; i < rays; i++) {
+      const angle1 = (i * Math.PI * 2) / rays - 0.1;
+      const angle2 = (i * Math.PI * 2) / rays + 0.1;
+      starburst.moveTo(0, 0);
+      starburst.arc(0, 0, 420, angle1, angle2);
+      starburst.fill({ color: 0xffdd57, alpha: 0.05 });
+    }
+    this.gameOverModal.addChild(starburst);
+    gsap.to(starburst, {
+      rotation: Math.PI * 2,
+      duration: 25,
+      repeat: -1,
+      ease: "none",
+    });
 
-    // Score display
-    const scoreLabel = document.createElement("div");
-    scoreLabel.className = "game-over-stats";
-    scoreLabel.innerText = `ĐIỂM SỐ: ${this.score.toLocaleString()}`;
-    card.appendChild(scoreLabel);
+    const cardW = 480;
+    const cardH = 480;
 
-    // Record / Rank Banner
+    // 1. Soft Card Shadow
+    const cardShadow = new Graphics()
+      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 24)
+      .fill({ color: 0x000000, alpha: 0.25 });
+    this.gameOverModal.addChild(cardShadow);
+
+    // 2. Thick 3D Cyan-Blue Border
+    const borderBg = new Graphics()
+      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24)
+      .fill({ color: 0x004466 }) // Shadow Base
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
+      .fill({
+        fill: new FillGradient({
+          start: { x: 0, y: -cardH / 2 },
+          end: { x: 0, y: cardH / 2 },
+          colorStops: [
+            { offset: 0, color: 0x33ccff },
+            { offset: 1, color: 0x0088cc },
+          ],
+        }),
+      });
+
+    this.gameOverModal.addChild(borderBg);
+
+    // 3. Bright Cream Card Face
+    const cardFace = new Graphics()
+      .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 18)
+      .fill({ color: 0xfbfaf5 });
+    this.gameOverModal.addChild(cardFace);
+
+    // 1. Glowing neon & floating title
+    const titleContainer = new Container();
+    titleContainer.position.set(0, -185);
+    this.gameOverModal.addChild(titleContainer);
+
+    const titleGrad = new FillGradient({
+      end: { x: 0, y: 44 },
+      colorStops: [
+        { offset: 0, color: 0xffea00 },
+        { offset: 1, color: 0xff3300 },
+      ],
+    });
+
+    const glowText = new Text({
+      text: "TRÒ CHƠI KẾT THÚC",
+      style: {
+        fontFamily: '"Nunito", sans-serif',
+        fontSize: 34,
+        fill: 0xffea00,
+        fontWeight: "900",
+      },
+    });
+    glowText.anchor.set(0.5);
+    titleContainer.addChild(glowText);
+
+    const glowFilter = new BlurFilter();
+    glowFilter.blur = 5;
+    glowText.filters = [glowFilter];
+
+    const victoryText = new Text({
+      text: "TRÒ CHƠI KẾT THÚC",
+      style: {
+        fontFamily: '"Nunito", sans-serif',
+        fontSize: 34,
+        fill: titleGrad,
+        fontWeight: "900",
+      },
+    });
+    victoryText.anchor.set(0.5);
+    titleContainer.addChild(victoryText);
+
+    // Title animations
+    gsap.to(glowText, {
+      alpha: 0.35,
+      duration: 1.2,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+    });
+
+    gsap.to(titleContainer, {
+      y: "-=6",
+      duration: 1.5,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+    });
+
+    // 2. Central Vietnamese Emblem Badge (rotating trống đồng and detailed chim lạc birds!)
+    const badgeContainer = new Container();
+    badgeContainer.position.set(0, -68);
+    badgeContainer.scale.set(1.45);
+    this.gameOverModal.addChild(badgeContainer);
+
+    const lacBirdCtx = new GraphicsContext()
+      // --- Base Silhouette ---
+      .moveTo(35, -4)
+      .lineTo(10, -2)
+      .quadraticCurveTo(12, -7, 8, -8)
+      .quadraticCurveTo(-2, -16, -20, -14)
+      .quadraticCurveTo(-22, -13, -20, -12)
+      .quadraticCurveTo(-4, -10, 4, -5)
+      .quadraticCurveTo(-4, 2, -12, 8)
+      .quadraticCurveTo(-25, 14, -40, 10)
+      .quadraticCurveTo(-55, 15, -68, 22)
+      .quadraticCurveTo(-54, 11, -44, 5)
+      .quadraticCurveTo(-58, 12, -70, 14)
+      .quadraticCurveTo(-48, 5, -38, 2)
+      .lineTo(-32, -3)
+      .quadraticCurveTo(-18, -4, -4, -3)
+      .lineTo(10, -4.5)
+      .lineTo(35, -4)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.25 })
+      .stroke({ width: 1.5, color: 0xd4af37 })
+
+      // --- Wings with Traditional Comb Feathers ---
+      .moveTo(-22, 0)
+      .bezierCurveTo(-15, -20, -5, -36, 10, -45)
+      .bezierCurveTo(-2, -30, -8, -18, -12, -10)
+      .quadraticCurveTo(-16, -18, -20, 0)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.3 })
+      .stroke({ width: 1.5, color: 0xd4af37 })
+
+      .moveTo(0, -20)
+      .lineTo(4, -32)
+      .moveTo(-4, -16)
+      .lineTo(-1, -26)
+      .moveTo(-8, -12)
+      .lineTo(-5, -20)
+      .moveTo(-12, -8)
+      .lineTo(-9, -15)
+      .moveTo(-16, -4)
+      .lineTo(-13, -10)
+
+      // --- Plumed Crest ---
+      .moveTo(8, -8)
+      .bezierCurveTo(12, -16, 25, -20, 38, -22)
+      .bezierCurveTo(24, -14, 18, -8, 10, -7)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.35 })
+      .stroke({ width: 1, color: 0xd4af37 })
+
+      // --- Tail Feathers ---
+      .moveTo(-20, -14)
+      .bezierCurveTo(-38, -18, -55, -15, -72, -10)
+      .bezierCurveTo(-52, -8, -35, -10, -20, -12)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.35 })
+      .stroke({ width: 1, color: 0xd4af37 })
+
+      .moveTo(-32, -11)
+      .lineTo(-52, -14)
+      .moveTo(-42, -10)
+      .lineTo(-62, -12)
+
+      // --- Internal Dong Son Carving Details ---
+      .moveTo(11, -3.2)
+      .lineTo(32, -4)
+      .stroke({ width: 1.0, color: 0xd4af37, alpha: 0.7 })
+
+      .circle(7, -5, 2.2)
+      .fill({ color: 0xffea00 })
+      .stroke({ width: 0.8, color: 0x3e2723 })
+      .circle(7, -5, 0.8)
+      .fill({ color: 0x000000 })
+
+      .circle(-18, 5, 2.8)
+      .stroke({ width: 1.0, color: 0xd4af37 })
+      .circle(-18, 5, 1.2)
+      .fill({ color: 0xffea00 })
+
+      .circle(-28, 4, 2.2)
+      .stroke({ width: 1.0, color: 0xd4af37 })
+      .circle(-28, 4, 0.8)
+      .fill({ color: 0xffea00 })
+
+      .moveTo(-35, 6)
+      .quadraticCurveTo(-48, 15, -58, 18)
+      .stroke({ width: 1.2, color: 0xd4af37 })
+      .moveTo(-32, 7)
+      .quadraticCurveTo(-45, 17, -55, 20)
+      .stroke({ width: 1.2, color: 0xd4af37 });
+
+    const leftBird = new Graphics(lacBirdCtx);
+    leftBird.position.set(-82, -5);
+    leftBird.scale.set(-1.1, 1.1); // flip horizontally
+    badgeContainer.addChild(leftBird);
+
+    const rightBird = new Graphics(lacBirdCtx);
+    rightBird.position.set(82, -5);
+    rightBird.scale.set(1.1);
+    badgeContainer.addChild(rightBird);
+
+    // Rotating Drum (trống đồng, radius 42)
+    const drum = new Graphics()
+      .circle(0, 0, 42)
+      .fill(
+        new FillGradient({
+          start: { x: -42, y: -42 },
+          end: { x: 42, y: 42 },
+          colorStops: [
+            { offset: 0, color: 0xaa7c11 },
+            { offset: 0.5, color: 0x8a6d20 },
+            { offset: 1, color: 0x4a3b10 },
+          ],
+        }),
+      )
+      .stroke({ width: 2.2, color: 0xffea00 })
+      .circle(0, 0, 35)
+      .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.6 })
+      .circle(0, 0, 28)
+      .stroke({ width: 1, color: 0xd4af37, alpha: 0.5 })
+      .circle(0, 0, 20)
+      .stroke({ width: 0.8, color: 0xd4af37, alpha: 0.4 })
+      .star(0, 0, 12, 12, 5)
+      .fill({ color: 0xffea00 })
+      .stroke({ width: 1, color: 0xb89326 });
+    badgeContainer.addChild(drum);
+
+    gsap.to(drum, {
+      rotation: Math.PI * 2,
+      duration: 16,
+      repeat: -1,
+      ease: "none",
+    });
+
+    // Record Ribbon (relocated down)
     if (rank) {
-      const rankBanner = document.createElement("div");
-      rankBanner.className = "game-over-record-banner";
-      rankBanner.innerHTML = `🏆 KỶ LỤC MỚI! HẠNG #${rank}`;
-      card.appendChild(rankBanner);
-    } else {
-      const normalLabel = document.createElement("div");
-      normalLabel.className = "game-over-normal-text";
-      normalLabel.innerText = "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!";
-      card.appendChild(normalLabel);
+      const ribbon = new Graphics()
+        .roundRect(-60, 30, 120, 20, 5)
+        .fill({ color: 0xd32f2f })
+        .stroke({ width: 1.2, color: 0xffea00 });
+      const ribbonText = new Text({
+        text: "KỶ LỤC MỚI!",
+        style: {
+          fontFamily: '"Nunito", sans-serif',
+          fontSize: 10,
+          fill: "#ffffff",
+          fontWeight: "bold",
+          padding: 8,
+        },
+      });
+      ribbonText.anchor.set(0.5);
+      ribbonText.position.set(0, 40);
+      badgeContainer.addChild(ribbon, ribbonText);
     }
 
-    // Action buttons row
-    const btnRow = document.createElement("div");
-    btnRow.style.display = "flex";
-    btnRow.style.justifyContent = "center";
-    btnRow.style.alignItems = "center";
-    btnRow.style.gap = "15px";
-    btnRow.style.marginTop = "20px";
-
-    // Revive button is now removed since it's handled in the Revive Offer popup
-
-    // Double Reward button (x2 icon)
-    let hasDoubled = false;
-    const doubleBtn = document.createElement("button");
-    doubleBtn.className = "game-over-button";
-    doubleBtn.style.backgroundImage = "url(/assets/x2_btn.png)";
-    doubleBtn.addEventListener("click", async () => {
-      if (hasDoubled) return;
-      soundManager.playClick();
-      const success = await AdManager.showRewardedVideo();
-      if (success) {
-        hasDoubled = true;
-        doubleBtn.className += " disabled";
-        this.score = this.score * 2;
-        scoreLabel.innerText = `ĐIỂM SỐ: ${this.score.toLocaleString()}`;
-      }
-    });
-    btnRow.appendChild(doubleBtn);
-
-    // PLAY AGAIN Button (replay icon)
-    const replayBtn = document.createElement("button");
-    replayBtn.className = "game-over-button";
-    replayBtn.style.backgroundImage = "url(/assets/replay_btn.png)";
-    replayBtn.addEventListener("click", async () => {
-      soundManager.playClick();
-      if (this.gameOverIntervalId) {
-        clearInterval(this.gameOverIntervalId);
-        this.gameOverIntervalId = null;
-      }
-      window.defeatCount_marth3 = (window.defeatCount_marth3 || 0) + 1;
-      if (window.defeatCount_marth3 >= 3) {
-        window.defeatCount_marth3 = 0;
-        await AdManager.showInterstitial();
-      }
-      overlay.remove();
-      this.gameOverScreen = null;
-      await sceneManager.switchTo(GameScene);
-    });
-    btnRow.appendChild(replayBtn);
-
-    // MAIN MENU Button (home icon)
-    const homeBtn = document.createElement("button");
-    homeBtn.className = "game-over-button";
-    homeBtn.style.backgroundImage = "url(/assets/home_btn.png)";
-    homeBtn.addEventListener("click", async () => {
-      soundManager.playClick();
-      if (this.gameOverIntervalId) {
-        clearInterval(this.gameOverIntervalId);
-        this.gameOverIntervalId = null;
-      }
-      overlay.remove();
-      this.gameOverScreen = null;
-      const { MainMenuScene } = await import("./MainMenuScene.js");
-      await sceneManager.switchTo(MainMenuScene);
-    });
-    btnRow.appendChild(homeBtn);
-
-    card.appendChild(btnRow);
-    overlay.appendChild(card);
-    const appContainer = document.getElementById("app") || document.body;
-    appContainer.appendChild(overlay);
-
-    this.gameOverScreen = {
-      isHTML: true,
-      destroy: () => {
-        overlay.remove();
-        this.gameOverScreen = null;
+    // 3. Stats Labels (Relocated below the badge)
+    const scoreLabel = new Text({
+      text: `ĐIỂM SỐ: ${this.score}`,
+      style: {
+        fontFamily: '"Nunito", sans-serif',
+        fontSize: 26,
+        fontWeight: "bold",
+        fill: "#241d4f",
       },
-    };
+    });
+    scoreLabel.anchor.set(0.5);
+    scoreLabel.y = 35;
+    this.gameOverModal.addChild(scoreLabel);
+
+    if (rank) {
+      const rankContainer = new Container();
+      rankContainer.y = 85;
+      this.gameOverModal.addChild(rankContainer);
+
+      const trophyL = createVectorIconFromUI("🏆", 24);
+      rankContainer.addChild(trophyL);
+
+      const rankText = new Text({
+        text: ` KỶ LỤC MỚI! HẠNG #${rank} `,
+        style: {
+          fontFamily: '"Nunito", sans-serif',
+          fontSize: 20,
+          fontWeight: "bold",
+          fill: "#e91e63",
+        },
+      });
+      rankText.anchor.set(0.5);
+      rankText.position.set(20, 0);
+      rankContainer.addChild(rankText);
+
+      // Center the elements in rankContainer
+      const gap = 8;
+      const totalW = trophyL.width + gap + rankText.width;
+      trophyL.x = -totalW / 2 + trophyL.width / 2;
+      rankText.x = totalW / 2 - rankText.width / 2;
+
+      rankContainer.scale.set(1.0);
+      gsap.to(rankContainer.scale, {
+        x: 1.06,
+        y: 1.06,
+        duration: 0.6,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+    } else {
+      const normalLabel = new Text({
+        text: "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!",
+        style: {
+          fontFamily: '"Nunito", sans-serif',
+          fontSize: 14,
+          fill: "#7c73a1",
+        },
+      });
+      normalLabel.anchor.set(0.5);
+      normalLabel.y = 85;
+      this.gameOverModal.addChild(normalLabel);
+    }
+
+    // 4. Action Buttons (Colorful3DCircleButton style in a single row)
+    const btnY = 165;
+
+    // We only show 3 buttons since the player already had their "Thêm Lượt" popup.
+    let hasDoubled = false;
+    const doubleBtn = new Colorful3DCircleButton({
+      iconType: "star",
+      colorStyle: "green",
+      radius: 32,
+      onClick: async () => {
+        if (hasDoubled) return;
+        const success = await AdManager.showRewardedVideo();
+        if (success) {
+          hasDoubled = true;
+          doubleBtn.alpha = 0.5;
+          doubleBtn.eventMode = "none";
+          this.score = this.score * 2;
+          scoreLabel.text = `ĐIỂM SỐ: ${this.score}`;
+          await gameAlert("🎉 Điểm số của bạn đã được x2!");
+        }
+      },
+    });
+    doubleBtn.x = -80;
+    doubleBtn.y = btnY;
+    this.gameOverModal.addChild(doubleBtn);
+
+    const replayBtn = new Colorful3DCircleButton({
+      iconType: "🔄",
+      colorStyle: "yellow",
+      radius: 32,
+      onClick: async () => {
+        if (this.gameOverIntervalId) {
+          clearInterval(this.gameOverIntervalId);
+          this.gameOverIntervalId = null;
+        }
+        window.defeatCount_marth3 = (window.defeatCount_marth3 || 0) + 1;
+        if (window.defeatCount_marth3 >= 3) {
+          window.defeatCount_marth3 = 0;
+          await AdManager.showInterstitial();
+        }
+        await sceneManager.switchTo(GameScene);
+      },
+    });
+    replayBtn.x = 0;
+    replayBtn.y = btnY;
+    this.gameOverModal.addChild(replayBtn);
+
+    const homeBtn = new Colorful3DCircleButton({
+      iconType: "🏠",
+      colorStyle: "blue",
+      radius: 32,
+      onClick: async () => {
+        if (this.gameOverIntervalId) {
+          clearInterval(this.gameOverIntervalId);
+          this.gameOverIntervalId = null;
+        }
+        const { MainMenuScene } = await import("./MainMenuScene.js");
+        await sceneManager.switchTo(MainMenuScene);
+      },
+    });
+    homeBtn.x = 80;
+    homeBtn.y = btnY;
+    this.gameOverModal.addChild(homeBtn);
 
     // 5. Spawn Confetti Fireworks Loop
     this.gameOverIntervalId = setInterval(() => {
@@ -3079,10 +3401,20 @@ export class GameScene {
       });
     }
 
-    requestAnimationFrame(() => {
-      overlay.style.opacity = "1";
-      card.style.opacity = "1";
-      card.style.transform = "scale(1)";
+    // Apply responsive layout immediately
+    this.resize();
+
+    const targetScale = this.gameOverModal.scale.x;
+    this.gameOverModal.scale.set(targetScale * 0.7);
+
+    // Entrance animation
+    this.gameOverOverlay.alpha = 0;
+    gsap.to(this.gameOverOverlay, { alpha: 1, duration: 0.3 });
+    gsap.to(this.gameOverModal.scale, {
+      x: targetScale,
+      y: targetScale,
+      duration: 0.5,
+      ease: "back.out(1.5)",
     });
   }
 
@@ -3359,7 +3691,7 @@ export class GameScene {
       sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
       sprite.width = customRadius * 2;
       sprite.height = customRadius * 2;
-      const drawOverlays = (r) => { };
+      const drawOverlays = (r) => {};
       content.addChild(sprite);
 
       drawOverlays(customRadius);
@@ -3432,11 +3764,17 @@ export class GameScene {
       const tex = this.loadingAvatar.texture;
       let baseScale = 0.5;
       if (tex && tex.width > 1) {
-        baseScale = Math.min(0.6, (width * 0.72) / tex.width, (height * 0.45) / tex.height);
+        baseScale = Math.min(
+          0.6,
+          (width * 0.72) / tex.width,
+          (height * 0.45) / tex.height,
+        );
       } else {
         baseScale = Math.min(0.6, (width * 0.72) / 512);
       }
-      this.loadingAvatar.scale.set(baseScale * (this.avatarPulse ? this.avatarPulse.val : 1.0));
+      this.loadingAvatar.scale.set(
+        baseScale * (this.avatarPulse ? this.avatarPulse.val : 1.0),
+      );
     }
 
     // 2. Adjust Board Position and Scale
