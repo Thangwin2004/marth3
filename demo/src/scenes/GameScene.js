@@ -3310,16 +3310,17 @@ export class GameScene {
       this.gameOverModal.addChild(normalLabel);
     }
 
-    // 4. Action Buttons (Colorful3DCircleButton style in a single row)
+    // 4. Action Buttons (Circular Icon style in a single row)
     const btnY = 165;
+    const btnRadius = 32;
 
-    // We only show 3 buttons since the player already had their "Thêm Lượt" popup.
+    // We only show 3 buttons since the player already had their "Th�m L�?t" popup.
     let hasDoubled = false;
-    const doubleBtn = new Colorful3DCircleButton({
-      iconType: "star",
-      colorStyle: "green",
-      radius: 32,
-      onClick: async () => {
+    const doubleBtn = this.createCircularButton(
+      "star",
+      -80,
+      btnY,
+      async () => {
         if (hasDoubled) return;
         const success = await AdManager.showRewardedVideo();
         if (success) {
@@ -3327,20 +3328,19 @@ export class GameScene {
           doubleBtn.alpha = 0.5;
           doubleBtn.eventMode = "none";
           this.score = this.score * 2;
-          scoreLabel.text = `ĐIỂM SỐ: ${this.score}`;
-          await gameAlert("🎉 Điểm số của bạn đã được x2!");
+          scoreLabel.text = `�I?M S?: ${this.score}`;
+          await gameAlert("?? �i?m s? c?a b?n �? ��?c x2!");
         }
       },
-    });
-    doubleBtn.x = -80;
-    doubleBtn.y = btnY;
-    this.gameOverModal.addChild(doubleBtn);
+      this.gameOverModal,
+      btnRadius,
+    );
 
-    const replayBtn = new Colorful3DCircleButton({
-      iconType: "🔄",
-      colorStyle: "yellow",
-      radius: 32,
-      onClick: async () => {
+    const replayBtn = this.createCircularButton(
+      "??",
+      0,
+      btnY,
+      async () => {
         if (this.gameOverIntervalId) {
           clearInterval(this.gameOverIntervalId);
           this.gameOverIntervalId = null;
@@ -3352,16 +3352,15 @@ export class GameScene {
         }
         await sceneManager.switchTo(GameScene);
       },
-    });
-    replayBtn.x = 0;
-    replayBtn.y = btnY;
-    this.gameOverModal.addChild(replayBtn);
+      this.gameOverModal,
+      btnRadius,
+    );
 
-    const homeBtn = new Colorful3DCircleButton({
-      iconType: "🏠",
-      colorStyle: "blue",
-      radius: 32,
-      onClick: async () => {
+    const homeBtn = this.createCircularButton(
+      "??",
+      80,
+      btnY,
+      async () => {
         if (this.gameOverIntervalId) {
           clearInterval(this.gameOverIntervalId);
           this.gameOverIntervalId = null;
@@ -3369,10 +3368,9 @@ export class GameScene {
         const { MainMenuScene } = await import("./MainMenuScene.js");
         await sceneManager.switchTo(MainMenuScene);
       },
-    });
-    homeBtn.x = 80;
-    homeBtn.y = btnY;
-    this.gameOverModal.addChild(homeBtn);
+      this.gameOverModal,
+      btnRadius,
+    );
 
     // 5. Spawn Confetti Fireworks Loop
     this.gameOverIntervalId = setInterval(() => {
