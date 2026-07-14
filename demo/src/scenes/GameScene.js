@@ -49,8 +49,8 @@ function gameAlert(message) {
         }
         .game-alert-card {
           background: #fbfaf5;
-          border: 5px solid #5900b3;
-          box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
+          border: 5px solid #0088cc;
+          box-shadow: inset 0 0 0 2.5px #33ccff, 0 10px 25px rgba(0, 0, 0, 0.35);
           border-radius: 20px;
           padding: 28px 24px;
           width: 85%;
@@ -595,7 +595,7 @@ export class GameScene {
           fontFamily: '"Nunito", sans-serif',
           fontSize: 26,
           fontWeight: "bold",
-          fill: "#ffdd57",
+          fill: "#33ccff",
         },
       });
       floatText.anchor.set(0.5);
@@ -674,7 +674,7 @@ export class GameScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 42,
         fontWeight: "bold",
-        fill: "#ff5252",
+        fill: "#ff66b2",
       },
     });
     this.comboText.anchor.set(0.5);
@@ -687,7 +687,7 @@ export class GameScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
-        fill: "#ffecb3",
+        fill: "#33ccff",
       },
     });
     this.tutorialText.anchor.set(0.5);
@@ -2911,7 +2911,7 @@ export class GameScene {
     const heartIcon = document.createElement("div");
     heartIcon.innerText = "🎁";
     heartIcon.style.cssText =
-      "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,200,50,0.6);";
+      "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,100,150,0.6);";
     heartIcon.animate(
       [
         { transform: "scale(1)" },
@@ -3283,7 +3283,7 @@ export class GameScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 26,
         fontWeight: "bold",
-        fill: "#241d4f",
+        fill: "#360207",
       },
     });
     scoreLabel.anchor.set(0.5);
@@ -3304,7 +3304,7 @@ export class GameScene {
           fontFamily: '"Nunito", sans-serif',
           fontSize: 20,
           fontWeight: "bold",
-          fill: "#e91e63",
+          fill: "#0088cc",
         },
       });
       rankText.anchor.set(0.5);
@@ -3332,7 +3332,7 @@ export class GameScene {
         style: {
           fontFamily: '"Nunito", sans-serif',
           fontSize: 14,
-          fill: "#7c73a1",
+          fill: "#360207",
         },
       });
       normalLabel.anchor.set(0.5);
@@ -3500,7 +3500,7 @@ export class GameScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
-        fill: "#ffea00",
+        fill: "#33ccff",
         align: "center",
       },
     });
@@ -4207,7 +4207,7 @@ export class GameScene {
     // Version
     const versionText = document.createElement("div");
     versionText.style.fontSize = "11px";
-    versionText.style.color = "#7c73a1";
+    versionText.style.color = "#360207";
     versionText.style.marginTop = "20px";
     versionText.innerText = "Phiên bản: 1.0.0";
     card.appendChild(versionText);
