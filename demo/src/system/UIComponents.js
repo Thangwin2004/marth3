@@ -4,27 +4,12 @@ import { soundManager } from "./SoundManager.js";
 
 // Vibrant Cartoon 3D Bubble UI Color Palettes
 export const palettes = {
-  yellow: {
-    top: 0xffe500,
-    bottom: 0xff9900,
-    shadow: 0x8a4500,
-    stroke: 0xfff8b3,
-  },
-  green: {
-    top: 0x7fff00,
-    bottom: 0x00cc00,
-    shadow: 0x006600,
-    stroke: 0xd4ffd4,
-  },
-  pink: { top: 0xff66b2, bottom: 0xcc0066, shadow: 0x800040, stroke: 0xffe6f2 },
-  blue: { top: 0x33ccff, bottom: 0x0088cc, shadow: 0x004466, stroke: 0xe6f9ff },
-  purple: {
-    top: 0xb266ff,
-    bottom: 0x5900b3,
-    shadow: 0x330066,
-    stroke: 0xf2e6ff,
-  },
-  red: { top: 0xf95e8b, bottom: 0xd93955, shadow: 0x92233f, stroke: 0xffd4e2 },
+  green: { top: 0x88D399, bottom: 0x5CB475, shadow: 0x4A965E, stroke: 0xFFFFFF },
+  blue: { top: 0x66C2FF, bottom: 0x2DA9FF, shadow: 0x1B89D4, stroke: 0xFFFFFF },
+  red: { top: 0xFF8A8A, bottom: 0xEF5350, shadow: 0xC62828, stroke: 0xFFFFFF },
+  grey: { top: 0xE0E0E0, bottom: 0xBDBDBD, shadow: 0x9E9E9E, stroke: 0xFFFFFF },
+  orange: { top: 0xFFB347, bottom: 0xFF7B00, shadow: 0xC45600, stroke: 0xFFFFFF },
+  purple: { top: 0x88D399, bottom: 0x5CB475, shadow: 0x4A965E, stroke: 0xFFFFFF }
 };
 
 /**

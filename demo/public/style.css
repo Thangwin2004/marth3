@@ -348,11 +348,13 @@ body {
   box-sizing: border-box;
 }
 .game-popup-card {
-  background: #fffae6;
-  border: 5px solid #d32f2f;
-  box-shadow: inset 0 0 0 2.5px #ffea00, 0 6px 0 #8a0000, 0 12px 25px rgba(0, 0, 0, 0.35);
-  border-radius: 20px;
-  padding: 36px 24px 20px 24px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+  border-radius: 24px;
+  padding: 40px 24px 24px 24px;
   width: 90%; max-width: 380px;
   text-align: center;
   position: relative;
@@ -367,35 +369,31 @@ body {
 }
 .game-popup-title {
   position: absolute;
-  top: -25px;
+  top: 15px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(180deg, #ff6b6b 0%, #d32f2f 100%);
-  border: 2.5px solid #fff8b3;
-  border-radius: 12px;
-  box-shadow: 0 4px 0 #8a0000;
-  color: #ffffff;
+  color: #1B365D;
   font-family: 'Be Vietnam Pro', sans-serif;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  padding: 6px 32px;
-  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
-  white-space: nowrap;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
   text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
 }
 .game-popup-close-btn {
   position: absolute;
-  top: -16px;
-  right: -16px;
-  width: 40px;
-  height: 40px;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
   border: none;
   background: url(/assets/close_btn.png) no-repeat center center;
   background-size: contain;
   cursor: pointer;
   transition: transform 0.15s ease;
   z-index: 100100;
+  opacity: 0.6;
 }
 .game-popup-close-btn:hover {
   transform: scale(1.1);
@@ -412,8 +410,9 @@ body {
 }
 .game-settings-row {
   background: #ffffff;
-  border: 3.5px solid #ffccbc;
-  border-radius: 15px;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
   padding: 10px 18px;
   display: flex;
   justify-content: space-between;
@@ -423,9 +422,9 @@ body {
 }
 .game-settings-label {
   font-family: 'Be Vietnam Pro', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: #5c0612;
+  font-size: 16px;
+  font-weight: 800;
+  color: #1B365D;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -448,9 +447,9 @@ body {
   transform: scale(0.95);
 }
 .game-settings-reset-btn {
-  background: linear-gradient(180deg, #ff6b6b 0%, #d32f2f 100%);
-  border: none;
-  box-shadow: 0 4px 0 #8a0000;
+  background: linear-gradient(180deg, #FF6B6B 0%, #E53935 100%);
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 4px 0 #B71C1C;
   border-radius: 12px;
   color: #ffffff;
   font-family: 'Be Vietnam Pro', sans-serif;
@@ -477,7 +476,7 @@ body {
 }
 .game-settings-reset-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #8a0000;
+  box-shadow: 0 2px 0 #8A0000;
 }
 
 /* Paused / Game Over buttons */
@@ -509,10 +508,10 @@ body {
 /* Leaderboard popup styles */
 .game-leaderboard-user-text {
   font-family: 'Be Vietnam Pro', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: #5c0612;
-  margin: 10px 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1B365D;
+  margin: 15px 0 10px 0;
   text-align: center;
 }
 .game-leaderboard-table-container {
@@ -545,19 +544,19 @@ body {
   z-index: 10;
   font-size: 12px;
   font-weight: 800;
-  color: #5c0612;
+  color: #3D247A;
   padding: 8px 4px;
-  border-bottom: 2px solid #ffccbc;
+  border-bottom: 2px solid #E1D5FF;
 }
 .game-leaderboard-table td {
-  font-size: 12px;
-  font-weight: 700;
-  color: #5c0612;
-  padding: 8px 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1B365D;
+  padding: 10px 6px;
   text-align: center;
 }
 .game-leaderboard-table tr.highlighted td {
-  color: #d32f2f;
+  color: #7E57FF;
   font-weight: 900;
 }
 .game-leaderboard-table tr.rank-0 td {
@@ -573,15 +572,20 @@ body {
   font-weight: 900;
 }
 .game-leaderboard-table tbody tr {
-  border-bottom: 1px solid #ffebe6;
+  border-bottom: none;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  display: table-row;
 }
 .game-leaderboard-table tbody tr:last-child {
   border-bottom: none;
 }
 .game-leaderboard-footer {
   margin-top: 14px;
-  background: #fff3cd;
-  border: 2px solid #ffea00;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border-radius: 12px;
   padding: 10px 14px;
   display: flex;
@@ -594,7 +598,7 @@ body {
 .game-leaderboard-footer-item {
   font-size: 13px;
   font-weight: 900;
-  color: #d32f2f;
+  color: #5A33C9;
   width: 33%;
   text-align: center;
 }
@@ -671,4 +675,33 @@ body {
 .game-over-button.disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+.game-paused-btn-wide {
+  width: 100%;
+  height: 56px;
+  border-radius: 28px;
+  border: 2px solid #fff;
+  font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: white;
+  margin-bottom: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.game-paused-btn-wide:active {
+  transform: scale(0.95);
+}
+.btn-resume {
+  background: linear-gradient(to bottom, #88D399, #5CB475);
+  box-shadow: 0 4px 0 #4A965E;
+}
+.btn-restart {
+  background: linear-gradient(to bottom, #66C2FF, #2DA9FF);
+  box-shadow: 0 4px 0 #1B89D4;
+}
+.btn-quit {
+  background: linear-gradient(to bottom, #E0E0E0, #BDBDBD);
+  box-shadow: 0 4px 0 #9E9E9E;
 }

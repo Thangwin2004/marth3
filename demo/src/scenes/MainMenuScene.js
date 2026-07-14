@@ -533,9 +533,47 @@ export class MainMenuScene {
       this.showLeaderboard();
     });
 
-    this.settingsBtn = this.createCircularButton("⚙️", 0, 0, () => {
+    this.settingsBtn = new Container();
+    const settingsSprite = new Sprite();
+    settingsSprite.anchor.set(0.5);
+    this.settingsBtn.addChild(settingsSprite);
+
+    Assets.load("/assets/settings_btn.png").then((texture) => {
+      if (settingsSprite.destroyed) return;
+      settingsSprite.texture = texture;
+      if (this.settingsBtn.targetRadius) {
+         settingsSprite.width = this.settingsBtn.targetRadius * 2;
+         settingsSprite.height = this.settingsBtn.targetRadius * 2;
+      }
+    });
+
+    this.settingsBtn.updateStyle = (targetRadius) => {
+      this.settingsBtn.targetRadius = targetRadius;
+      if (settingsSprite.texture && settingsSprite.texture.width > 1) {
+         settingsSprite.width = targetRadius * 2.2; // slightly larger than circle
+         settingsSprite.height = targetRadius * 2.2;
+      }
+    };
+
+    this.settingsBtn.eventMode = "static";
+    this.settingsBtn.cursor = "pointer";
+    this.settingsBtn.on("pointerdown", () => {
+      settingsSprite.scale.set(settingsSprite.scale.x * 0.9);
+    });
+    this.settingsBtn.on("pointerup", () => {
+      if (this.settingsBtn.targetRadius && settingsSprite.texture) {
+         settingsSprite.width = this.settingsBtn.targetRadius * 2.2;
+         settingsSprite.height = this.settingsBtn.targetRadius * 2.2;
+      }
       this.showSettingsModal(false);
     });
+    this.settingsBtn.on("pointerupoutside", () => {
+      if (this.settingsBtn.targetRadius && settingsSprite.texture) {
+         settingsSprite.width = this.settingsBtn.targetRadius * 2.2;
+         settingsSprite.height = this.settingsBtn.targetRadius * 2.2;
+      }
+    });
+    this.container.addChild(this.settingsBtn);
 
     // === ANIMAL SCROLLING BANNER (PARADE) ===
     this.paradeContainer = new Container();
@@ -708,7 +746,9 @@ export class MainMenuScene {
     const startX = width / 2 - ((totalCircs - 1) * (circR * 2 + circGap)) / 2;
     visibleCircs.forEach((btn, idx) => {
       btn.position.set(startX + idx * (circR * 2 + circGap), circY);
-      btn.updateStyle(circR / scale);
+      if (typeof btn.updateStyle === "function") {
+        btn.updateStyle(circR / scale);
+      }
       btn.scale.set(scale);
     });
 
@@ -991,24 +1031,24 @@ export class MainMenuScene {
         .clear()
         // Soft black drop shadow
         .roundRect(-width / 2, -r + r * 0.22, width, height, radius)
-        .fill({ color: 0x000000, alpha: 0.45 })
-        // Dark blue 3D base
+        .fill({ color: 0x000000, alpha: 0.15 })
+        // Mint Green 3D base
         .roundRect(-width / 2, -r + r * 0.15, width, height, radius)
-        .fill({ color: 0x004466 });
+        .fill({ color: 0x4A965E });
 
-      // 2. Main Face Background (vibrant blue gradient)
+      // 2. Main Face Background (Mint Green gradient)
       const btnGrad = new FillGradient({
         start: { x: 0, y: -r },
         end: { x: 0, y: r },
         colorStops: [
-          { offset: 0, color: 0x33ccff }, // Bright cyan
-          { offset: 1, color: 0x0088cc }, // Medium blue
+          { offset: 0, color: 0x88D399 }, // Mint Top
+          { offset: 1, color: 0x5CB475 }, // Mint Bottom
         ],
       });
       bg.clear()
         .roundRect(-width / 2, -r, width, height, radius)
         .fill({ fill: btnGrad })
-        .stroke({ width: Math.max(2.5, r * 0.15), color: 0xffffff }); // Thick white border!
+        .stroke({ width: Math.max(3, r * 0.15), color: 0xFFFFFF }); // White border
 
       // 3. Glossy highlight sheen on top (ellipse highlight)
       highlight
@@ -1365,11 +1405,8 @@ export class MainMenuScene {
       row.style.cssText = `width:100%; height:70px; border-radius:12px; background:#fbfaf5; border:3px solid #fff; display:flex; justify-content:space-between; align-items:center; padding:0 20px; box-sizing:border-box; margin-bottom: 15px;`;
       
       const text = document.createElement("span");
-      text.style.cssText = `font-family:'Fredoka', 'Baloo 2', 'Be Vietnam Pro', sans-serif; font-size:18px; font-weight:bold; color:#47363B; letter-spacing:0.8px; white-space:nowrap;`;
+      text.style.cssText = `font-family:'Fredoka', 'Baloo 2', 'Be Vietnam Pro', sans-serif; font-size:18px; font-weight:bold; color:#47363B; letter-spacing:0.8px; white-space:nowrap; flex:1;`;
       text.innerText = label;
-
-      const dots = document.createElement("div");
-      dots.style.cssText = `flex:1; border-bottom: 4px dotted #c0bba0; margin: 0 15px; position:relative; top:5px;`;
 
       const toggle = document.createElement("div");
       const isMuted = !isEnabled;
@@ -1400,7 +1437,6 @@ export class MainMenuScene {
       toggle.onmouseleave = () => toggle.style.transform = "scale(1)";
 
       row.appendChild(text);
-      row.appendChild(dots);
       row.appendChild(toggle);
       return row;
     };

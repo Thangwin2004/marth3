@@ -210,46 +210,15 @@ function killTweensRecursive(obj) {
 }
 
 const palettes = {
-  yellow: {
-    top: 0xffe500,
-    bottom: 0xff9900,
-    shadow: 0x8a4500,
-    stroke: 0xfff8b3,
-  },
-  green: {
-    top: 0x7fff00,
-    bottom: 0x00cc00,
-    shadow: 0x006600,
-    stroke: 0xd4ffd4,
-  },
-  pink: { top: 0xff66b2, bottom: 0xcc0066, shadow: 0x800040, stroke: 0xffe6f2 },
-  blue: { top: 0x33ccff, bottom: 0x0088cc, shadow: 0x004466, stroke: 0xe6f9ff },
-  purple: {
-    top: 0xb266ff,
-    bottom: 0x5900b3,
-    shadow: 0x330066,
-    stroke: 0xf2e6ff,
-  },
-  red: { top: 0xf95e8b, bottom: 0xd93955, shadow: 0x92233f, stroke: 0xffd4e2 },
+  yellow: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
+  green: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
+  pink: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
+  blue: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
+  purple: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
+  red: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
 };
 
 const getColorStyle = (colorValue, label = "") => {
-  const lbl = String(label).toUpperCase();
-  if (lbl.includes("PLAY") || lbl.includes("CHƠI LẠI")) return "green";
-  if (lbl.includes("TIẾP TỤC")) return "yellow";
-  if (
-    lbl.includes("QUAY LẠI") ||
-    lbl.includes("BACK") ||
-    lbl.includes("TRANG CHỦ")
-  )
-    return "blue";
-  if (lbl.includes("XÓA") || lbl.includes("RESET")) return "red";
-
-  if (colorValue === 0x5c0612 || colorValue === 0xd32f2f) return "red";
-  if (colorValue === 0x1b0103) return "blue";
-  if (colorValue === 0x4caf50 || colorValue === 0x2ecc71) return "green";
-  if (colorValue === 0xffaa00 || colorValue === 0xffea00) return "yellow";
-
   return "purple";
 };
 
@@ -452,6 +421,12 @@ export class GameScene {
     this.bg.tint = 0x888888; // brighter background for clearer landscape
     this.container.addChild(this.bg);
 
+    // Add Happy Color overlay tint
+    this.bgOverlay = new Graphics();
+    this.bgOverlay.rect(0, 0, App.app.screen.width, App.app.screen.height);
+    this.bgOverlay.fill({ color: 0x2b1441, alpha: 0.18 });
+    this.container.addChild(this.bgOverlay);
+
     // === CREATE AMBIENT PARTICLES ===
     this.createAmbientParticles();
 
@@ -515,20 +490,20 @@ export class GameScene {
 
     // 1. 3D Shadow Base
     this.boardBg.roundRect(0, shadowOffset, w, h, 24);
-    this.boardBg.fill({ color: theme.shadow });
+    this.boardBg.fill({ color: 0x3d247a });
 
     // 2. Main Face Background (gradient)
     const bgGrad = new FillGradient({
       start: { x: 0, y: 0 },
       end: { x: 0, y: h },
       colorStops: [
-        { offset: 0, color: theme.top },
-        { offset: 1, color: theme.bottom },
+        { offset: 0, color: 0xa772ff },
+        { offset: 1, color: 0x6f58e8 },
       ],
     });
     this.boardBg.roundRect(0, 0, w, h, 24);
     this.boardBg.fill({ fill: bgGrad });
-    this.boardBg.stroke({ width: 5, color: theme.stroke });
+    this.boardBg.stroke({ width: 2, color: 0xffffff });
 
     // 3. Highlight Sheen
     this.boardBg.ellipse(w / 2, h * 0.12, w * 0.45, h * 0.08);
@@ -559,7 +534,7 @@ export class GameScene {
       p.anchor.set(0.5);
       p.width = size * 2;
       p.height = size * 2;
-      const colors = [0x4fc3f7, 0xffeb3b, 0x00e676, 0xff5252, 0xd500f9];
+      const colors = [0xffd54a, 0xffc84a, 0xffae2b];
       p.tint = colors[Math.floor(Math.random() * colors.length)];
       p.alpha = 0.08 + Math.random() * 0.18;
       p.x = Math.random() * App.app.screen.width;
@@ -641,7 +616,13 @@ export class GameScene {
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
-
+        stroke: { color: "#7750FF", width: 3 },
+        dropShadow: {
+          color: "rgba(0,0,0,0.25)",
+          blur: 2,
+          distance: 2,
+          angle: Math.PI / 2
+        },
         padding: 24,
       },
     });
@@ -660,7 +641,13 @@ export class GameScene {
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
-
+        stroke: { color: "#7750FF", width: 3 },
+        dropShadow: {
+          color: "rgba(0,0,0,0.25)",
+          blur: 2,
+          distance: 2,
+          angle: Math.PI / 2
+        },
         padding: 24,
       },
     });
@@ -674,28 +661,51 @@ export class GameScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 42,
         fontWeight: "bold",
-        fill: "#ff66b2",
+        fill: "#ffc84a",
+        stroke: { color: "#3d247a", width: 5 },
       },
     });
     this.comboText.anchor.set(0.5);
     this.comboText.visible = false;
     this.uiContainer.addChild(this.comboText);
 
+    this.tutorialBg = new Graphics();
+    this.uiContainer.addChild(this.tutorialBg);
+
     this.tutorialText = new Text({
-      text: "👉 Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
+      text: "✨ Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
       style: {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
-        fill: "#33ccff",
+        fill: "#ffffff",
       },
     });
     this.tutorialText.anchor.set(0.5);
     this.uiContainer.addChild(this.tutorialText);
 
     // === SETTINGS BUTTON ===
-    this.settingsBtn = this.createCircularButton("⚙️", 0, 0, () => {
+    this.settingsBtn = new Sprite();
+    Assets.load("/assets/settings_btn.png").then((texture) => {
+      if (this.settingsBtn.destroyed) return;
+      this.settingsBtn.texture = texture;
+      this.settingsBtn.width = 64;
+      this.settingsBtn.height = 64;
+    });
+    this.settingsBtn.anchor.set(0.5);
+    this.settingsBtn.eventMode = "static";
+    this.settingsBtn.cursor = "pointer";
+    this.settingsBtn.on("pointerdown", () => {
+      this.settingsBtn.scale.set(this.settingsBtn.scale.x * 0.9);
+    });
+    this.settingsBtn.on("pointerup", () => {
+      this.settingsBtn.width = 64;
+      this.settingsBtn.height = 64;
       this.showSettingsModal(true);
+    });
+    this.settingsBtn.on("pointerupoutside", () => {
+      this.settingsBtn.width = 64;
+      this.settingsBtn.height = 64;
     });
     this.uiContainer.addChild(this.settingsBtn);
   }
@@ -939,9 +949,7 @@ export class GameScene {
       shakeIntensity = 30;
 
       // Multicolored expanding rainbow ripples
-      const rainbowColors = [
-        0xff1744, 0xff9100, 0xffea00, 0x00e676, 0x2979ff, 0xd500f9,
-      ];
+      const rainbowColors = [0xffd54a, 0xffc84a, 0xffae2b];
       rainbowColors.forEach((color, index) => {
         gsap.delayedCall(index * 0.08, () => {
           this.spawnRipple(pX, pY, color);
@@ -2181,9 +2189,7 @@ export class GameScene {
     vfxContainer.zIndex = 92;
     this.container.addChild(vfxContainer);
 
-    const rainbowColors = [
-      0xff1744, 0xff9100, 0xffea00, 0x00e676, 0x00e5ff, 0x2979ff, 0xd500f9,
-    ];
+    const rainbowColors = [0xffd54a, 0xffc84a, 0xffae2b];
     const dotCount = 14;
     let completed = 0;
 
@@ -2373,7 +2379,7 @@ export class GameScene {
     blastContainer.zIndex = 90;
     this.container.addChild(blastContainer);
 
-    const colors = [0xff80ab, 0x00e5ff, 0xffeb3b, 0x00e676, 0xd500f9];
+    const colors = [0xffd54a, 0xffc84a, 0xffae2b];
 
     targets.forEach((target, idx) => {
       // Draw a very soft, faint wind trail line (làn gió mỏng)
@@ -2562,7 +2568,7 @@ export class GameScene {
     });
 
     // Spawn 48 colorful firefly sparks shooting out in all directions (optimized from 100) - simplified single fill pass
-    const colors = [0xff1744, 0xff9100, 0xffea00, 0x00e676, 0x2979ff, 0xd500f9];
+    const colors = [0xffd54a, 0xffc84a, 0xffae2b];
     const count = 48;
     for (let i = 0; i < count; i++) {
       const p = new Graphics();
@@ -2718,14 +2724,7 @@ export class GameScene {
   }
 
   spawnFireworkBurst(x, y, count = 25) {
-    const colors = [
-      0xffd600, // Vàng kim sáng
-      0xff3d00, // Đỏ cam rực rỡ
-      0xffffff, // Trắng lấp lánh
-      0xff007f, // Hồng sen
-      0x00e5ff, // Xanh điện tử
-      0x4caf50, // Xanh lá bamboo
-    ];
+    const colors = [0xffd54a, 0xffc84a, 0xffae2b];
 
     // 1. Central flash
     const flash = new Graphics()
@@ -2901,15 +2900,15 @@ export class GameScene {
 
     const card = document.createElement("div");
     card.style.cssText =
-      "background:#fbfaf5;border:6px solid #0088cc;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 15px 30px rgba(0,0,0,0.5);";
+      "background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.6);border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 12px 40px rgba(0,0,0,0.15), inset 0 0 0 2px rgba(255,255,255,0.5);";
 
     const title = document.createElement("div");
-    title.innerText = "THÊM LƯỢT";
+    title.innerText = "CONTINUE?";
     title.style.cssText =
-      "font-size:32px;font-weight:900;color:#0088cc;margin-bottom:20px;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
+      "font-size:32px;font-weight:900;background:linear-gradient(180deg, #FFDF73 0%, #E6A123 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 2px rgba(255,255,255,1));margin-bottom:20px;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
 
     const heartIcon = document.createElement("div");
-    heartIcon.innerText = "🎁";
+    heartIcon.innerText = "❤️";
     heartIcon.style.cssText =
       "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,100,150,0.6);";
     heartIcon.animate(
@@ -2925,23 +2924,23 @@ export class GameScene {
 
     const yesBtn = document.createElement("button");
     yesBtn.style.cssText =
-      "background:linear-gradient(to bottom, #7CD41E, #62A816);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4C8210, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+      "background:linear-gradient(to bottom, #88D399, #5CB475);border:2px solid #FFFFFF;border-radius:12px;padding:10px 40px;color:white;font-size:24px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4A965E, 0 8px 10px rgba(0,0,0,0.2);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
 
     const tvIcon = document.createElement("img");
     tvIcon.src = "/assest/iconbtn/images.png";
     tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
 
     const yesText = document.createElement("span");
-    yesText.innerText = "+5 LƯỢT";
+    yesText.innerText = "REVIVE";
     yesText.style.textShadow = "0 2px 4px rgba(0,0,0,0.3)";
 
     yesBtn.appendChild(tvIcon);
     yesBtn.appendChild(yesText);
 
     const skipText = document.createElement("div");
-    skipText.innerText = "Không, cảm ơn";
+    skipText.innerText = "No, thanks";
     skipText.style.cssText =
-      "margin-top:15px;font-family:sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
+      "margin-top:15px;color:#1B365D;font-size:16px;font-weight:700;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;text-decoration:underline;";
 
     card.appendChild(title);
     card.appendChild(heartIcon);
@@ -3030,31 +3029,14 @@ export class GameScene {
     // 1. Soft Card Shadow
     const cardShadow = new Graphics()
       .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 24)
-      .fill({ color: 0x000000, alpha: 0.25 });
+      .fill({ color: 0x000000, alpha: 0.15 });
     this.gameOverModal.addChild(cardShadow);
 
-    // 2. Thick 3D Cyan-Blue Border
-    const borderBg = new Graphics()
-      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24)
-      .fill({ color: 0x004466 }) // Shadow Base
-      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
-      .fill({
-        fill: new FillGradient({
-          start: { x: 0, y: -cardH / 2 },
-          end: { x: 0, y: cardH / 2 },
-          colorStops: [
-            { offset: 0, color: 0x33ccff },
-            { offset: 1, color: 0x0088cc },
-          ],
-        }),
-      });
-
-    this.gameOverModal.addChild(borderBg);
-
-    // 3. Bright Cream Card Face
+    // 2. Bright Semi-Transparent Card Face (Glassmorphism style)
     const cardFace = new Graphics()
-      .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 18)
-      .fill({ color: 0xfbfaf5 });
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
+      .fill({ color: 0xffffff, alpha: 0.9 })
+      .stroke({ width: 3, color: 0xffffff, alpha: 0.8 });
     this.gameOverModal.addChild(cardFace);
 
     // 1. Glowing neon & floating title
@@ -3065,17 +3047,18 @@ export class GameScene {
     const titleGrad = new FillGradient({
       end: { x: 0, y: 44 },
       colorStops: [
-        { offset: 0, color: 0xffea00 },
-        { offset: 1, color: 0xff3300 },
+        { offset: 0, color: 0xFFDF73 },
+        { offset: 1, color: 0xE6A123 },
       ],
     });
 
     const glowText = new Text({
-      text: "TRÒ CHƠI KẾT THÚC",
+      text: "GAME OVER",
       style: {
         fontFamily: '"Nunito", sans-serif',
-        fontSize: 34,
-        fill: 0xffea00,
+        fontSize: 38,
+        fill: 0xffffff,
+        stroke: { color: 0xffffff, width: 2 },
         fontWeight: "900",
       },
     });
@@ -3087,11 +3070,12 @@ export class GameScene {
     glowText.filters = [glowFilter];
 
     const victoryText = new Text({
-      text: "TRÒ CHƠI KẾT THÚC",
+      text: "GAME OVER",
       style: {
         fontFamily: '"Nunito", sans-serif',
-        fontSize: 34,
+        fontSize: 38,
         fill: titleGrad,
+        stroke: { color: 0xffffff, width: 2 },
         fontWeight: "900",
       },
     });
@@ -3259,8 +3243,8 @@ export class GameScene {
     if (rank) {
       const ribbon = new Graphics()
         .roundRect(-60, 30, 120, 20, 5)
-        .fill({ color: 0xd32f2f })
-        .stroke({ width: 1.2, color: 0xffea00 });
+        .fill({ color: 0x7E57FF })
+        .stroke({ width: 1.2, color: 0xFFC84A });
       const ribbonText = new Text({
         text: "KỶ LỤC MỚI!",
         style: {
@@ -3278,12 +3262,13 @@ export class GameScene {
 
     // 3. Stats Labels (Relocated below the badge)
     const scoreLabel = new Text({
-      text: `ĐIỂM SỐ: ${this.score}`,
+      text: `FINAL SCORE:\n${this.score}`,
       style: {
         fontFamily: '"Nunito", sans-serif',
-        fontSize: 26,
-        fontWeight: "bold",
-        fill: "#360207",
+        fontSize: 30,
+        fontWeight: "900",
+        fill: "#1B365D",
+        align: "center",
       },
     });
     scoreLabel.anchor.set(0.5);
@@ -3332,7 +3317,7 @@ export class GameScene {
         style: {
           fontFamily: '"Nunito", sans-serif',
           fontSize: 14,
-          fill: "#360207",
+          fill: "#1B365D",
         },
       });
       normalLabel.anchor.set(0.5);
@@ -3700,37 +3685,76 @@ export class GameScene {
     parent = null,
     customRadius = 26,
   ) {
-    const tex = getIconTexture(emojiText);
-    if (tex) {
-      const btn = new Container();
-      btn.x = x;
-      btn.y = y;
-      if (parent) {
-        parent.addChild(btn);
+    const btn = new Container();
+    btn.x = x;
+    btn.y = y;
+    if (parent) {
+      parent.addChild(btn);
+    }
+
+    btn.eventMode = "static";
+    btn.cursor = "pointer";
+
+    const content = new Container();
+    btn.addChild(content);
+
+    const shadowOffset = 4;
+    const shadow = new Graphics();
+    const bg = new Graphics();
+    content.addChild(shadow);
+    content.addChild(bg);
+
+    let topColor = 0x88D399;
+    let bottomColor = 0x5CB475;
+    let ringColor = 0xFFFFFF;
+    let shadowColor = 0x4A965E;
+
+    if (emojiText.includes("star")) {
+      topColor = 0xFFB347;
+      bottomColor = 0xFF7B00;
+      shadowColor = 0xC45600;
+    } else if (emojiText.includes("🔄")) {
+      topColor = 0xFF8A8A;
+      bottomColor = 0xEF5350;
+      shadowColor = 0xC62828;
+    } else if (emojiText.includes("⚙️") || emojiText.includes("🏠")) {
+      topColor = 0xE0E0E0;
+      bottomColor = 0xBDBDBD;
+      shadowColor = 0x9E9E9E;
+    }
+
+    const drawOverlays = (r) => {
+      shadow.clear().circle(0, shadowOffset, r).fill({ color: shadowColor });
+      bg.clear().circle(0, 0, r);
+      const grad = new FillGradient({
+        start: { x: 0, y: -r },
+        end: { x: 0, y: r },
+        colorStops: [
+          { offset: 0, color: topColor },
+          { offset: 1, color: bottomColor },
+        ],
+      });
+      bg.fill({ fill: grad }).stroke({ color: ringColor, width: 3 });
+    };
+    drawOverlays(customRadius);
+
+    const icon = new Text({
+      text: emojiText,
+      style: {
+        fontFamily: '"Nunito", sans-serif',
+        fontSize: customRadius * 1.2,
+        fill: "#ffffff",
       }
+    });
+    icon.anchor.set(0.5);
+    content.addChild(icon);
 
-      btn.eventMode = "static";
-      btn.cursor = "pointer";
-
-      const content = new Container();
-      btn.addChild(content);
-
-      const sprite = new Sprite(tex);
-      sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
-      sprite.width = customRadius * 2;
-      sprite.height = customRadius * 2;
-      const drawOverlays = (r) => {};
-      content.addChild(sprite);
-
-      drawOverlays(customRadius);
-
-      btn.r = customRadius;
-      btn.updateStyle = (r) => {
-        btn.r = r;
-        sprite.width = r * 2;
-        sprite.height = r * 2;
-        drawOverlays(r);
-      };
+    btn.r = customRadius;
+    btn.updateStyle = (r) => {
+      btn.r = r;
+      drawOverlays(r);
+      icon.style.fontSize = r * 1.2;
+    };
 
       btn.on("pointerover", (e) => {
         if (window.matchMedia("(hover: none)").matches) return;
@@ -3769,10 +3793,7 @@ export class GameScene {
         delay: 0.4,
         ease: "power2.out",
       });
-
       return btn;
-    }
-    return null;
   }
 
   resize() {
@@ -3783,6 +3804,11 @@ export class GameScene {
     if (this.bg) {
       this.bg.width = width;
       this.bg.height = height;
+    }
+    if (this.bgOverlay) {
+      this.bgOverlay.clear();
+      this.bgOverlay.rect(0, 0, width, height);
+      this.bgOverlay.fill({ color: 0x2b1441, alpha: 0.18 });
     }
 
     // 2.5. Aspect-Ratio Aware Adaptive Loading Avatar Scaling
@@ -3888,7 +3914,7 @@ export class GameScene {
         .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
-        .fill({ color: 0x004466 })
+        .fill({ color: 0x3d247a })
         // Main Face Background (gradient)
         .roundRect(0, 0, panelWidth, panelHeight, 12)
         .fill({
@@ -3896,12 +3922,12 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0x33ccff },
-              { offset: 1, color: 0x0088cc },
+              { offset: 0, color: 0x6f6bff },
+              { offset: 1, color: 0x4c42d7 },
             ],
           }),
         })
-        .stroke({ width: 2.5, color: 0xe6f9ff })
+        .stroke({ width: 2.5, color: 0xb79bff })
         // Highlight Sheen
         .ellipse(
           panelWidth / 2,
@@ -3915,7 +3941,7 @@ export class GameScene {
         .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
-        .fill({ color: 0x800040 })
+        .fill({ color: 0x3d247a })
         // Main Face Background (gradient)
         .roundRect(0, 0, panelWidth, panelHeight, 12)
         .fill({
@@ -3923,12 +3949,12 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0xff66b2 },
-              { offset: 1, color: 0xcc0066 },
+              { offset: 0, color: 0x9b72ff },
+              { offset: 1, color: 0x6d47d9 },
             ],
           }),
         })
-        .stroke({ width: 2.5, color: 0xffe6f2 })
+        .stroke({ width: 2.5, color: 0xb79bff })
         // Highlight Sheen
         .ellipse(
           panelWidth / 2,
@@ -4007,7 +4033,23 @@ export class GameScene {
           this.tutorialText.y = settingsBtnTop - 20;
         }
         this.tutorialText.visible = true;
+
+        if (this.tutorialBg) {
+          this.tutorialBg.clear();
+          const tw = this.tutorialText.width + 40;
+          const th = this.tutorialText.height + 20;
+          this.tutorialBg.roundRect(
+            this.tutorialText.x - tw / 2,
+            this.tutorialText.y - th / 2,
+            tw,
+            th,
+            20,
+          );
+          this.tutorialBg.fill({ color: 0x301a48, alpha: 0.75 });
+        }
       } else {
+        if (this.tutorialBg) this.tutorialBg.clear();
+
         // Disable word wrap or set a large wrap width on PC
         this.tutorialText.style.wordWrap = true;
         this.tutorialText.style.wordWrapWidth = 600;
@@ -4114,7 +4156,8 @@ export class GameScene {
 
     const title = document.createElement("div");
     title.className = "game-popup-title";
-    title.innerText = "CÀI ĐẶT";
+    title.innerText = isIngame ? "PAUSED" : "CÀI ĐẶT";
+    title.style.cssText = "position:relative;top:0;left:0;transform:none;margin-bottom:24px;background:none;box-shadow:none;border:none;color:#1B365D;font-size:36px;letter-spacing:2px;text-shadow:0 2px 4px rgba(255,255,255,0.8);";
     card.appendChild(title);
 
     const closePopup = () => {
@@ -4128,86 +4171,110 @@ export class GameScene {
       }, 250);
     };
 
+    const createToggleRow = (label, isEnabled, onToggle) => {
+      const row = document.createElement("div");
+      row.className = "game-settings-row";
+      row.style.marginBottom = "15px";
+
+      const text = document.createElement("span");
+      text.className = "game-settings-label";
+      text.innerText = label;
+
+      const toggle = document.createElement("div");
+      const isMuted = !isEnabled;
+      toggle.style.cssText = `width:90px; height:42px; border-radius:21px; background:${isMuted ? '#E8E3D8' : '#81C784'}; box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s; flex-shrink:0; display:flex; align-items:center;`;
+      
+      const statusText = document.createElement("span");
+      statusText.innerText = isMuted ? "OFF" : "ON";
+      statusText.style.cssText = `color:#fff; font-family:'Impact', 'Arial Black', sans-serif; font-size:16px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? '0' : '28px'}; padding-left:${isMuted ? '28px' : '0'}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
+
+      const knob = document.createElement("div");
+      knob.style.cssText = `width:34px; height:34px; border-radius:50%; background:#fff; position:absolute; top:4px; left:${isMuted ? '4px' : '52px'}; transition: left 0.25s cubic-bezier(0.3, 1.2, 0.5, 1); box-shadow: 0 3px 6px rgba(0,0,0,0.4); pointer-events:none;`;
+      
+      toggle.appendChild(statusText);
+      toggle.appendChild(knob);
+
+      toggle.onclick = () => {
+        const newState = onToggle();
+        const nowMuted = !newState;
+        toggle.style.background = nowMuted ? '#E8E3D8' : '#81C784';
+        knob.style.left = nowMuted ? '4px' : '52px';
+        statusText.innerText = nowMuted ? "OFF" : "ON";
+        statusText.style.paddingRight = nowMuted ? '0' : '28px';
+        statusText.style.paddingLeft = nowMuted ? '28px' : '0';
+      };
+      
+      toggle.onmousedown = () => toggle.style.transform = "scale(0.92)";
+      toggle.onmouseup = () => toggle.style.transform = "scale(1)";
+      toggle.onmouseleave = () => toggle.style.transform = "scale(1)";
+
+      row.appendChild(text);
+      row.appendChild(toggle);
+      return row;
+    };
+
     const rowContainer = document.createElement("div");
     rowContainer.className = "game-settings-row-container";
+    rowContainer.style.marginTop = "10px";
+    rowContainer.style.marginBottom = "20px";
 
     // Music row
-    const musicRow = document.createElement("div");
-    musicRow.className = "game-settings-row";
-    const musicLabel = document.createElement("span");
-    musicLabel.className = "game-settings-label";
-    musicLabel.innerText = "🎵 Nhạc nền";
-    musicRow.appendChild(musicLabel);
-
-    const musicToggle = document.createElement("button");
-    musicToggle.className = "game-settings-toggle-btn";
-    musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
-    musicToggle.addEventListener("click", () => {
+    const musicRow = createToggleRow("🎵 Nhạc nền", soundManager.musicEnabled, () => {
       soundManager.playClick();
       soundManager.toggleMusic();
-      musicToggle.style.backgroundImage = `url(${soundManager.musicEnabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
+      return soundManager.musicEnabled;
     });
-    musicRow.appendChild(musicToggle);
     rowContainer.appendChild(musicRow);
 
     // SFX row
-    const sfxRow = document.createElement("div");
-    sfxRow.className = "game-settings-row";
-    const sfxLabel = document.createElement("span");
-    sfxLabel.className = "game-settings-label";
-    sfxLabel.innerText = "🔊 Hiệu ứng";
-    sfxRow.appendChild(sfxLabel);
-
-    const sfxToggle = document.createElement("button");
-    sfxToggle.className = "game-settings-toggle-btn";
-    sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
-    sfxToggle.addEventListener("click", () => {
+    const sfxRow = createToggleRow("🔊 Hiệu ứng", soundManager.enabled, () => {
       soundManager.playClick();
       soundManager.enabled = !soundManager.enabled;
-      sfxToggle.style.backgroundImage = `url(${soundManager.enabled ? "/assets/toggle_on.png" : "/assets/toggle_off.png"})`;
+      return soundManager.enabled;
     });
-    sfxRow.appendChild(sfxToggle);
     rowContainer.appendChild(sfxRow);
 
     card.appendChild(rowContainer);
 
     // Ingame Buttons: Home, Replay, Continue
-    const actionContainer = document.createElement("div");
-    actionContainer.className = "game-paused-action-container";
-
-    const homeBtn = document.createElement("button");
-    homeBtn.className = "game-paused-btn";
-    homeBtn.style.backgroundImage = "url(/assets/home_btn.png)";
-    homeBtn.addEventListener("click", async () => {
-      overlay.remove();
-      this.settingsPopup = null;
-      const { MainMenuScene } = await import("./MainMenuScene.js");
-      await sceneManager.switchTo(MainMenuScene);
-    });
-    actionContainer.appendChild(homeBtn);
-
-    const replayBtn = document.createElement("button");
-    replayBtn.className = "game-paused-btn";
-    replayBtn.style.backgroundImage = "url(/assets/replay_btn.png)";
-    replayBtn.addEventListener("click", async () => {
-      overlay.remove();
-      this.settingsPopup = null;
-      await sceneManager.switchTo(GameScene);
-    });
-    actionContainer.appendChild(replayBtn);
-
-    const continueBtn = document.createElement("button");
-    continueBtn.className = "game-paused-btn";
-    continueBtn.style.backgroundImage = "url(/assets/continue_btn.png)";
-    continueBtn.addEventListener("click", closePopup);
-    actionContainer.appendChild(continueBtn);
-
-    card.appendChild(actionContainer);
+    if (isIngame) {
+      const actionContainer = document.createElement("div");
+      actionContainer.className = "game-paused-action-container";
+  
+      const homeBtn = document.createElement("button");
+      homeBtn.className = "game-paused-btn";
+      homeBtn.style.backgroundImage = "url(/assets/home_btn.png)";
+      homeBtn.addEventListener("click", async () => {
+        overlay.remove();
+        this.settingsPopup = null;
+        const { MainMenuScene } = await import("./MainMenuScene.js");
+        await sceneManager.switchTo(MainMenuScene);
+      });
+      actionContainer.appendChild(homeBtn);
+  
+      const replayBtn = document.createElement("button");
+      replayBtn.className = "game-paused-btn";
+      replayBtn.style.backgroundImage = "url(/assets/replay_btn.png)";
+      replayBtn.addEventListener("click", async () => {
+        overlay.remove();
+        this.settingsPopup = null;
+        await sceneManager.switchTo(GameScene);
+      });
+      actionContainer.appendChild(replayBtn);
+  
+      const continueBtn = document.createElement("button");
+      continueBtn.className = "game-paused-btn";
+      continueBtn.style.backgroundImage = "url(/assets/continue_btn.png)";
+      continueBtn.addEventListener("click", closePopup);
+      actionContainer.appendChild(continueBtn);
+  
+      card.appendChild(actionContainer);
+    }
 
     // Version
     const versionText = document.createElement("div");
     versionText.style.fontSize = "11px";
-    versionText.style.color = "#360207";
+    versionText.style.color = "#1B365D";
     versionText.style.marginTop = "20px";
     versionText.innerText = "Phiên bản: 1.0.0";
     card.appendChild(versionText);

@@ -67,7 +67,7 @@ export class Field {
     this.sprite = new Graphics();
     // Main background
     this.sprite.roundRect(0, 0, tileSize, tileSize, 14);
-    this.sprite.fill({ color: 0x101830, alpha: 0.92 });
+    this.sprite.fill({ color: 0x584b8d, alpha: 0.92 });
     this.sprite.stroke({ color: 0xffffff, width: 3, alpha: 0.14 });
 
     // Ánh sáng nhẹ ở góc trên bên trái giống hiệu ứng đá quý
@@ -86,8 +86,8 @@ export class Field {
     // === HIỂN THỊ Ô ĐƯỢC CHỌN (PixiJS v8 Graphics API) ===
     this.selected = new Graphics();
     this.selected.roundRect(0, 0, tileSize, tileSize, 14);
-    this.selected.fill({ color: 0x00e5ff, alpha: 0.16 });
-    this.selected.stroke({ color: 0x00e5ff, width: 3.5, alpha: 0.95 });
+    this.selected.fill({ color: 0xffd54a, alpha: 0.16 });
+    this.selected.stroke({ color: 0xffd54a, width: 3.5, alpha: 0.95 });
     this.selected.x = this.position.x;
     this.selected.y = this.position.y;
     this.selected.visible = false; // Ẩn mặc định, chỉ hiện khi được chọn
