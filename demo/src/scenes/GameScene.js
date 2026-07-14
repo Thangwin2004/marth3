@@ -2925,7 +2925,7 @@ export class GameScene {
 
     const yesBtn = document.createElement("button");
     yesBtn.style.cssText =
-      "background:linear-gradient(to bottom, #64B5F6, #42A5F5);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #1976D2, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+      "background:linear-gradient(to bottom, #90CAF9, #42A5F5);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #1976D2, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
 
     const tvIcon = document.createElement("img");
     tvIcon.src = "/assest/iconbtn/images.png";
@@ -4207,7 +4207,7 @@ export class GameScene {
     // Version
     const versionText = document.createElement("div");
     versionText.style.fontSize = "11px";
-    versionText.style.color = "#1976D2";
+    versionText.style.color = "#0D47A1";
     versionText.style.marginTop = "20px";
     versionText.innerText = "Phiên bản: 1.0.0";
     card.appendChild(versionText);

@@ -1211,7 +1211,7 @@ export class MainMenuScene {
     if (list.length === 0) {
       const emptyText = document.createElement("div");
       emptyText.style.padding = "24px";
-      emptyText.style.color = "#1976D2";
+      emptyText.style.color = "#0D47A1";
       emptyText.style.fontSize = "16px";
       emptyText.style.fontWeight = "bold";
       emptyText.innerText =
@@ -1244,7 +1244,7 @@ export class MainMenuScene {
         row.innerHTML = `
           <td>${medalText}</td>
           <td style="text-align: left; display: flex; align-items: center; gap: 8px;">
-            <img src="${avatarUrl}" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #42A5F5; background: #fff;" alt="" />
+            <img src="${avatarUrl}" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #90CAF9; background: #fff;" alt="" />
             <span>${name}</span>
           </td>
           <td>${entry.score.toLocaleString()}</td>
@@ -1294,7 +1294,7 @@ export class MainMenuScene {
     nameItem.style.justifyContent = "center";
     nameItem.style.gap = "6px";
     nameItem.innerHTML = `
-      <img src="${activeAvatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #BBDEFB;" alt="" />
+      <img src="${activeAvatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #90CAF9;" alt="" />
       <span>${activeName}</span>
     `;
     footer.appendChild(nameItem);
@@ -1420,7 +1420,7 @@ export class MainMenuScene {
     // Version
     const versionText = document.createElement("div");
     versionText.style.fontSize = "12px";
-    versionText.style.color = "#1976D2";
+    versionText.style.color = "#0D47A1";
     versionText.style.marginTop = "20px";
     versionText.innerText = "Phiên bản: 1.0.0";
     card.appendChild(versionText);
