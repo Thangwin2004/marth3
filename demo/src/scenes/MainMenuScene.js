@@ -144,9 +144,9 @@ function gameConfirm(message) {
           transition: opacity 0.25s ease;
         }
         .game-alert-card {
-          background: #fbfaf5;
-          border: 5px solid #5900b3;
-          box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
+          background: #E3F2FD;
+          border: 5px solid #1976D2;
+          box-shadow: inset 0 0 0 2.5px #BBDEFB, 0 10px 25px rgba(0, 0, 0, 0.35);
           border-radius: 20px;
           padding: 28px 24px;
           width: 85%;
@@ -157,7 +157,7 @@ function gameConfirm(message) {
           font-family: 'Be Vietnam Pro', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .game-alert-text {
-          color: #360207;
+          color: #0D47A1;
           font-size: 17px;
           line-height: 1.6;
           margin: 0 0 24px 0;
@@ -485,7 +485,7 @@ export class MainMenuScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
-        fill: "#ffecb3",
+        fill: "#E3F2FD",
 
         letterSpacing: 4,
       },
@@ -517,7 +517,7 @@ export class MainMenuScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 18,
         fontWeight: "bold",
-        fill: "#ffdd57",
+        fill: "#BBDEFB",
       },
     });
     this.infoText.anchor.set(0.5);
@@ -1211,7 +1211,7 @@ export class MainMenuScene {
     if (list.length === 0) {
       const emptyText = document.createElement("div");
       emptyText.style.padding = "24px";
-      emptyText.style.color = "#7c73a1";
+      emptyText.style.color = "#1976D2";
       emptyText.style.fontSize = "16px";
       emptyText.style.fontWeight = "bold";
       emptyText.innerText =
@@ -1244,7 +1244,7 @@ export class MainMenuScene {
         row.innerHTML = `
           <td>${medalText}</td>
           <td style="text-align: left; display: flex; align-items: center; gap: 8px;">
-            <img src="${avatarUrl}" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #d4af37; background: #fff;" alt="" />
+            <img src="${avatarUrl}" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #42A5F5; background: #fff;" alt="" />
             <span>${name}</span>
           </td>
           <td>${entry.score.toLocaleString()}</td>
@@ -1294,7 +1294,7 @@ export class MainMenuScene {
     nameItem.style.justifyContent = "center";
     nameItem.style.gap = "6px";
     nameItem.innerHTML = `
-      <img src="${activeAvatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #ffea00;" alt="" />
+      <img src="${activeAvatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #BBDEFB;" alt="" />
       <span>${activeName}</span>
     `;
     footer.appendChild(nameItem);
@@ -1420,7 +1420,7 @@ export class MainMenuScene {
     // Version
     const versionText = document.createElement("div");
     versionText.style.fontSize = "12px";
-    versionText.style.color = "#aaaaaa";
+    versionText.style.color = "#1976D2";
     versionText.style.marginTop = "20px";
     versionText.innerText = "Phiên bản: 1.0.0";
     card.appendChild(versionText);
