@@ -609,8 +609,8 @@ export class MainMenuScene {
     // Tự động căn chỉnh toàn bộ vị trí các nút và tiêu đề
     this.resize();
 
-    // Khởi tạo các DOM overlay (Google login và Fullscreen)
-    this.initDOMOverlays();
+    // Bỏ qua khởi tạo DOM overlay Google login
+
 
     // Entrance animation
     this.titleContent.alpha = 0;
@@ -1468,166 +1468,7 @@ export class MainMenuScene {
     this.container.destroy({ children: true });
   }
 
-  initDOMOverlays() {
-    // 2. Google Modal Account Items
-    const modal = document.getElementById("google-login-modal");
-    const accountItems = document.querySelectorAll(".google-account-item");
-    accountItems.forEach((item) => {
-      item.onclick = () => {
-        const accountId = item.getAttribute("data-account");
-        let name = "Guest";
-        let email = "";
-        let avatar = "";
-
-        if (accountId === "laclac") {
-          name = "Lạc Lạc (Bơ Lạc)";
-          email = "laclac.bolac@gmail.com";
-          avatar = "/assets/imagenobackgrd/001_avatar_laclac.png";
-        } else if (accountId === "dauphong") {
-          name = "Đậu Phộng";
-          email = "dauphong.bolac@gmail.com";
-          avatar = "/assets/imagenobackgrd/015_avatar_dauLan.png";
-        }
-
-        // Set current user
-        const user = { id: accountId, name, email, avatar };
-        localStorage.setItem("google_user", JSON.stringify(user));
-
-        // Hide modal
-        if (modal) modal.classList.remove("active");
-
-        // Update UI
-        this.updateUserUI();
-      };
-    });
-
-    // 3. Close Modal Button
-    const closeBtn = document.getElementById("google-modal-close-btn");
-    if (closeBtn && modal) {
-      closeBtn.onclick = () => {
-        modal.classList.remove("active");
-      };
-    }
-
-    // 4. Sign out Button
-    const signOutBtn = document.getElementById("user-signout");
-    if (signOutBtn) {
-      signOutBtn.onclick = () => {
-        localStorage.removeItem("google_user");
-        if (window.parent !== window) {
-          window.parent.postMessage({ type: "trigger_google_logout" }, "*");
-        }
-        this.updateUserUI();
-      };
-    }
-
-    // 5. Parent Iframe postMessage Bridge
-    window.addEventListener("message", (event) => {
-      const data = event.data;
-      if (data && data.type === "user_profile") {
-        const user = data.user; // { id: '...', name: '...', avatar: '...', email: '...' }
-        if (user) {
-          localStorage.setItem("google_user", JSON.stringify(user));
-        } else {
-          localStorage.removeItem("google_user");
-        }
-        this.updateUserUI();
-      }
-    });
-
-    // If running inside parent iframe, request the logged-in profile immediately
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: "get_user_profile" }, "*");
-    }
-
-    // 6. Real Google Identity Services (GSI) Integration with polling fallback
-    const initRealGoogleSignIn = () => {
-      try {
-        if (window.google && window.google.accounts) {
-          window.google.accounts.id.initialize({
-            client_id:
-              import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-              "55776077309-8pco7q4b260ghldp.apps.googleusercontent.com",
-            callback: (response) => {
-              try {
-                const jwt = response.credential;
-                const base64Url = jwt.split(".")[1];
-                const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-                const jsonPayload = decodeURIComponent(
-                  window
-                    .atob(base64)
-                    .split("")
-                    .map(
-                      (c) =>
-                        "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2),
-                    )
-                    .join(""),
-                );
-                const payload = JSON.parse(jsonPayload);
-                const user = {
-                  id: payload.sub,
-                  name: payload.name,
-                  avatar: payload.picture,
-                  email: payload.email,
-                };
-                localStorage.setItem("google_user", JSON.stringify(user));
-
-                if (modal) modal.classList.remove("active");
-
-                // Notify parent of successful login
-                if (window.parent !== window) {
-                  window.parent.postMessage(
-                    { type: "google_login_success", user: user },
-                    "*",
-                  );
-                }
-                this.updateUserUI();
-              } catch (err) {
-                console.error("Failed to parse Google JWT credential:", err);
-              }
-            },
-          });
-
-          // Render the official Google Sign-in button
-          const realBtnContainer = document.getElementById(
-            "google-real-signin-btn",
-          );
-          if (realBtnContainer) {
-            window.google.accounts.id.renderButton(realBtnContainer, {
-              theme: "outline",
-              size: "large",
-              width: 260,
-            });
-          }
-        } else {
-          // If not loaded yet, retry in 100ms
-          setTimeout(initRealGoogleSignIn, 100);
-        }
-      } catch (e) {
-        console.warn("GSI client initialization was blocked or failed:", e);
-      }
-    };
-    initRealGoogleSignIn();
-
-    this.updateUserUI();
-  }
-
   updateUserUI() {
-    let currentUser = null;
-    try {
-      const savedUser = localStorage.getItem("google_user");
-      if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-      }
-    } catch (e) {
-      console.error("Error loading user profile:", e);
-    }
-
-    const profileWidget = document.getElementById("user-profile");
-    if (profileWidget) {
-      profileWidget.style.display = "none";
-    }
-
     // Update the highest score banner display
     const leaderboard = saveManager.getLeaderboard();
     const topScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
@@ -1639,16 +1480,5 @@ export class MainMenuScene {
     }
 
     this.resize();
-  }
-
-  showGoogleLoginModal() {
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: "trigger_google_login" }, "*");
-    } else {
-      const modal = document.getElementById("google-login-modal");
-      if (modal) {
-        modal.classList.add("active");
-      }
-    }
   }
 }
