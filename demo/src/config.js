@@ -35,12 +35,12 @@ export const Config = {
    * PixiJS Assets.load() uses these to cache textures.
    */
   assets: {
-    duck: "/assets/imagebldp/003_avatar_duck.png",
-    turtle: "/assets/imagebldp/004_avatar_turtle.png",
-    husky: "/assets/imagebldp/008_avatar_husky.png",
-    daulan: "/assets/imagebldp/015_avatar_dauLan.png",
-    laclac: "/assets/imagebldp/001_avatar_laclac.png",
-    echxanh: "/assets/imagebldp/010_avatar_echxanh1.png",
+    duck: "/assets/imagenobackgrd/003_avatar_duck.png",
+    turtle: "/assets/imagenobackgrd/004_avatar_turtle.png",
+    husky: "/assets/imagenobackgrd/008_avatar_husky.png",
+    daulan: "/assets/imagenobackgrd/015_avatar_dauLan.png",
+    laclac: "/assets/imagenobackgrd/001_avatar_laclac.png",
+    echxanh: "/assets/imagenobackgrd/010_avatar_echxanh1.png",
     home_btn: "/assets/home_btn.png",
     settings_btn: "/assets/settings_btn.png",
     close_btn: "/assets/close_btn.png",

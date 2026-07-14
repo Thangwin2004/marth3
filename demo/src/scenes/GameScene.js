@@ -429,7 +429,7 @@ export class GameScene {
       // 3. Load the 6 chosen avatars dynamically in parallel
       const loadPromises = chosenFiles.map((file, idx) => {
         const alias = this.sessionColors[idx];
-        const src = `/assets/imagebldp/${file}`;
+        const src = `/assets/imagenobackgrd/${file}`;
         return Assets.load({ alias, src });
       });
       await Promise.all(loadPromises);
