@@ -30,9 +30,31 @@ async function startGame() {
     const { MainMenuScene } = await import("./scenes/MainMenuScene.js");
     await sceneManager.switchTo(MainMenuScene);
 
-    // Hide Splash Screen smoothly
+    // Hide Splash Screen smoothly with fake progress
     const splash = document.getElementById("splash-screen");
-    if (splash) {
+    const splashProgress = document.getElementById("splash-progress");
+    const splashText = document.getElementById("splash-text");
+    if (splash && splashProgress && splashText) {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.floor(Math.random() * 15) + 5;
+        if (progress > 90) progress = 90;
+        splashProgress.style.width = progress + "%";
+        splashText.innerText = `Loading ${progress}%`;
+      }, 50);
+
+      setTimeout(() => {
+        clearInterval(interval);
+        splashProgress.style.width = "100%";
+        splashText.innerText = `Loading 100%`;
+        setTimeout(() => {
+          splash.style.opacity = "0";
+          setTimeout(() => {
+            splash.style.display = "none";
+          }, 500);
+        }, 200);
+      }, 600);
+    } else if (splash) {
       splash.style.opacity = "0";
       setTimeout(() => {
         splash.style.display = "none";

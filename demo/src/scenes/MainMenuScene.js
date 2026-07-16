@@ -603,11 +603,10 @@ export class MainMenuScene {
         itemContainer.x = i * spacing;
         this.paradeContainer.addChild(itemContainer);
 
-        // Styled Frame under the sprite to make it stand out
+        // Styled Frame under the sprite to make it stand out - minimal and translucent
         const frame = new Graphics()
           .roundRect(-30, -30, 60, 60, 10)
-          .fill({ color: 0x120103, alpha: 0.9 })
-          .stroke({ color: 0xffea00, width: 2 });
+          .fill({ color: 0x000000, alpha: 0.4 });
         itemContainer.addChild(frame);
 
         // Mask for rounded corners on the sprite
