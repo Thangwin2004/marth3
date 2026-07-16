@@ -490,7 +490,7 @@ export class GameScene {
 
     // 1. 3D Shadow Base
     this.boardBg.roundRect(0, shadowOffset, w, h, 24);
-    this.boardBg.fill({ color: 0x3d247a });
+    this.boardBg.fill({ color: 0x3d247a, alpha: 0.4 });
 
     // 2. Main Face Background (gradient)
     const bgGrad = new FillGradient({
@@ -502,8 +502,8 @@ export class GameScene {
       ],
     });
     this.boardBg.roundRect(0, 0, w, h, 24);
-    this.boardBg.fill({ fill: bgGrad });
-    this.boardBg.stroke({ width: 2, color: 0xffffff });
+    this.boardBg.fill({ fill: bgGrad, alpha: 0.5 });
+    this.boardBg.stroke({ width: 2, color: 0xffffff, alpha: 0.7 });
 
     // 3. Highlight Sheen
     this.boardBg.ellipse(w / 2, h * 0.12, w * 0.45, h * 0.08);
