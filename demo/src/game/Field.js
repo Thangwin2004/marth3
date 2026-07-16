@@ -67,8 +67,8 @@ export class Field {
     this.sprite = new Graphics();
     // Main background
     this.sprite.roundRect(0, 0, tileSize, tileSize, 14);
-    this.sprite.fill({ color: 0x000000, alpha: 0.25 });
-    this.sprite.stroke({ color: 0xffffff, width: 2, alpha: 0.15 });
+    this.sprite.fill({ color: 0x000000, alpha: 0.1 });
+    this.sprite.stroke({ color: 0xffffff, width: 2, alpha: 0.25 });
 
     // Ánh sáng nhẹ ở góc trên bên trái giống hiệu ứng đá quý
     this.sprite.roundRect(

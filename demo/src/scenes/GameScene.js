@@ -490,11 +490,11 @@ export class GameScene {
 
     // 1. 3D Shadow Base
     this.boardBg.roundRect(0, shadowOffset, w, h, 24);
-    this.boardBg.fill({ color: 0x000000, alpha: 0.25 });
+    this.boardBg.fill({ color: 0x000000, alpha: 0.15 });
 
-    // 2. Main Face Background (translucent dark to show background)
+    // 2. Main Face Background (translucent light to show background)
     this.boardBg.roundRect(0, 0, w, h, 24);
-    this.boardBg.fill({ color: 0x000000, alpha: 0.45 });
+    this.boardBg.fill({ color: 0xffffff, alpha: 0.15 });
     this.boardBg.stroke({ width: 2, color: 0xffffff, alpha: 0.5 });
 
     // 3. Highlight Sheen
