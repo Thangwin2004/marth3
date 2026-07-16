@@ -490,20 +490,12 @@ export class GameScene {
 
     // 1. 3D Shadow Base
     this.boardBg.roundRect(0, shadowOffset, w, h, 24);
-    this.boardBg.fill({ color: 0x3d247a, alpha: 0.4 });
+    this.boardBg.fill({ color: 0x000000, alpha: 0.25 });
 
-    // 2. Main Face Background (gradient)
-    const bgGrad = new FillGradient({
-      start: { x: 0, y: 0 },
-      end: { x: 0, y: h },
-      colorStops: [
-        { offset: 0, color: 0xa772ff },
-        { offset: 1, color: 0x6f58e8 },
-      ],
-    });
+    // 2. Main Face Background (translucent dark to show background)
     this.boardBg.roundRect(0, 0, w, h, 24);
-    this.boardBg.fill({ fill: bgGrad, alpha: 0.5 });
-    this.boardBg.stroke({ width: 2, color: 0xffffff, alpha: 0.7 });
+    this.boardBg.fill({ color: 0x000000, alpha: 0.45 });
+    this.boardBg.stroke({ width: 2, color: 0xffffff, alpha: 0.5 });
 
     // 3. Highlight Sheen
     this.boardBg.ellipse(w / 2, h * 0.12, w * 0.45, h * 0.08);
@@ -610,19 +602,12 @@ export class GameScene {
 
     // === SCORE LABEL ===
     this.scoreText = new Text({
-      text: "ĐIỂM: 0",
+      text: "⭐ " + this.score,
       style: {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
-        stroke: { color: "#7750FF", width: 3 },
-        dropShadow: {
-          color: "rgba(0,0,0,0.25)",
-          blur: 2,
-          distance: 2,
-          angle: Math.PI / 2
-        },
         padding: 24,
       },
     });
@@ -635,19 +620,12 @@ export class GameScene {
 
     // === MOVES LABEL ===
     this.movesText = new Text({
-      text: `LƯỢT ĐI: ${this.moves}`,
+      text: "👟 " + this.moves,
       style: {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
-        stroke: { color: "#7750FF", width: 3 },
-        dropShadow: {
-          color: "rgba(0,0,0,0.25)",
-          blur: 2,
-          distance: 2,
-          angle: Math.PI / 2
-        },
         padding: 24,
       },
     });
@@ -714,8 +692,8 @@ export class GameScene {
    * Update HUD texts with scale pulsing effects.
    */
   updateUI() {
-    const newScoreStr = `ĐIỂM: ${this.score}`;
-    const newMovesStr = `LƯỢT ĐI: ${this.moves}`;
+    const newScoreStr = `⭐ ${this.score}`;
+    const newMovesStr = `👟 ${this.moves}`;
 
     if (this.scoreText.text !== newScoreStr) {
       this.scoreText.text = newScoreStr;
@@ -3914,7 +3892,7 @@ export class GameScene {
         .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
-        .fill({ color: 0x3d247a })
+        .fill({ color: 0x4A965E })
         // Main Face Background (gradient)
         .roundRect(0, 0, panelWidth, panelHeight, 12)
         .fill({
@@ -3922,12 +3900,12 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0x6f6bff },
-              { offset: 1, color: 0x4c42d7 },
+              { offset: 0, color: 0x88D399 },
+              { offset: 1, color: 0x5CB475 },
             ],
           }),
         })
-        .stroke({ width: 2.5, color: 0xb79bff })
+        .stroke({ width: 2.5, color: 0xffffff })
         // Highlight Sheen
         .ellipse(
           panelWidth / 2,
@@ -3941,7 +3919,7 @@ export class GameScene {
         .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
-        .fill({ color: 0x3d247a })
+        .fill({ color: 0x4A965E })
         // Main Face Background (gradient)
         .roundRect(0, 0, panelWidth, panelHeight, 12)
         .fill({
@@ -3949,12 +3927,12 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0x9b72ff },
-              { offset: 1, color: 0x6d47d9 },
+              { offset: 0, color: 0x88D399 },
+              { offset: 1, color: 0x5CB475 },
             ],
           }),
         })
-        .stroke({ width: 2.5, color: 0xb79bff })
+        .stroke({ width: 2.5, color: 0xffffff })
         // Highlight Sheen
         .ellipse(
           panelWidth / 2,
