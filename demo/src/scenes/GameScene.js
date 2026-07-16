@@ -4134,7 +4134,7 @@ export class GameScene {
 
     const title = document.createElement("div");
     title.className = "game-popup-title";
-    title.innerText = isIngame ? "PAUSED" : "CÀI ĐẶT";
+    title.innerText = isIngame ? "TẠM DỪNG" : "CÀI ĐẶT";
     title.style.cssText = "position:relative;top:0;left:0;transform:none;margin-bottom:24px;background:none;box-shadow:none;border:none;color:#1B365D;font-size:36px;letter-spacing:2px;text-shadow:0 2px 4px rgba(255,255,255,0.8);";
     card.appendChild(title);
 
