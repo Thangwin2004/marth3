@@ -461,9 +461,8 @@ export class MainMenuScene {
     const titleGrad = new FillGradient({
       end: { x: 0, y: 48 },
       colorStops: [
-        { color: 0xffea00, offset: 0 },
-        { color: 0xd4af37, offset: 0.5 },
-        { color: 0xaa7c11, offset: 1 },
+        { color: 0xffffff, offset: 0 },
+        { color: 0xeeeeee, offset: 1 },
       ],
     });
 
@@ -485,7 +484,7 @@ export class MainMenuScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
-        fill: "#33ccff",
+        fill: "#ffffff",
 
         letterSpacing: 4,
       },
@@ -499,7 +498,7 @@ export class MainMenuScene {
     line.anchor.set(0.5);
     line.width = 320;
     line.height = 3;
-    line.tint = 0xffb300;
+    line.tint = 0xffffff;
     line.alpha = 0.8;
     line.y = 74;
     this.titleContent.addChild(line);
@@ -517,7 +516,7 @@ export class MainMenuScene {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 18,
         fontWeight: "bold",
-        fill: "#33ccff",
+        fill: "#ffffff",
       },
     });
     this.infoText.anchor.set(0.5);

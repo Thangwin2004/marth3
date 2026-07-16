@@ -447,9 +447,9 @@ body {
   transform: scale(0.95);
 }
 .game-settings-reset-btn {
-  background: linear-gradient(180deg, #FF6B6B 0%, #E53935 100%);
+  background: linear-gradient(180deg, #88D399 0%, #5CB475 100%);
   border: 2px solid #FFFFFF;
-  box-shadow: 0 4px 0 #B71C1C;
+  box-shadow: 0 4px 0 #3d8251;
   border-radius: 12px;
   color: #ffffff;
   font-family: 'Be Vietnam Pro', sans-serif;
@@ -476,7 +476,7 @@ body {
 }
 .game-settings-reset-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #8A0000;
+  box-shadow: 0 2px 0 #2e663e;
 }
 
 /* Paused / Game Over buttons */
@@ -598,7 +598,7 @@ body {
 .game-leaderboard-footer-item {
   font-size: 13px;
   font-weight: 900;
-  color: #5A33C9;
+  color: #1B365D;
   width: 33%;
   text-align: center;
 }

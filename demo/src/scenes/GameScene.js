@@ -424,7 +424,7 @@ export class GameScene {
     // Add Happy Color overlay tint
     this.bgOverlay = new Graphics();
     this.bgOverlay.rect(0, 0, App.app.screen.width, App.app.screen.height);
-    this.bgOverlay.fill({ color: 0x2b1441, alpha: 0.18 });
+    this.bgOverlay.fill({ color: 0x000000, alpha: 0.18 });
     this.container.addChild(this.bgOverlay);
 
     // === CREATE AMBIENT PARTICLES ===
