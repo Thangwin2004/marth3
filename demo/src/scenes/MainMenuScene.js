@@ -532,47 +532,9 @@ export class MainMenuScene {
       this.showLeaderboard();
     });
 
-    this.settingsBtn = new Container();
-    const settingsSprite = new Sprite();
-    settingsSprite.anchor.set(0.5);
-    this.settingsBtn.addChild(settingsSprite);
-
-    Assets.load("/assets/settings_btn.png").then((texture) => {
-      if (settingsSprite.destroyed) return;
-      settingsSprite.texture = texture;
-      if (this.settingsBtn.targetRadius) {
-         settingsSprite.width = this.settingsBtn.targetRadius * 2;
-         settingsSprite.height = this.settingsBtn.targetRadius * 2;
-      }
-    });
-
-    this.settingsBtn.updateStyle = (targetRadius) => {
-      this.settingsBtn.targetRadius = targetRadius;
-      if (settingsSprite.texture && settingsSprite.texture.width > 1) {
-         settingsSprite.width = targetRadius * 2.2; // slightly larger than circle
-         settingsSprite.height = targetRadius * 2.2;
-      }
-    };
-
-    this.settingsBtn.eventMode = "static";
-    this.settingsBtn.cursor = "pointer";
-    this.settingsBtn.on("pointerdown", () => {
-      settingsSprite.scale.set(settingsSprite.scale.x * 0.9);
-    });
-    this.settingsBtn.on("pointerup", () => {
-      if (this.settingsBtn.targetRadius && settingsSprite.texture) {
-         settingsSprite.width = this.settingsBtn.targetRadius * 2.2;
-         settingsSprite.height = this.settingsBtn.targetRadius * 2.2;
-      }
+    this.settingsBtn = this.createCircularButton("⚙️", 0, 0, () => {
       this.showSettingsModal(false);
     });
-    this.settingsBtn.on("pointerupoutside", () => {
-      if (this.settingsBtn.targetRadius && settingsSprite.texture) {
-         settingsSprite.width = this.settingsBtn.targetRadius * 2.2;
-         settingsSprite.height = this.settingsBtn.targetRadius * 2.2;
-      }
-    });
-    this.container.addChild(this.settingsBtn);
 
     // === ANIMAL SCROLLING BANNER (PARADE) ===
     this.paradeContainer = new Container();
@@ -1107,86 +1069,33 @@ export class MainMenuScene {
     parent = this.container,
     customRadius = 26,
   ) {
-    const tex = getIconTexture(emojiText);
-    if (tex) {
-      const btn = new Container();
-      btn.x = x;
-      btn.y = y;
-      parent.addChild(btn);
+    let colorStyle = "blue";
+    if (emojiText === "🏆") colorStyle = "red";
+    else if (emojiText === "⚙️") colorStyle = "blue";
+    else if (emojiText === "🏠" || emojiText === "🏡") colorStyle = "yellow";
+    else if (emojiText === "🔄") colorStyle = "green";
+    else if (emojiText === "✕") colorStyle = "red";
 
-      btn.eventMode = "static";
-      btn.cursor = "pointer";
+    const btn = new Colorful3DCircleButton({
+      radius: customRadius,
+      iconType: emojiText,
+      colorStyle: colorStyle,
+      onClick: onClick,
+    });
+    btn.x = x;
+    btn.y = y;
+    
+    // Entrance animation
+    btn.alpha = 0;
+    gsap.to(btn, {
+      alpha: 1,
+      duration: 0.5,
+      delay: 0.4,
+      ease: "power2.out",
+    });
 
-      const content = new Container();
-      btn.addChild(content);
-
-      const sprite = new Sprite(tex);
-      sprite.anchor.set(0.5, 0.45); // Fix visual center for icons with bottom shadow
-      const ratio = tex.width && tex.height ? tex.width / tex.height : 1;
-      if (ratio > 1.2 || ratio < 0.8) {
-        sprite.height = customRadius * 2;
-        sprite.width = customRadius * 2 * ratio;
-      } else {
-        sprite.width = customRadius * 2;
-        sprite.height = customRadius * 2;
-      }
-      content.addChild(sprite);
-
-      btn.r = customRadius;
-      btn.updateStyle = (r) => {
-        btn.r = r;
-        const currentRatio =
-          tex.width && tex.height ? tex.width / tex.height : 1;
-        if (currentRatio > 1.2 || currentRatio < 0.8) {
-          sprite.height = r * 2;
-          sprite.width = r * 2 * currentRatio;
-        } else {
-          sprite.width = r * 2;
-          sprite.height = r * 2;
-        }
-      };
-
-      btn.on("pointerover", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-
-        gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.12 });
-        // soundManager.playClick();
-      });
-
-      btn.on("pointerout", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-
-        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-        gsap.to(content, { y: 0, duration: 0.1 });
-      });
-
-      btn.on("pointerdown", () => {
-        gsap.to(content, { y: 4, duration: 0.05 });
-      });
-
-      btn.on("pointerup", () => {
-        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-        gsap.to(content, { y: 0, duration: 0.1 });
-        onClick();
-      });
-
-      btn.on("pointerupoutside", () => {
-        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-        gsap.to(content, { y: 0, duration: 0.1 });
-      });
-
-      // Entrance animation
-      btn.alpha = 0;
-      gsap.to(btn, {
-        alpha: 1,
-        duration: 0.5,
-        delay: 0.4,
-        ease: "power2.out",
-      });
-
-      return btn;
-    }
-    return null;
+    if (parent) parent.addChild(btn);
+    return btn;
   }
 
   /**
@@ -1456,23 +1365,6 @@ export class MainMenuScene {
     rowContainer.appendChild(sfxRow);
 
     card.appendChild(rowContainer);
-
-    // Reset Data Button
-    const resetBtn = document.createElement("button");
-    resetBtn.className = "game-settings-reset-btn";
-    resetBtn.innerHTML = `<img src="/assets/delete_btn.png" class="game-settings-reset-icon" alt="" /> XÓA LỊCH SỬ`;
-    resetBtn.addEventListener("click", async () => {
-      soundManager.playClick();
-      const confirmDelete = await gameConfirm(
-        "Bạn có chắc chắn muốn xóa toàn bộ dữ liệu thành tích không?",
-      );
-      if (confirmDelete) {
-        saveManager.reset();
-        closePopup();
-        await sceneManager.switchTo(MainMenuScene);
-      }
-    });
-    card.appendChild(resetBtn);
 
     // Version
     const versionText = document.createElement("div");

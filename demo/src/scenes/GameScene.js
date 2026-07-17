@@ -663,29 +663,9 @@ export class GameScene {
     this.uiContainer.addChild(this.tutorialText);
 
     // === SETTINGS BUTTON ===
-    this.settingsBtn = new Sprite();
-    Assets.load("/assets/settings_btn.png").then((texture) => {
-      if (this.settingsBtn.destroyed) return;
-      this.settingsBtn.texture = texture;
-      this.settingsBtn.width = 64;
-      this.settingsBtn.height = 64;
-    });
-    this.settingsBtn.anchor.set(0.5);
-    this.settingsBtn.eventMode = "static";
-    this.settingsBtn.cursor = "pointer";
-    this.settingsBtn.on("pointerdown", () => {
-      this.settingsBtn.scale.set(this.settingsBtn.scale.x * 0.9);
-    });
-    this.settingsBtn.on("pointerup", () => {
-      this.settingsBtn.width = 64;
-      this.settingsBtn.height = 64;
+    this.settingsBtn = this.createCircularButton("⚙️", 0, 0, () => {
       this.showSettingsModal(true);
-    });
-    this.settingsBtn.on("pointerupoutside", () => {
-      this.settingsBtn.width = 64;
-      this.settingsBtn.height = 64;
-    });
-    this.uiContainer.addChild(this.settingsBtn);
+    }, this.uiContainer);
   }
 
   /**
@@ -1894,7 +1874,7 @@ export class GameScene {
     ];
     const particleColor = slotIndex !== -1 ? palette[slotIndex] : 0xffffff;
 
-    const count = 10; // Optimized count (from 24) to prevent CPU hitching
+    const count = 5; // Optimized count (from 10) to prevent CPU hitching during cascades
     for (let i = 0; i < count; i++) {
       const p = new Graphics();
       const isLeaf = Math.random() > 0.4; // 60% leaves, 40% sparks
@@ -2407,7 +2387,7 @@ export class GameScene {
         });
       }
 
-      this.spawnParticles(target.x, target.y, target.color);
+      // this.spawnParticles(target.x, target.y, target.color); // Removed: Spawning 10 particles per target across 15+ targets causes severe GSAP lag when new tiles fall
     });
 
     gsap.delayedCall(1.8, () => {
@@ -2878,10 +2858,10 @@ export class GameScene {
 
     const card = document.createElement("div");
     card.style.cssText =
-      "background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.6);border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 12px 40px rgba(0,0,0,0.15), inset 0 0 0 2px rgba(255,255,255,0.5);";
+      "background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.6);border-radius:24px;width:90%;max-width:350px;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 12px 40px rgba(0,0,0,0.15), inset 0 0 0 2px rgba(255,255,255,0.5);";
 
     const title = document.createElement("div");
-    title.innerText = "CONTINUE?";
+    title.innerText = "TIẾP TỤC?";
     title.style.cssText =
       "font-size:32px;font-weight:900;background:linear-gradient(180deg, #FFDF73 0%, #E6A123 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 2px rgba(255,255,255,1));margin-bottom:20px;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
 
@@ -2909,14 +2889,14 @@ export class GameScene {
     tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
 
     const yesText = document.createElement("span");
-    yesText.innerText = "REVIVE";
+    yesText.innerText = "THÊM LƯỢT";
     yesText.style.textShadow = "0 2px 4px rgba(0,0,0,0.3)";
 
     yesBtn.appendChild(tvIcon);
     yesBtn.appendChild(yesText);
 
     const skipText = document.createElement("div");
-    skipText.innerText = "No, thanks";
+    skipText.innerText = "Không, cảm ơn";
     skipText.style.cssText =
       "margin-top:15px;color:#1B365D;font-size:16px;font-weight:700;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;text-decoration:underline;";
 
@@ -3031,7 +3011,7 @@ export class GameScene {
     });
 
     const glowText = new Text({
-      text: "GAME OVER",
+      text: "KẾT THÚC",
       style: {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 38,
@@ -3048,7 +3028,7 @@ export class GameScene {
     glowText.filters = [glowFilter];
 
     const victoryText = new Text({
-      text: "GAME OVER",
+      text: "KẾT THÚC",
       style: {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 38,
@@ -3240,7 +3220,7 @@ export class GameScene {
 
     // 3. Stats Labels (Relocated below the badge)
     const scoreLabel = new Text({
-      text: `FINAL SCORE:\n${this.score}`,
+      text: `TỔNG ĐIỂM:\n${this.score}`,
       style: {
         fontFamily: '"Nunito", sans-serif',
         fontSize: 30,
@@ -3305,12 +3285,11 @@ export class GameScene {
 
     // 4. Action Buttons (Circular Icon style in a single row)
     const btnY = 165;
-    const btnRadius = 32;
 
     // We only show 3 buttons since the player already had their "Thêm Lượt" popup.
     let hasDoubled = false;
     const doubleBtn = this.createCircularButton(
-      "star",
+      "X2",
       -80,
       btnY,
       async () => {
@@ -3326,11 +3305,11 @@ export class GameScene {
         }
       },
       this.gameOverModal,
-      btnRadius,
+      32,
     );
 
     const replayBtn = this.createCircularButton(
-      "🔄",
+      "replay",
       0,
       btnY,
       async () => {
@@ -3346,11 +3325,11 @@ export class GameScene {
         await sceneManager.switchTo(GameScene);
       },
       this.gameOverModal,
-      btnRadius,
+      32,
     );
 
     const homeBtn = this.createCircularButton(
-      "🏠",
+      "home",
       80,
       btnY,
       async () => {
@@ -3362,7 +3341,7 @@ export class GameScene {
         await sceneManager.switchTo(MainMenuScene);
       },
       this.gameOverModal,
-      btnRadius,
+      32,
     );
 
     // 5. Spawn Confetti Fireworks Loop
@@ -3663,115 +3642,37 @@ export class GameScene {
     parent = null,
     customRadius = 26,
   ) {
-    const btn = new Container();
+    let colorStyle = "blue";
+    if (emojiText === "🏆") colorStyle = "red";
+    else if (emojiText === "⚙️" || emojiText === "settings") colorStyle = "blue";
+    else if (emojiText === "🏠" || emojiText === "🏡" || emojiText === "home") colorStyle = "grey";
+    else if (emojiText === "🔄" || emojiText === "replay") colorStyle = "blue";
+    else if (emojiText === "✕" || emojiText === "close") colorStyle = "red";
+    else if (emojiText === "star" || emojiText === "video" || emojiText === "X2") colorStyle = "orange";
+
+    const btn = new Colorful3DCircleButton({
+      radius: customRadius,
+      iconType: emojiText,
+      colorStyle: colorStyle,
+      onClick: onClick,
+    });
     btn.x = x;
     btn.y = y;
+
     if (parent) {
       parent.addChild(btn);
     }
 
-    btn.eventMode = "static";
-    btn.cursor = "pointer";
-
-    const content = new Container();
-    btn.addChild(content);
-
-    const shadowOffset = 4;
-    const shadow = new Graphics();
-    const bg = new Graphics();
-    content.addChild(shadow);
-    content.addChild(bg);
-
-    let topColor = 0x88D399;
-    let bottomColor = 0x5CB475;
-    let ringColor = 0xFFFFFF;
-    let shadowColor = 0x4A965E;
-
-    if (emojiText.includes("star")) {
-      topColor = 0xFFB347;
-      bottomColor = 0xFF7B00;
-      shadowColor = 0xC45600;
-    } else if (emojiText.includes("🔄")) {
-      topColor = 0xFF8A8A;
-      bottomColor = 0xEF5350;
-      shadowColor = 0xC62828;
-    } else if (emojiText.includes("⚙️") || emojiText.includes("🏠")) {
-      topColor = 0xE0E0E0;
-      bottomColor = 0xBDBDBD;
-      shadowColor = 0x9E9E9E;
-    }
-
-    const drawOverlays = (r) => {
-      shadow.clear().circle(0, shadowOffset, r).fill({ color: shadowColor });
-      bg.clear().circle(0, 0, r);
-      const grad = new FillGradient({
-        start: { x: 0, y: -r },
-        end: { x: 0, y: r },
-        colorStops: [
-          { offset: 0, color: topColor },
-          { offset: 1, color: bottomColor },
-        ],
-      });
-      bg.fill({ fill: grad }).stroke({ color: ringColor, width: 3 });
-    };
-    drawOverlays(customRadius);
-
-    const icon = new Text({
-      text: emojiText,
-      style: {
-        fontFamily: '"Nunito", sans-serif',
-        fontSize: customRadius * 1.2,
-        fill: "#ffffff",
-      }
+    // Entrance animation
+    btn.alpha = 0;
+    gsap.to(btn, {
+      alpha: 1,
+      duration: 0.5,
+      delay: 0.4,
+      ease: "power2.out",
     });
-    icon.anchor.set(0.5);
-    content.addChild(icon);
 
-    btn.r = customRadius;
-    btn.updateStyle = (r) => {
-      btn.r = r;
-      drawOverlays(r);
-      icon.style.fontSize = r * 1.2;
-    };
-
-      btn.on("pointerover", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-
-        gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.12 });
-        // soundManager.playClick();
-      });
-
-      btn.on("pointerout", (e) => {
-        if (window.matchMedia("(hover: none)").matches) return;
-
-        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-        gsap.to(content, { y: 0, duration: 0.1 });
-      });
-
-      btn.on("pointerdown", () => {
-        gsap.to(content, { y: 4, duration: 0.05 });
-      });
-
-      btn.on("pointerup", () => {
-        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-        gsap.to(content, { y: 0, duration: 0.1 });
-        onClick();
-      });
-
-      btn.on("pointerupoutside", () => {
-        gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-        gsap.to(content, { y: 0, duration: 0.1 });
-      });
-
-      // Entrance animation
-      btn.alpha = 0;
-      gsap.to(btn, {
-        alpha: 1,
-        duration: 0.5,
-        delay: 0.4,
-        ease: "power2.out",
-      });
-      return btn;
+    return btn;
   }
 
   resize() {
