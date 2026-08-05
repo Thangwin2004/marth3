@@ -1,0 +1,10 @@
+{
+  "gameId": "8aed8605-a790-49e2-a8eb-87b919f4838e",
+  "environment": "dev",
+  "protocolVersion": 1,
+  "bridgeVersion": "9.0.0",
+  "allowedParentOrigins": [
+    "https://dev-winkgames.papastudio.net",
+    "http://127.0.0.1:8787"
+  ]
+}
