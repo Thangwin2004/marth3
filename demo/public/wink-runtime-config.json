@@ -2,7 +2,7 @@
   "gameId": "4bc4b359-7b79-4f0c-b740-74dbfc448906",
   "environment": "prod",
   "protocolVersion": 1,
-  "bridgeVersion": "9.0.0",
+  "bridgeVersion": "9.0.1",
   "allowedParentOrigins": [
     "https://winkgames.papastudio.net"
   ]
