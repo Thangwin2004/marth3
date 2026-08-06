@@ -9,6 +9,8 @@ import { App } from "./system/App.js";
 import { Config } from "./config.js";
 import { sceneManager } from "./system/SceneManager.js";
 import { saveManager } from "./system/SaveManager.js";
+import { soundManager } from "./system/SoundManager.js";
+import { winkGame } from "./integrations/wink/wink-adapter.js";
 
 async function startGame() {
   try {
@@ -19,6 +21,19 @@ async function startGame() {
 
     // Step 2: Init scene manager
     sceneManager.init(App.app);
+
+    winkGame.bindLifecycle({
+      onPause: () => App.app?.ticker.stop(),
+      onResume: () => App.app?.ticker.start(),
+      onMute: () => {
+        window.__GLOBAL_MUTE__ = true;
+        soundManager.syncMuteState();
+      },
+      onUnmute: () => {
+        window.__GLOBAL_MUTE__ = false;
+        soundManager.syncMuteState();
+      },
+    });
 
     // Step 3: Load save data
     const save = saveManager.load();

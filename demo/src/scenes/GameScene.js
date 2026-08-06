@@ -17,6 +17,7 @@ import { App } from "../system/App.js";
 import { saveManager } from "../system/SaveManager.js";
 import { sceneManager } from "../system/SceneManager.js";
 import { soundManager } from "../system/SoundManager.js";
+import { winkGame } from "../integrations/wink/wink-adapter.js";
 import gsap from "gsap";
 import {
   Colorful3DCircleButton,
@@ -264,6 +265,8 @@ export class GameScene {
   constructor(data = {}) {
     this.container = new Container();
     this.container.sortableChildren = true;
+    this._winkRound = winkGame.startRound();
+    this._winkRoundFinalized = false;
 
     App.setBackgroundColor(0x0a0a1a);
 
@@ -2932,6 +2935,24 @@ export class GameScene {
   showFinalGameOverScreen() {
     this.isGameOver = true;
     this.disabled = true;
+
+    if (!this._winkRoundFinalized) {
+      this._winkRoundFinalized = true;
+      winkGame.completeRound(this._winkRound, {
+        metadata: { outcome: "game_over", score: Math.floor(this.score) },
+      });
+      if (winkGame.canSubmitScore) {
+        winkGame
+          .submitFinalScore({
+            score: Math.floor(this.score),
+            playTime: Math.round(
+              (Date.now() - this._winkRound.startedAtMs) / 1000,
+            ),
+            gameMode: "classic",
+          })
+          .catch(() => {});
+      }
+    }
 
     // Dừng nhạc nền và phát nhạc kết quả tương ứng
     soundManager.stopBGM();

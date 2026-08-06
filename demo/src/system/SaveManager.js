@@ -65,10 +65,8 @@ class SaveManager {
   }
 
   /**
-  /**
    * Get the sorted list of top scores across all unique profiles,
    * keeping only the single highest score for each person/profile.
-   * If there are fewer than 5 entries, populates with themed default bots.
    * @returns {Array<{score: number, date: string, userName: string, profileKey: string}>}
    */
   getLeaderboard() {
@@ -105,11 +103,8 @@ class SaveManager {
               if (activeId && key === `${BASE_KEY}_${activeId}`) {
                 name = activeName;
               }
-              // Support mockup profiles fallback for visual testing
               if (!name) {
-                if (key.endsWith("_laclac")) name = "Lạc Lạc (Bơ Lạc)";
-                else if (key.endsWith("_dauphong")) name = "Đậu Phộng";
-                else name = key === BASE_KEY ? "Khách" : "Người chơi";
+                name = key === BASE_KEY ? "Khách" : "Người chơi";
               }
 
               allEntries.push({
@@ -126,44 +121,7 @@ class SaveManager {
       }
     }
 
-    // 2. Define themed bot competitors
-    const defaultCompetitors = [
-      {
-        userName: "Bơ Lạc",
-        score: 5500,
-        date: "Hệ thống",
-        profileKey: "bot_1",
-      },
-      {
-        userName: "Đậu Phộng",
-        score: 4000,
-        date: "Hệ thống",
-        profileKey: "bot_2",
-      },
-      {
-        userName: "Ếch Xanh",
-        score: 2500,
-        date: "Hệ thống",
-        profileKey: "bot_3",
-      },
-      {
-        userName: "Gấu Trúc",
-        score: 1500,
-        date: "Hệ thống",
-        profileKey: "bot_4",
-      },
-      {
-        userName: "Mèo Lười",
-        score: 800,
-        date: "Hệ thống",
-        profileKey: "bot_5",
-      },
-    ];
-
-    // Append all bots to ensure the leaderboard is always populated
-    defaultCompetitors.forEach((bot) => allEntries.push(bot));
-
-    // 3. Keep only the single highest score for each unique player name
+    // Keep only the single highest score for each unique player name.
     const uniqueMap = new Map();
     allEntries.sort((a, b) => b.score - a.score);
     allEntries.forEach((entry) => {
