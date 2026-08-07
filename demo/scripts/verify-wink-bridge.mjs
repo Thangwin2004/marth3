@@ -1,5 +1,5 @@
-#!/usr/bin/env node
-
+/* global console */
+import { Buffer } from "node:buffer";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 
@@ -11,7 +11,7 @@ const EXPECTED_PARENTS = [
 ];
 const EXPECTED_GAME_ID = "4bc4b359-7b79-4f0c-b740-74dbfc448906";
 
-const [artifact, lockText, configText, indexHtml] = await Promise.all([
+const [artifactRaw, lockText, configText, indexHtml] = await Promise.all([
   fs.readFile("public/wink-bridge.js"),
   fs.readFile("public/wink-bridge.lock.json", "utf8"),
   fs.readFile("public/wink-runtime-config.json", "utf8"),
@@ -19,6 +19,10 @@ const [artifact, lockText, configText, indexHtml] = await Promise.all([
 ]);
 const lock = JSON.parse(lockText);
 const config = JSON.parse(configText);
+const artifact = Buffer.from(
+  artifactRaw.toString("utf8").replace(/\r\n/g, "\n"),
+  "utf8",
+);
 const sha256 = crypto.createHash("sha256").update(artifact).digest("hex");
 
 if (

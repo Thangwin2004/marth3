@@ -4,13 +4,32 @@
  *   No PixiJS dependency — pure data management.
  */
 
+import { winkGame } from "../integrations/wink/wink-adapter.js";
+
 const BASE_KEY = "match3_pure_leaderboard";
 
-function getKey() {
+function getEffectiveUser() {
   try {
     const savedUser = localStorage.getItem("google_user");
     if (savedUser) {
-      const user = JSON.parse(savedUser);
+      const parsed = JSON.parse(savedUser);
+      if (parsed && parsed.name) return parsed;
+    }
+  } catch (e) {}
+
+  if (winkGame && winkGame.isAuthenticated) {
+    return {
+      id: "wink_user",
+      name: "Thành viên",
+    };
+  }
+  return null;
+}
+
+function getKey() {
+  try {
+    const user = getEffectiveUser();
+    if (user && user.id) {
       return `${BASE_KEY}_${user.id}`;
     }
   } catch (e) {
@@ -146,16 +165,8 @@ class SaveManager {
     const data = this.load();
 
     // Set active username at root of save data for aggregation
-    let activeName = "Khách";
-    try {
-      const savedUser = localStorage.getItem("google_user");
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        activeName = user.name || "Người chơi";
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    const user = getEffectiveUser();
+    const activeName = user ? user.name : "Khách";
     data.userName = activeName;
 
     const leaderboard = data.leaderboard || [];

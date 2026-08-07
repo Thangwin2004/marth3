@@ -16,6 +16,10 @@ async function startGame() {
   try {
     console.log("🚀 Starting Pure Match-3 Game...");
 
+    // Step 0: Force-load Google Fonts with Vietnamese text before PixiJS renders
+    await document.fonts.load("700 1em Nunito", "Bộ Lạc Đậu Phộng");
+    await document.fonts.ready;
+
     // Step 1: Initialize PixiJS + Load assets
     await App.init(Config);
 
