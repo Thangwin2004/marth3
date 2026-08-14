@@ -22,6 +22,25 @@ import {
   createVectorIcon as createVectorIconFromUI,
   mapEmojiToIconType,
 } from "../system/UIComponents.js";
+import { winkGame } from "../integrations/wink/wink-adapter.js";
+
+function getEffectiveUser() {
+  try {
+    const savedUser = localStorage.getItem("google_user");
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      if (parsed && parsed.name) return parsed;
+    }
+  } catch (e) {}
+
+  if (winkGame && winkGame.isAuthenticated) {
+    return {
+      id: "wink_user",
+      name: "Thành viên",
+    };
+  }
+  return null;
+}
 
 const ALL_AVATAR_FILES = [
   "001_avatar_laclac.png",
@@ -609,7 +628,6 @@ export class MainMenuScene {
 
     // Bỏ qua khởi tạo DOM overlay Google login
 
-
     // Entrance animation
     this.titleContent.alpha = 0;
     this.titleContent.y = -30;
@@ -994,21 +1012,21 @@ export class MainMenuScene {
         .fill({ color: 0x000000, alpha: 0.15 })
         // Mint Green 3D base
         .roundRect(-width / 2, -r + r * 0.15, width, height, radius)
-        .fill({ color: 0x4A965E });
+        .fill({ color: 0x4a965e });
 
       // 2. Main Face Background (Mint Green gradient)
       const btnGrad = new FillGradient({
         start: { x: 0, y: -r },
         end: { x: 0, y: r },
         colorStops: [
-          { offset: 0, color: 0x88D399 }, // Mint Top
-          { offset: 1, color: 0x5CB475 }, // Mint Bottom
+          { offset: 0, color: 0x88d399 }, // Mint Top
+          { offset: 1, color: 0x5cb475 }, // Mint Bottom
         ],
       });
       bg.clear()
         .roundRect(-width / 2, -r, width, height, radius)
         .fill({ fill: btnGrad })
-        .stroke({ width: Math.max(3, r * 0.15), color: 0xFFFFFF }); // White border
+        .stroke({ width: Math.max(3, r * 0.15), color: 0xffffff }); // White border
 
       // 3. Glossy highlight sheen on top (ellipse highlight)
       highlight
@@ -1084,7 +1102,7 @@ export class MainMenuScene {
     });
     btn.x = x;
     btn.y = y;
-    
+
     // Entrance animation
     btn.alpha = 0;
     gsap.to(btn, {
@@ -1133,20 +1151,11 @@ export class MainMenuScene {
     closeBtn.addEventListener("click", closePopup);
     card.appendChild(closeBtn);
 
-    let currentUser = null;
-    try {
-      const savedUser = localStorage.getItem("google_user");
-      if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
+    const effUser = getEffectiveUser();
     const userText = document.createElement("div");
     userText.className = "game-leaderboard-user-text";
-    userText.innerText = currentUser
-      ? `Tài khoản: ${currentUser.name} (Google)`
+    userText.innerText = effUser
+      ? `Tài khoản: ${effUser.name} (Đã đăng nhập)`
       : `Tài khoản: Khách (Điểm lưu thiết bị)`;
     card.appendChild(userText);
 
@@ -1209,21 +1218,15 @@ export class MainMenuScene {
     const personalBest = personalList.length > 0 ? personalList[0].score : 0;
 
     let activeKey = "match3_pure_leaderboard";
-    try {
-      const savedUser = localStorage.getItem("google_user");
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        activeKey = `match3_pure_leaderboard_${user.id}`;
-      }
-    } catch (e) {
-      console.error(e);
+    if (effUser && effUser.id) {
+      activeKey = `match3_pure_leaderboard_${effUser.id}`;
     }
 
     const activeRankIdx = list.findIndex(
       (entry) => entry.profileKey === activeKey,
     );
     const activeRankVal = activeRankIdx !== -1 ? activeRankIdx + 1 : null;
-    const activeName = currentUser ? currentUser.name : "Khách";
+    const activeName = effUser ? effUser.name : "Khách";
     const activeAvatarUrl = getAvatarUrl(activeName);
 
     const footer = document.createElement("div");
@@ -1310,38 +1313,38 @@ export class MainMenuScene {
     const createToggleRow = (label, isEnabled, onToggle) => {
       const row = document.createElement("div");
       row.style.cssText = `width:100%; height:70px; border-radius:12px; background:#fbfaf5; border:3px solid #fff; display:flex; justify-content:space-between; align-items:center; padding:0 20px; box-sizing:border-box; margin-bottom: 15px;`;
-      
+
       const text = document.createElement("span");
       text.style.cssText = `font-family:'Fredoka', 'Baloo 2', 'Be Vietnam Pro', sans-serif; font-size:18px; font-weight:bold; color:#47363B; letter-spacing:0.8px; white-space:nowrap; flex:1;`;
       text.innerText = label;
 
       const toggle = document.createElement("div");
       const isMuted = !isEnabled;
-      toggle.style.cssText = `width:96px; height:46px; border-radius:23px; background:${isMuted ? '#E8E3D8' : '#81C784'}; border:3px solid #fff; box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s; flex-shrink:0; display:flex; align-items:center;`;
-      
+      toggle.style.cssText = `width:96px; height:46px; border-radius:23px; background:${isMuted ? "#E8E3D8" : "#81C784"}; border:3px solid #fff; box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s; flex-shrink:0; display:flex; align-items:center;`;
+
       const statusText = document.createElement("span");
       statusText.innerText = isMuted ? "OFF" : "ON";
-      statusText.style.cssText = `color:#fff; font-family:'Impact', 'Arial Black', sans-serif; font-size:18px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? '0' : '32px'}; padding-left:${isMuted ? '32px' : '0'}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
+      statusText.style.cssText = `color:#fff; font-family:'Impact', 'Arial Black', sans-serif; font-size:18px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? "0" : "32px"}; padding-left:${isMuted ? "32px" : "0"}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
 
       const knob = document.createElement("div");
-      knob.style.cssText = `width:36px; height:36px; border-radius:50%; background:#fff; position:absolute; top:2px; left:${isMuted ? '3px' : '51px'}; transition: left 0.25s cubic-bezier(0.3, 1.2, 0.5, 1); box-shadow: 0 3px 6px rgba(0,0,0,0.4); pointer-events:none;`;
-      
+      knob.style.cssText = `width:36px; height:36px; border-radius:50%; background:#fff; position:absolute; top:2px; left:${isMuted ? "3px" : "51px"}; transition: left 0.25s cubic-bezier(0.3, 1.2, 0.5, 1); box-shadow: 0 3px 6px rgba(0,0,0,0.4); pointer-events:none;`;
+
       toggle.appendChild(statusText);
       toggle.appendChild(knob);
 
       toggle.onclick = () => {
         const newState = onToggle(); // Trả về trạng thái ENABLED sau khi toggle
         const nowMuted = !newState;
-        toggle.style.background = nowMuted ? '#E8E3D8' : '#81C784';
-        knob.style.left = nowMuted ? '3px' : '51px';
+        toggle.style.background = nowMuted ? "#E8E3D8" : "#81C784";
+        knob.style.left = nowMuted ? "3px" : "51px";
         statusText.innerText = nowMuted ? "OFF" : "ON";
-        statusText.style.paddingRight = nowMuted ? '0' : '32px';
-        statusText.style.paddingLeft = nowMuted ? '32px' : '0';
+        statusText.style.paddingRight = nowMuted ? "0" : "32px";
+        statusText.style.paddingLeft = nowMuted ? "32px" : "0";
       };
-      
-      toggle.onmousedown = () => toggle.style.transform = "scale(0.92)";
-      toggle.onmouseup = () => toggle.style.transform = "scale(1)";
-      toggle.onmouseleave = () => toggle.style.transform = "scale(1)";
+
+      toggle.onmousedown = () => (toggle.style.transform = "scale(0.92)");
+      toggle.onmouseup = () => (toggle.style.transform = "scale(1)");
+      toggle.onmouseleave = () => (toggle.style.transform = "scale(1)");
 
       row.appendChild(text);
       row.appendChild(toggle);
@@ -1349,11 +1352,15 @@ export class MainMenuScene {
     };
 
     // Music row
-    const musicRow = createToggleRow("ÂM NHẠC", soundManager.musicEnabled, () => {
-      soundManager.playClick();
-      soundManager.toggleMusic();
-      return soundManager.musicEnabled;
-    });
+    const musicRow = createToggleRow(
+      "ÂM NHẠC",
+      soundManager.musicEnabled,
+      () => {
+        soundManager.playClick();
+        soundManager.toggleMusic();
+        return soundManager.musicEnabled;
+      },
+    );
     rowContainer.appendChild(musicRow);
 
     // SFX row

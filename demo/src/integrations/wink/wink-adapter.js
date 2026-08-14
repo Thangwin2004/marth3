@@ -22,11 +22,11 @@ import {
   onUnmute,
   submitScore,
   subscribe,
-} from './wink-bridge.js';
+} from "./wink-bridge.js";
 
 function newRoundId() {
   const cryptoRef = globalThis.crypto;
-  if (cryptoRef && typeof cryptoRef.randomUUID === 'function') {
+  if (cryptoRef && typeof cryptoRef.randomUUID === "function") {
     return cryptoRef.randomUUID();
   }
   const random = Math.random().toString(16).slice(2, 10);
@@ -112,12 +112,12 @@ export class WinkGameIntegration {
   /** True when bridge is ready (anonymous or authenticated). */
   get isReady() {
     const s = this.state;
-    return s?.phase === 'ready_anonymous' || s?.phase === 'ready_authenticated';
+    return s?.phase === "ready_anonymous" || s?.phase === "ready_authenticated";
   }
 
   /** True when user is authenticated (can submit scores). */
   get isAuthenticated() {
-    return this.state?.phase === 'ready_authenticated';
+    return this.state?.phase === "ready_authenticated";
   }
 
   /**

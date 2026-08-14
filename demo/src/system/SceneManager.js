@@ -54,7 +54,7 @@ class SceneManager {
     setTimeout(() => {
       const container = this.app.canvas ? this.app.canvas.parentElement : null;
       if (container && window.ResizeObserver) {
-        const resizeObserver = new ResizeObserver(() => {
+        const resizeObserver = new window.ResizeObserver(() => {
           handleResize();
         });
         resizeObserver.observe(container);

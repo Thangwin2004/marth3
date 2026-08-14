@@ -211,11 +211,26 @@ function killTweensRecursive(obj) {
 }
 
 const palettes = {
-  yellow: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
-  green: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
+  yellow: {
+    top: 0x7e57ff,
+    bottom: 0x5a33c9,
+    shadow: 0x3d247a,
+    stroke: 0xb79bff,
+  },
+  green: {
+    top: 0x7e57ff,
+    bottom: 0x5a33c9,
+    shadow: 0x3d247a,
+    stroke: 0xb79bff,
+  },
   pink: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
   blue: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
-  purple: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
+  purple: {
+    top: 0x7e57ff,
+    bottom: 0x5a33c9,
+    shadow: 0x3d247a,
+    stroke: 0xb79bff,
+  },
   red: { top: 0x7e57ff, bottom: 0x5a33c9, shadow: 0x3d247a, stroke: 0xb79bff },
 };
 
@@ -666,9 +681,15 @@ export class GameScene {
     this.uiContainer.addChild(this.tutorialText);
 
     // === SETTINGS BUTTON ===
-    this.settingsBtn = this.createCircularButton("⚙️", 0, 0, () => {
-      this.showSettingsModal(true);
-    }, this.uiContainer);
+    this.settingsBtn = this.createCircularButton(
+      "⚙️",
+      0,
+      0,
+      () => {
+        this.showSettingsModal(true);
+      },
+      this.uiContainer,
+    );
   }
 
   /**
@@ -3026,8 +3047,8 @@ export class GameScene {
     const titleGrad = new FillGradient({
       end: { x: 0, y: 44 },
       colorStops: [
-        { offset: 0, color: 0xFFDF73 },
-        { offset: 1, color: 0xE6A123 },
+        { offset: 0, color: 0xffdf73 },
+        { offset: 1, color: 0xe6a123 },
       ],
     });
 
@@ -3222,8 +3243,8 @@ export class GameScene {
     if (rank) {
       const ribbon = new Graphics()
         .roundRect(-60, 30, 120, 20, 5)
-        .fill({ color: 0x7E57FF })
-        .stroke({ width: 1.2, color: 0xFFC84A });
+        .fill({ color: 0x7e57ff })
+        .stroke({ width: 1.2, color: 0xffc84a });
       const ribbonText = new Text({
         text: "KỶ LỤC MỚI!",
         style: {
@@ -3665,11 +3686,18 @@ export class GameScene {
   ) {
     let colorStyle = "blue";
     if (emojiText === "🏆") colorStyle = "red";
-    else if (emojiText === "⚙️" || emojiText === "settings") colorStyle = "blue";
-    else if (emojiText === "🏠" || emojiText === "🏡" || emojiText === "home") colorStyle = "grey";
+    else if (emojiText === "⚙️" || emojiText === "settings")
+      colorStyle = "blue";
+    else if (emojiText === "🏠" || emojiText === "🏡" || emojiText === "home")
+      colorStyle = "grey";
     else if (emojiText === "🔄" || emojiText === "replay") colorStyle = "blue";
     else if (emojiText === "✕" || emojiText === "close") colorStyle = "red";
-    else if (emojiText === "star" || emojiText === "video" || emojiText === "X2") colorStyle = "orange";
+    else if (
+      emojiText === "star" ||
+      emojiText === "video" ||
+      emojiText === "X2"
+    )
+      colorStyle = "orange";
 
     const btn = new Colorful3DCircleButton({
       radius: customRadius,
@@ -3814,7 +3842,7 @@ export class GameScene {
         .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
-        .fill({ color: 0x4A965E })
+        .fill({ color: 0x4a965e })
         // Main Face Background (gradient)
         .roundRect(0, 0, panelWidth, panelHeight, 12)
         .fill({
@@ -3822,8 +3850,8 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0x88D399 },
-              { offset: 1, color: 0x5CB475 },
+              { offset: 0, color: 0x88d399 },
+              { offset: 1, color: 0x5cb475 },
             ],
           }),
         })
@@ -3841,7 +3869,7 @@ export class GameScene {
         .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
-        .fill({ color: 0x4A965E })
+        .fill({ color: 0x4a965e })
         // Main Face Background (gradient)
         .roundRect(0, 0, panelWidth, panelHeight, 12)
         .fill({
@@ -3849,8 +3877,8 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0x88D399 },
-              { offset: 1, color: 0x5CB475 },
+              { offset: 0, color: 0x88d399 },
+              { offset: 1, color: 0x5cb475 },
             ],
           }),
         })
@@ -4057,7 +4085,8 @@ export class GameScene {
     const title = document.createElement("div");
     title.className = "game-popup-title";
     title.innerText = isIngame ? "TẠM DỪNG" : "CÀI ĐẶT";
-    title.style.cssText = "position:relative;top:0;left:0;transform:none;margin-bottom:24px;background:none;box-shadow:none;border:none;color:#1B365D;font-size:36px;letter-spacing:2px;text-shadow:0 2px 4px rgba(255,255,255,0.8);";
+    title.style.cssText =
+      "position:relative;top:0;left:0;transform:none;margin-bottom:24px;background:none;box-shadow:none;border:none;color:#1B365D;font-size:36px;letter-spacing:2px;text-shadow:0 2px 4px rgba(255,255,255,0.8);";
     card.appendChild(title);
 
     const closePopup = () => {
@@ -4082,31 +4111,31 @@ export class GameScene {
 
       const toggle = document.createElement("div");
       const isMuted = !isEnabled;
-      toggle.style.cssText = `width:90px; height:42px; border-radius:21px; background:${isMuted ? '#E8E3D8' : '#81C784'}; box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s; flex-shrink:0; display:flex; align-items:center;`;
-      
+      toggle.style.cssText = `width:90px; height:42px; border-radius:21px; background:${isMuted ? "#E8E3D8" : "#81C784"}; box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s; flex-shrink:0; display:flex; align-items:center;`;
+
       const statusText = document.createElement("span");
       statusText.innerText = isMuted ? "OFF" : "ON";
-      statusText.style.cssText = `color:#fff; font-family:'Impact', 'Arial Black', sans-serif; font-size:16px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? '0' : '28px'}; padding-left:${isMuted ? '28px' : '0'}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
+      statusText.style.cssText = `color:#fff; font-family:'Impact', 'Arial Black', sans-serif; font-size:16px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? "0" : "28px"}; padding-left:${isMuted ? "28px" : "0"}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
 
       const knob = document.createElement("div");
-      knob.style.cssText = `width:34px; height:34px; border-radius:50%; background:#fff; position:absolute; top:4px; left:${isMuted ? '4px' : '52px'}; transition: left 0.25s cubic-bezier(0.3, 1.2, 0.5, 1); box-shadow: 0 3px 6px rgba(0,0,0,0.4); pointer-events:none;`;
-      
+      knob.style.cssText = `width:34px; height:34px; border-radius:50%; background:#fff; position:absolute; top:4px; left:${isMuted ? "4px" : "52px"}; transition: left 0.25s cubic-bezier(0.3, 1.2, 0.5, 1); box-shadow: 0 3px 6px rgba(0,0,0,0.4); pointer-events:none;`;
+
       toggle.appendChild(statusText);
       toggle.appendChild(knob);
 
       toggle.onclick = () => {
         const newState = onToggle();
         const nowMuted = !newState;
-        toggle.style.background = nowMuted ? '#E8E3D8' : '#81C784';
-        knob.style.left = nowMuted ? '4px' : '52px';
+        toggle.style.background = nowMuted ? "#E8E3D8" : "#81C784";
+        knob.style.left = nowMuted ? "4px" : "52px";
         statusText.innerText = nowMuted ? "OFF" : "ON";
-        statusText.style.paddingRight = nowMuted ? '0' : '28px';
-        statusText.style.paddingLeft = nowMuted ? '28px' : '0';
+        statusText.style.paddingRight = nowMuted ? "0" : "28px";
+        statusText.style.paddingLeft = nowMuted ? "28px" : "0";
       };
-      
-      toggle.onmousedown = () => toggle.style.transform = "scale(0.92)";
-      toggle.onmouseup = () => toggle.style.transform = "scale(1)";
-      toggle.onmouseleave = () => toggle.style.transform = "scale(1)";
+
+      toggle.onmousedown = () => (toggle.style.transform = "scale(0.92)");
+      toggle.onmouseup = () => (toggle.style.transform = "scale(1)");
+      toggle.onmouseleave = () => (toggle.style.transform = "scale(1)");
 
       row.appendChild(text);
       row.appendChild(toggle);
@@ -4119,11 +4148,15 @@ export class GameScene {
     rowContainer.style.marginBottom = "20px";
 
     // Music row
-    const musicRow = createToggleRow("🎵 Nhạc nền", soundManager.musicEnabled, () => {
-      soundManager.playClick();
-      soundManager.toggleMusic();
-      return soundManager.musicEnabled;
-    });
+    const musicRow = createToggleRow(
+      "🎵 Nhạc nền",
+      soundManager.musicEnabled,
+      () => {
+        soundManager.playClick();
+        soundManager.toggleMusic();
+        return soundManager.musicEnabled;
+      },
+    );
     rowContainer.appendChild(musicRow);
 
     // SFX row
@@ -4140,7 +4173,7 @@ export class GameScene {
     if (isIngame) {
       const actionContainer = document.createElement("div");
       actionContainer.className = "game-paused-action-container";
-  
+
       const homeBtn = document.createElement("button");
       homeBtn.className = "game-paused-btn";
       homeBtn.style.backgroundImage = "url(/assets/home_btn.png)";
@@ -4151,7 +4184,7 @@ export class GameScene {
         await sceneManager.switchTo(MainMenuScene);
       });
       actionContainer.appendChild(homeBtn);
-  
+
       const replayBtn = document.createElement("button");
       replayBtn.className = "game-paused-btn";
       replayBtn.style.backgroundImage = "url(/assets/replay_btn.png)";
@@ -4161,13 +4194,13 @@ export class GameScene {
         await sceneManager.switchTo(GameScene);
       });
       actionContainer.appendChild(replayBtn);
-  
+
       const continueBtn = document.createElement("button");
       continueBtn.className = "game-paused-btn";
       continueBtn.style.backgroundImage = "url(/assets/continue_btn.png)";
       continueBtn.addEventListener("click", closePopup);
       actionContainer.appendChild(continueBtn);
-  
+
       card.appendChild(actionContainer);
     }
 
