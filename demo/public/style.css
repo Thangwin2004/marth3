@@ -392,7 +392,7 @@ body {
   width: 32px;
   height: 32px;
   border: none;
-  background: url(/assets/close_btn.png) no-repeat center center;
+  background: url(/assets/close_btn.webp) no-repeat center center;
   background-size: contain;
   cursor: pointer;
   transition: transform 0.15s ease;

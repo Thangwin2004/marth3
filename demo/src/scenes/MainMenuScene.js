@@ -43,50 +43,50 @@ function getEffectiveUser() {
 }
 
 const ALL_AVATAR_FILES = [
-  "001_avatar_laclac.png",
-  "002_avatar_cat_lick1.png",
-  "003_avatar_duck.png",
-  "004_avatar_turtle.png",
-  "005_avatar_long.png",
-  "006_avatar_horse.png",
-  "007_avatar_tiguawhite.png",
-  "008_avatar_husky.png",
-  "009_avatar_doremonk.png",
-  "010_avatar_echxanh1.png",
-  "011_avatar_nudaeng.png",
-  "012_avatar_hubcat.png",
-  "013_avatar_unicorn.png",
-  "014_avatar_zongbadou.png",
-  "015_avatar_dauLan.png",
-  "016_avatar_banhtung.png",
-  "017_avatar_tiguayel.png",
-  "018_avatar_megachard.png",
-  "019_avatar_gigaboy.png",
-  "020_avatar_cloudball.png",
-  "021_avatar_culama.png",
-  "022_avatar_poolpanda.png",
-  "023_avatar_trollvn.png",
-  "024_avatar_heothy.png",
-  "025_avatar_zolype.png",
-  "026_avatar_crick.png",
-  "027_avatar_penguine.png",
-  "028_avatar_timao.png",
-  "029_avatar_caocal.png",
-  "030_avatar_cowboy.png",
-  "031_avatar_ninjadog.png",
-  "032_avatar_petrocat.png",
-  "033_avatar_richmonkey.png",
-  "034_avatar_hazagi.png",
-  "035_avatar_dogoin.png",
-  "036_avatar_watermelon.png",
-  "037_avatar_timone.png",
-  "038_avatar_ronaldo.png",
-  "039_avatar_hustmouse.png",
-  "040_avatar_hitbear.png",
-  "041_avatar_echxanh2.png",
-  "042_avatar_zolype2.png",
-  "043_avatar_cat_lick2.png",
-  "044_avatar_poolpanda2.png",
+  "001_avatar_laclac.webp",
+  "002_avatar_cat_lick1.webp",
+  "003_avatar_duck.webp",
+  "004_avatar_turtle.webp",
+  "005_avatar_long.webp",
+  "006_avatar_horse.webp",
+  "007_avatar_tiguawhite.webp",
+  "008_avatar_husky.webp",
+  "009_avatar_doremonk.webp",
+  "010_avatar_echxanh1.webp",
+  "011_avatar_nudaeng.webp",
+  "012_avatar_hubcat.webp",
+  "013_avatar_unicorn.webp",
+  "014_avatar_zongbadou.webp",
+  "015_avatar_dauLan.webp",
+  "016_avatar_banhtung.webp",
+  "017_avatar_tiguayel.webp",
+  "018_avatar_megachard.webp",
+  "019_avatar_gigaboy.webp",
+  "020_avatar_cloudball.webp",
+  "021_avatar_culama.webp",
+  "022_avatar_poolpanda.webp",
+  "023_avatar_trollvn.webp",
+  "024_avatar_heothy.webp",
+  "025_avatar_zolype.webp",
+  "026_avatar_crick.webp",
+  "027_avatar_penguine.webp",
+  "028_avatar_timao.webp",
+  "029_avatar_caocal.webp",
+  "030_avatar_cowboy.webp",
+  "031_avatar_ninjadog.webp",
+  "032_avatar_petrocat.webp",
+  "033_avatar_richmonkey.webp",
+  "034_avatar_hazagi.webp",
+  "035_avatar_dogoin.webp",
+  "036_avatar_watermelon.webp",
+  "037_avatar_timone.webp",
+  "038_avatar_ronaldo.webp",
+  "039_avatar_hustmouse.webp",
+  "040_avatar_hitbear.webp",
+  "041_avatar_echxanh2.webp",
+  "042_avatar_zolype2.webp",
+  "043_avatar_cat_lick2.webp",
+  "044_avatar_poolpanda2.webp",
 ];
 
 function killTweensRecursive(obj) {
@@ -226,12 +226,12 @@ function gameConfirm(message) {
 
     const okButton = document.createElement("img");
     okButton.className = "game-alert-img-btn";
-    okButton.src = "assets/yes_btn.png";
+    okButton.src = "assets/yes_btn.webp";
     okButton.alt = "ĐỒNG Ý";
 
     const cancelButton = document.createElement("img");
     cancelButton.className = "game-alert-img-btn";
-    cancelButton.src = "assets/close_btn.png";
+    cancelButton.src = "assets/close_btn.webp";
     cancelButton.alt = "HỦY";
 
     btnContainer.appendChild(okButton);
@@ -365,7 +365,7 @@ export class MainMenuScene {
 
     // Load random background from the 3 new options
     const bgIndex = Math.floor(Math.random() * 3) + 1;
-    const bgPath = `/assets/backgroud/vietnamese_cultural_landscape_background_${bgIndex}/screen.png`;
+    const bgPath = `/assets/backgroud/vietnamese_cultural_landscape_background_${bgIndex}/screen.webp`;
     Assets.load(bgPath)
       .then((texture) => {
         if (this.bg.destroyed) return;
@@ -452,7 +452,7 @@ export class MainMenuScene {
     });
 
     // Load and add the new logo
-    Assets.load("/logo.png")
+    Assets.load("/logo.webp")
       .then((texture) => {
         if (this.titleContent.destroyed) return;
         const logo = new Sprite(texture);
@@ -473,7 +473,7 @@ export class MainMenuScene {
         });
       })
       .catch((err) => {
-        console.error("Failed to load logo.png on main menu:", err);
+        console.error("Failed to load logo.webp on main menu:", err);
       });
 
     // Main title
@@ -858,7 +858,7 @@ export class MainMenuScene {
       const icon = new Sprite();
       content.addChild(icon);
       btn.icon = icon;
-      Assets.load("/google_logo.png")
+      Assets.load("/google_logo.webp")
         .then((texture) => {
           icon.texture = texture;
           icon.anchor.set(0.5);
@@ -872,7 +872,7 @@ export class MainMenuScene {
           text.x = totalW / 2 - text.width / 2;
         })
         .catch((err) => {
-          console.error("Failed to load google_logo.png:", err);
+          console.error("Failed to load google_logo.webp:", err);
         });
     } else {
       const spaceIdx = label.indexOf(" ");

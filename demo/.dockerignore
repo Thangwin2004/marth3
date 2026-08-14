@@ -5,3 +5,4 @@ dist
 .env.*
 *.log
 GAME_REPORT.md
+.worktrees
