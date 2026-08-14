@@ -103,7 +103,7 @@ function gameAlert(message) {
 
     const button = document.createElement("img");
     button.className = "game-alert-img-btn";
-    button.src = "assets/yes_btn.png";
+    button.src = "assets/yes_btn.webp";
     button.alt = "ĐỒNG Ý";
 
     card.appendChild(text);
@@ -151,50 +151,50 @@ export const AdManager = {
 };
 
 const ALL_AVATAR_FILES = [
-  "001_avatar_laclac.png",
-  "002_avatar_cat_lick1.png",
-  "003_avatar_duck.png",
-  "004_avatar_turtle.png",
-  "005_avatar_long.png",
-  "006_avatar_horse.png",
-  "007_avatar_tiguawhite.png",
-  "008_avatar_husky.png",
-  "009_avatar_doremonk.png",
-  "010_avatar_echxanh1.png",
-  "011_avatar_nudaeng.png",
-  "012_avatar_hubcat.png",
-  "013_avatar_unicorn.png",
-  "014_avatar_zongbadou.png",
-  "015_avatar_dauLan.png",
-  "016_avatar_banhtung.png",
-  "017_avatar_tiguayel.png",
-  "018_avatar_megachard.png",
-  "019_avatar_gigaboy.png",
-  "020_avatar_cloudball.png",
-  "021_avatar_culama.png",
-  "022_avatar_poolpanda.png",
-  "023_avatar_trollvn.png",
-  "024_avatar_heothy.png",
-  "025_avatar_zolype.png",
-  "026_avatar_crick.png",
-  "027_avatar_penguine.png",
-  "028_avatar_timao.png",
-  "029_avatar_caocal.png",
-  "030_avatar_cowboy.png",
-  "031_avatar_ninjadog.png",
-  "032_avatar_petrocat.png",
-  "033_avatar_richmonkey.png",
-  "034_avatar_hazagi.png",
-  "035_avatar_dogoin.png",
-  "036_avatar_watermelon.png",
-  "037_avatar_timone.png",
-  "038_avatar_ronaldo.png",
-  "039_avatar_hustmouse.png",
-  "040_avatar_hitbear.png",
-  "041_avatar_echxanh2.png",
-  "042_avatar_zolype2.png",
-  "043_avatar_cat_lick2.png",
-  "044_avatar_poolpanda2.png",
+  "001_avatar_laclac.webp",
+  "002_avatar_cat_lick1.webp",
+  "003_avatar_duck.webp",
+  "004_avatar_turtle.webp",
+  "005_avatar_long.webp",
+  "006_avatar_horse.webp",
+  "007_avatar_tiguawhite.webp",
+  "008_avatar_husky.webp",
+  "009_avatar_doremonk.webp",
+  "010_avatar_echxanh1.webp",
+  "011_avatar_nudaeng.webp",
+  "012_avatar_hubcat.webp",
+  "013_avatar_unicorn.webp",
+  "014_avatar_zongbadou.webp",
+  "015_avatar_dauLan.webp",
+  "016_avatar_banhtung.webp",
+  "017_avatar_tiguayel.webp",
+  "018_avatar_megachard.webp",
+  "019_avatar_gigaboy.webp",
+  "020_avatar_cloudball.webp",
+  "021_avatar_culama.webp",
+  "022_avatar_poolpanda.webp",
+  "023_avatar_trollvn.webp",
+  "024_avatar_heothy.webp",
+  "025_avatar_zolype.webp",
+  "026_avatar_crick.webp",
+  "027_avatar_penguine.webp",
+  "028_avatar_timao.webp",
+  "029_avatar_caocal.webp",
+  "030_avatar_cowboy.webp",
+  "031_avatar_ninjadog.webp",
+  "032_avatar_petrocat.webp",
+  "033_avatar_richmonkey.webp",
+  "034_avatar_hazagi.webp",
+  "035_avatar_dogoin.webp",
+  "036_avatar_watermelon.webp",
+  "037_avatar_timone.webp",
+  "038_avatar_ronaldo.webp",
+  "039_avatar_hustmouse.webp",
+  "040_avatar_hitbear.webp",
+  "041_avatar_echxanh2.webp",
+  "042_avatar_zolype2.webp",
+  "043_avatar_cat_lick2.webp",
+  "044_avatar_poolpanda2.webp",
 ];
 
 function killTweensRecursive(obj) {
@@ -287,7 +287,7 @@ export class GameScene {
     this.container.addChild(this.loadingBg);
 
     // Animated logo for loading screen (replacing text and tribal avatar)
-    this.loadingAvatar = Sprite.from("/logo.png");
+    this.loadingAvatar = Sprite.from("/logo.webp");
     this.loadingAvatar.anchor.set(0.5);
     this.container.addChild(this.loadingAvatar);
 
@@ -369,12 +369,12 @@ export class GameScene {
     try {
       // 1. Randomize and select a background
       const bgIndex = Math.floor(Math.random() * 3) + 1;
-      const bgPath = `/assets/backgroud/vietnamese_cultural_landscape_background_${bgIndex}/screen.png`;
+      const bgPath = `/assets/backgroud/vietnamese_cultural_landscape_background_${bgIndex}/screen.webp`;
       this.bgTexture = await Assets.load(bgPath);
 
       // 2. Randomize and select 6 distinct avatars from the 44, avoiding duplicates (e.g., cat_lick1 and cat_lick2)
       const getBaseName = (filename) => {
-        const name = filename.replace(".png", "").split("_").slice(2).join("_");
+        const name = filename.replace(".webp", "").split("_").slice(2).join("_");
         return name.replace(/\d+$/, ""); // Remove trailing numbers
       };
 
@@ -394,7 +394,7 @@ export class GameScene {
       }
 
       this.sessionColors = chosenFiles.map((file) => {
-        const parts = file.replace(".png", "").split("_");
+        const parts = file.replace(".webp", "").split("_");
         return parts.slice(2).join("_");
       });
 
@@ -2888,7 +2888,7 @@ export class GameScene {
       "background:linear-gradient(to bottom, #88D399, #5CB475);border:2px solid #FFFFFF;border-radius:12px;padding:10px 40px;color:white;font-size:24px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4A965E, 0 8px 10px rgba(0,0,0,0.2);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
 
     const tvIcon = document.createElement("img");
-    tvIcon.src = "/assest/iconbtn/images.png";
+    tvIcon.src = "/assest/iconbtn/images.webp";
     tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
 
     const yesText = document.createElement("span");
@@ -4143,7 +4143,7 @@ export class GameScene {
   
       const homeBtn = document.createElement("button");
       homeBtn.className = "game-paused-btn";
-      homeBtn.style.backgroundImage = "url(/assets/home_btn.png)";
+      homeBtn.style.backgroundImage = "url(/assets/home_btn.webp)";
       homeBtn.addEventListener("click", async () => {
         overlay.remove();
         this.settingsPopup = null;
@@ -4154,7 +4154,7 @@ export class GameScene {
   
       const replayBtn = document.createElement("button");
       replayBtn.className = "game-paused-btn";
-      replayBtn.style.backgroundImage = "url(/assets/replay_btn.png)";
+      replayBtn.style.backgroundImage = "url(/assets/replay_btn.webp)";
       replayBtn.addEventListener("click", async () => {
         overlay.remove();
         this.settingsPopup = null;
@@ -4164,7 +4164,7 @@ export class GameScene {
   
       const continueBtn = document.createElement("button");
       continueBtn.className = "game-paused-btn";
-      continueBtn.style.backgroundImage = "url(/assets/continue_btn.png)";
+      continueBtn.style.backgroundImage = "url(/assets/continue_btn.webp)";
       continueBtn.addEventListener("click", closePopup);
       actionContainer.appendChild(continueBtn);
   
