@@ -12,6 +12,7 @@ import { saveManager } from "./system/SaveManager.js";
 import { soundManager } from "./system/SoundManager.js";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
 import { waitForGameFonts } from "./utils/fontLoader.js";
+import { installFocusPause } from "./utils/focusPause.js";
 
 async function startGame() {
   try {
@@ -34,9 +35,17 @@ async function startGame() {
     // Step 2: Init scene manager
     sceneManager.init(App.app);
 
+    const focusPause = installFocusPause({
+      isRunning: () => Boolean(App.app?.ticker.started),
+      pause: () => App.app?.ticker.stop(),
+      resume: () => App.app?.ticker.start(),
+      pauseAudio: () => soundManager.pauseForFocus(),
+      resumeAudio: () => soundManager.resumeFromFocus(),
+    });
+
     winkGame.bindLifecycle({
-      onPause: () => App.app?.ticker.stop(),
-      onResume: () => App.app?.ticker.start(),
+      onPause: focusPause.pauseFromHost,
+      onResume: focusPause.resumeFromHost,
       onMute: () => {
         window.__GLOBAL_MUTE__ = true;
         soundManager.syncMuteState();
