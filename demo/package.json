@@ -11,6 +11,7 @@
     "start": "npm run dev",
     "prebuild": "node scripts/verify-wink-bridge.mjs",
     "build": "vite build",
+    "postbuild": "node scripts/prune-unused-public-assets.mjs",
     "lint": "eslint .",
     "dev": "vite",
     "verify:wink-bridge": "node scripts/verify-wink-bridge.mjs"

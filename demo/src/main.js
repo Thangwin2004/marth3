@@ -11,14 +11,22 @@ import { sceneManager } from "./system/SceneManager.js";
 import { saveManager } from "./system/SaveManager.js";
 import { soundManager } from "./system/SoundManager.js";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
+import { waitForGameFonts } from "./utils/fontLoader.js";
 
 async function startGame() {
   try {
     console.log("🚀 Starting Pure Match-3 Game...");
 
-    // Step 0: Force-load Google Fonts with Vietnamese text before PixiJS renders
-    await document.fonts.load("700 1em Nunito", "Bộ Lạc Đậu Phộng");
-    await document.fonts.ready;
+    await waitForGameFonts([
+      "400 1em 'Be Vietnam Pro'",
+      "500 1em 'Be Vietnam Pro'",
+      "600 1em 'Be Vietnam Pro'",
+      "700 1em 'Be Vietnam Pro'",
+      "800 1em 'Be Vietnam Pro'",
+      "900 1em 'Be Vietnam Pro'",
+      "700 1em 'Baloo 2'",
+      "800 1em 'Baloo 2'",
+    ]);
 
     // Step 1: Initialize PixiJS + Load assets
     await App.init(Config);

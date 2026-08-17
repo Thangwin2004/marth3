@@ -173,7 +173,7 @@ function gameConfirm(message) {
           text-align: center;
           transform: scale(0.85);
           transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          font-family: 'Be Vietnam Pro', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family:'Be Vietnam Pro', sans-serif;
         }
         .game-alert-text {
           color: #360207;
@@ -488,7 +488,7 @@ export class MainMenuScene {
     const title = new Text({
       text: "Bộ Lạc CRUSH",
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Baloo 2", "Be Vietnam Pro", sans-serif',
         fontSize: 48,
         fontWeight: "bold",
         fill: titleGrad,
@@ -500,7 +500,7 @@ export class MainMenuScene {
     const subtitle = new Text({
       text: "DỄ THƯƠNG MATCH-3",
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffffff",
@@ -532,7 +532,7 @@ export class MainMenuScene {
           ? `🏆 KỶ LỤC ĐIỂM: ${topScore}`
           : `🎯 Hãy thiết lập kỷ lục điểm số ngay hôm nay!`,
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 18,
         fontWeight: "bold",
         fill: "#ffffff",
@@ -844,7 +844,7 @@ export class MainMenuScene {
       const text = new Text({
         text: displayText.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Nunito", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 14,
           fontWeight: "bold",
           fill: "#ffffff",
@@ -889,7 +889,7 @@ export class MainMenuScene {
         const text = new Text({
           text: textStr.toUpperCase(),
           style: new TextStyle({
-            fontFamily: '"Nunito", sans-serif',
+            fontFamily: '"Be Vietnam Pro", sans-serif',
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
@@ -910,7 +910,7 @@ export class MainMenuScene {
         const text = new Text({
           text: label.toUpperCase(),
           style: new TextStyle({
-            fontFamily: '"Nunito", sans-serif',
+            fontFamily: '"Be Vietnam Pro", sans-serif',
             fontSize: textSize,
             fontWeight: "bold",
             fill: "#ffffff",
@@ -985,7 +985,7 @@ export class MainMenuScene {
     const label = new Text({
       text: "CHƠI NGAY",
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 22,
         fontWeight: "900",
         fill: 0xffffff,
@@ -1315,7 +1315,7 @@ export class MainMenuScene {
       row.style.cssText = `width:100%; height:70px; border-radius:12px; background:#fbfaf5; border:3px solid #fff; display:flex; justify-content:space-between; align-items:center; padding:0 20px; box-sizing:border-box; margin-bottom: 15px;`;
 
       const text = document.createElement("span");
-      text.style.cssText = `font-family:'Fredoka', 'Baloo 2', 'Be Vietnam Pro', sans-serif; font-size:18px; font-weight:bold; color:#47363B; letter-spacing:0.8px; white-space:nowrap; flex:1;`;
+      text.style.cssText = `font-family:'Be Vietnam Pro', sans-serif; font-size:18px; font-weight:bold; color:#47363B; letter-spacing:0.8px; white-space:nowrap; flex:1;`;
       text.innerText = label;
 
       const toggle = document.createElement("div");
@@ -1324,7 +1324,7 @@ export class MainMenuScene {
 
       const statusText = document.createElement("span");
       statusText.innerText = isMuted ? "OFF" : "ON";
-      statusText.style.cssText = `color:#fff; font-family:'Impact', 'Arial Black', sans-serif; font-size:18px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? "0" : "32px"}; padding-left:${isMuted ? "32px" : "0"}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
+      statusText.style.cssText = `color:#fff; font-family:'Be Vietnam Pro', sans-serif; font-size:18px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? "0" : "32px"}; padding-left:${isMuted ? "32px" : "0"}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
 
       const knob = document.createElement("div");
       knob.style.cssText = `width:36px; height:36px; border-radius:50%; background:#fff; position:absolute; top:2px; left:${isMuted ? "3px" : "51px"}; transition: left 0.25s cubic-bezier(0.3, 1.2, 0.5, 1); box-shadow: 0 3px 6px rgba(0,0,0,0.4); pointer-events:none;`;

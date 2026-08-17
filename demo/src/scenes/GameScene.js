@@ -59,7 +59,7 @@ function gameAlert(message) {
           text-align: center;
           transform: scale(0.85);
           transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family:'Be Vietnam Pro', sans-serif;
         }
         .game-alert-text {
           color: #360207;
@@ -577,7 +577,7 @@ export class GameScene {
       const floatText = new Text({
         text: textString,
         style: {
-          fontFamily: '"Nunito", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 26,
           fontWeight: "bold",
           fill: "#33ccff",
@@ -622,7 +622,7 @@ export class GameScene {
     this.scoreText = new Text({
       text: "⭐ " + this.score,
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
@@ -640,7 +640,7 @@ export class GameScene {
     this.movesText = new Text({
       text: "👟 " + this.moves,
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
         fontWeight: "900",
         fill: "#ffffff",
@@ -654,7 +654,7 @@ export class GameScene {
     this.comboText = new Text({
       text: "",
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 42,
         fontWeight: "bold",
         fill: "#ffc84a",
@@ -671,7 +671,7 @@ export class GameScene {
     this.tutorialText = new Text({
       text: "✨ Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
         fill: "#ffffff",
@@ -2887,7 +2887,7 @@ export class GameScene {
     const title = document.createElement("div");
     title.innerText = "TIẾP TỤC?";
     title.style.cssText =
-      "font-size:32px;font-weight:900;background:linear-gradient(180deg, #FFDF73 0%, #E6A123 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 2px rgba(255,255,255,1));margin-bottom:20px;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
+      "font-size:32px;font-weight:900;background:linear-gradient(180deg, #FFDF73 0%, #E6A123 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 2px rgba(255,255,255,1));margin-bottom:20px;font-family:'Be Vietnam Pro', sans-serif;text-align:center;text-transform:uppercase;";
 
     const heartIcon = document.createElement("div");
     heartIcon.innerText = "❤️";
@@ -2906,7 +2906,7 @@ export class GameScene {
 
     const yesBtn = document.createElement("button");
     yesBtn.style.cssText =
-      "background:linear-gradient(to bottom, #88D399, #5CB475);border:2px solid #FFFFFF;border-radius:12px;padding:10px 40px;color:white;font-size:24px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4A965E, 0 8px 10px rgba(0,0,0,0.2);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+      "background:linear-gradient(to bottom, #88D399, #5CB475);border:2px solid #FFFFFF;border-radius:12px;padding:10px 40px;color:white;font-size:24px;font-weight:900;font-family:'Be Vietnam Pro', sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4A965E, 0 8px 10px rgba(0,0,0,0.2);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
 
     const tvIcon = document.createElement("img");
     tvIcon.src = "/assest/iconbtn/images.webp";
@@ -2922,7 +2922,7 @@ export class GameScene {
     const skipText = document.createElement("div");
     skipText.innerText = "Không, cảm ơn";
     skipText.style.cssText =
-      "margin-top:15px;color:#1B365D;font-size:16px;font-weight:700;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;text-decoration:underline;";
+      "margin-top:15px;color:#1B365D;font-size:16px;font-weight:700;font-family:'Be Vietnam Pro', sans-serif;cursor:pointer;text-decoration:underline;";
 
     card.appendChild(title);
     card.appendChild(heartIcon);
@@ -3055,7 +3055,7 @@ export class GameScene {
     const glowText = new Text({
       text: "KẾT THÚC",
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 38,
         fill: 0xffffff,
         stroke: { color: 0xffffff, width: 2 },
@@ -3072,7 +3072,7 @@ export class GameScene {
     const victoryText = new Text({
       text: "KẾT THÚC",
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 38,
         fill: titleGrad,
         stroke: { color: 0xffffff, width: 2 },
@@ -3248,7 +3248,7 @@ export class GameScene {
       const ribbonText = new Text({
         text: "KỶ LỤC MỚI!",
         style: {
-          fontFamily: '"Nunito", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 10,
           fill: "#ffffff",
           fontWeight: "bold",
@@ -3264,7 +3264,7 @@ export class GameScene {
     const scoreLabel = new Text({
       text: `TỔNG ĐIỂM:\n${this.score}`,
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 30,
         fontWeight: "900",
         fill: "#1B365D",
@@ -3286,7 +3286,7 @@ export class GameScene {
       const rankText = new Text({
         text: ` KỶ LỤC MỚI! HẠNG #${rank} `,
         style: {
-          fontFamily: '"Nunito", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 20,
           fontWeight: "bold",
           fill: "#0088cc",
@@ -3315,7 +3315,7 @@ export class GameScene {
       const normalLabel = new Text({
         text: "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!",
         style: {
-          fontFamily: '"Nunito", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 14,
           fill: "#1B365D",
         },
@@ -3481,7 +3481,7 @@ export class GameScene {
     const text = new Text({
       text: "HẾT NƯỚC ĐI!\nĐANG TRÁO BÀN NGỌC...",
       style: {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
         fontWeight: "bold",
         fill: "#33ccff",
@@ -3616,7 +3616,7 @@ export class GameScene {
       const text = new Text({
         text: textStr.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Nunito", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
@@ -3637,7 +3637,7 @@ export class GameScene {
       const text = new Text({
         text: label.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Nunito", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: textSize,
           fontWeight: "900",
           fill: textColor,
@@ -4115,7 +4115,7 @@ export class GameScene {
 
       const statusText = document.createElement("span");
       statusText.innerText = isMuted ? "OFF" : "ON";
-      statusText.style.cssText = `color:#fff; font-family:'Impact', 'Arial Black', sans-serif; font-size:16px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? "0" : "28px"}; padding-left:${isMuted ? "28px" : "0"}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
+      statusText.style.cssText = `color:#fff; font-family:'Be Vietnam Pro', sans-serif; font-size:16px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? "0" : "28px"}; padding-left:${isMuted ? "28px" : "0"}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
 
       const knob = document.createElement("div");
       knob.style.cssText = `width:34px; height:34px; border-radius:50%; background:#fff; position:absolute; top:4px; left:${isMuted ? "4px" : "52px"}; transition: left 0.25s cubic-bezier(0.3, 1.2, 0.5, 1); box-shadow: 0 3px 6px rgba(0,0,0,0.4); pointer-events:none;`;

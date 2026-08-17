@@ -431,7 +431,7 @@ export function drawVectorIcon(g, type, size) {
       const text = new Text({
         text: type,
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: size * 0.95,
           fill: 0xffffff,
           align: "center",
@@ -471,7 +471,7 @@ export function createVectorIcon(type, size = 28) {
     const text = new Text({
       text: val,
       style: {
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: size * 0.5,
         fill: 0xffffff,
       },
@@ -684,7 +684,7 @@ export class Colorful3DButton extends Container {
       this.label = new Text({
         text: text.toUpperCase(),
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: fontSize,
           fill: 0xffffff,
           align: "center",
