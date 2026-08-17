@@ -18,6 +18,8 @@ class SoundManager {
     this.musicEnabled = true; // music toggle state (BGM on/off)
     this.bgmVolume = 0.1; // default BGM volume
     this.lastLandTime = 0;
+    this.wasContextRunningBeforeFocus = false;
+    this.wasBgmPlayingBeforeFocus = false;
 
     const isMobile =
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -713,6 +715,27 @@ class SoundManager {
     this.musicEnabled = !this.musicEnabled;
     this.syncMuteState();
     return this.musicEnabled;
+  }
+
+  async pauseForFocus() {
+    this.wasContextRunningBeforeFocus = this.ctx?.state === "running";
+    this.wasBgmPlayingBeforeFocus = Boolean(this.bgm && !this.bgm.paused);
+    if (this.wasBgmPlayingBeforeFocus) this.bgm.pause();
+    if (this.wasContextRunningBeforeFocus) await this.ctx.suspend();
+  }
+
+  async resumeFromFocus() {
+    if (this.wasContextRunningBeforeFocus && this.ctx) await this.ctx.resume();
+    this.wasContextRunningBeforeFocus = false;
+    if (
+      this.wasBgmPlayingBeforeFocus &&
+      this.bgm &&
+      this.musicEnabled &&
+      !window.__GLOBAL_MUTE__
+    ) {
+      await this.bgm.play().catch(() => {});
+    }
+    this.wasBgmPlayingBeforeFocus = false;
   }
 }
 
