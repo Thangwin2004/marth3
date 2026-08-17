@@ -10,7 +10,7 @@
   "scripts": {
     "start": "npm run dev",
     "prebuild": "node scripts/verify-wink-bridge.mjs",
-    "build": "vite build",
+    "build": "vite build && node scripts/build-wink-warm.mjs",
     "lint": "eslint .",
     "dev": "vite",
     "verify:wink-bridge": "node scripts/verify-wink-bridge.mjs"

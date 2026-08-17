@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 
 const EXPECTED_SHA256 =
-  "2c116572babd9d850f19a91ff68669395eb3c8cd268c34f85be3d13d5625e29c";
+  "089b2d6c2261a7b285fa8acf5ff599e6d2aba9c1366f9def4ae1b1f9fefcfbda";
 const EXPECTED_PARENTS = [
   "https://winkgames.papastudio.net",
   "http://localhost:3000",
