@@ -13,6 +13,9 @@ import { soundManager } from "./system/SoundManager.js";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
 import { waitForGameFonts } from "./utils/fontLoader.js";
 import { installFocusPause } from "./utils/focusPause.js";
+import { installInteractionGuard } from "./utils/interactionGuard.js";
+
+installInteractionGuard();
 
 async function startGame() {
   try {
