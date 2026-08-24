@@ -115,7 +115,7 @@ export class Tile {
 
     this.cardBg.clear();
 
-    // Soft drop shadow under the tile
+    // Warm soft shadow under the tile
     this.cardBg.roundRect(
       -maskSize / 2,
       -maskSize / 2 + 3,
@@ -123,9 +123,9 @@ export class Tile {
       maskSize,
       maskRadius,
     );
-    this.cardBg.fill({ color: 0x000000, alpha: 0.25 });
+    this.cardBg.fill({ color: 0x55352f, alpha: 0.3 });
 
-    // Thin elegant white frame around the tile image
+    // Frosted face and a thin ivory frame around the character.
     this.cardBg.roundRect(
       -maskSize / 2,
       -maskSize / 2,
@@ -133,7 +133,8 @@ export class Tile {
       maskSize,
       maskRadius,
     );
-    this.cardBg.stroke({ color: 0xffffff, width: 2.2 });
+    this.cardBg.fill({ color: 0xffe8d1, alpha: 0.1 });
+    this.cardBg.stroke({ color: 0xfff7e8, width: 1.8, alpha: 0.86 });
 
     // Crop Mask to isolate the animal character (full rounded rectangle)
     this.cardMask.clear();
@@ -255,28 +256,18 @@ export class Tile {
         onComplete: () => {
           soundManager.playLand();
           if (this.sprite && !this.sprite.destroyed) {
-            const baseScale = 1.0; // Standard container baseline scale
-
-            gsap
-              .timeline()
-              .to(this.sprite.scale, {
-                x: baseScale * 1.15,
-                y: baseScale * 0.82,
-                duration: 0.08,
-                ease: "power1.out",
-              })
-              .to(this.sprite.scale, {
-                x: baseScale * 0.9,
-                y: baseScale * 1.08,
-                duration: 0.08,
-                ease: "power1.inOut",
-              })
-              .to(this.sprite.scale, {
-                x: baseScale,
-                y: baseScale,
-                duration: 0.1,
-                ease: "sine.out",
-              });
+            // One compact landing tween replaces the former three-step chain.
+            // Resolve only after it finishes so cascade VFX cannot overlap the
+            // next refill pass on slower mobile devices.
+            this.sprite.scale.set(1.08, 0.92);
+            gsap.to(this.sprite.scale, {
+              x: 1,
+              y: 1,
+              duration: 0.12,
+              ease: "back.out(1.5)",
+              onComplete: resolve,
+            });
+            return;
           }
           resolve();
         },
@@ -355,6 +346,8 @@ export class Tile {
    * @param {string} color - The new color
    */
   reset(color) {
+    gsap.killTweensOf(this.sprite);
+    gsap.killTweensOf(this.sprite.scale);
     this.color = color;
     if (this.imageSprite) {
       this.imageSprite.texture = Texture.from(color);
@@ -415,6 +408,17 @@ export class Tile {
     }
 
     if (!this.sprite) return;
+    if (
+      !this.frozen &&
+      !this.corrupt &&
+      !this.poisoned &&
+      !this.hidden &&
+      !this.isRune &&
+      !this.isRainbow &&
+      !this.isDrum
+    ) {
+      return;
+    }
 
     const tileSize = App.config.tileSize;
     const overlay = new Graphics();
@@ -565,6 +569,8 @@ export class Tile {
   remove(immediate = false) {
     if (this.isRemoving || !this.sprite) return; // Đã bị xóa rồi
     this.isRemoving = true;
+    gsap.killTweensOf(this.sprite);
+    gsap.killTweensOf(this.sprite.scale);
 
     // Xóa tham chiếu 2 chiều ngay lập tức để logic game không dính lỗi
     if (this.field) {

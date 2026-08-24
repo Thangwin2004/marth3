@@ -7,6 +7,7 @@ const ICONS = {
   settings: `<svg viewBox="0 0 24 24" width="40" height="40"><path fill="#ffffff" d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>`,
   trophy: `<svg viewBox="0 0 24 24" width="40" height="40"><path fill="#ffffff" d="M19,5h-2V3H7v2H5C3.9,5,3,5.9,3,7v1c0,2.55,1.92,4.63,4.39,4.94c0.63,1.5,1.98,2.63,3.61,2.96V19H7v2h10v-2h-4v-3.1 c1.63-0.33,2.98-1.46,3.61-2.96C19.08,12.63,21,10.55,21,8V7C21,5.9,20.1,5,19,5z M5,8V7h2v3.82C5.84,10.4,5,9.3,5,8z M19,8 c0,1.3-0.84,2.4-2,2.82V7h2V8z"/></svg>`,
   replay: `<svg viewBox="0 0 24 24" width="40" height="40"><path fill="#ffffff" d="M17.65,6.35C16.2,4.9,14.21,4,12,4c-4.42,0-7.99,3.58-7.99,8s3.57,8,7.99,8c3.73,0,6.84-2.55,7.73-6h-2.08 c-0.82,2.33-3.04,4-5.65,4c-3.31,0-6-2.69-6-6s2.69-6,6-6c1.66,0,3.14,0.69,4.22,1.78L13,11h7V4L17.65,6.35z"/></svg>`,
+  hint: `<svg viewBox="0 0 24 24" width="40" height="40"><path fill="#ffffff" d="M9 21h6v-1H9v1zm3-19a7 7 0 0 0-4 12.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26A7 7 0 0 0 12 2zm2.85 11.1-.85.6V16h-4v-2.3l-.85-.6A5 5 0 1 1 14.85 13.1z"/></svg>`,
   close: `<svg viewBox="0 0 24 24" width="40" height="40"><path fill="#ffffff" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41z"/></svg>`,
 };
 
@@ -28,9 +29,9 @@ export const palettes = {
     stroke: 0xffffff,
   },
   purple: {
-    top: 0x88d399,
-    bottom: 0x5cb475,
-    shadow: 0x4a965e,
+    top: 0xe567ee,
+    bottom: 0xae36d4,
+    shadow: 0x7a249f,
     stroke: 0xffffff,
   },
 };
@@ -53,6 +54,7 @@ export function mapEmojiToIconType(emojiChar) {
   if (str.includes("🎵") || str === "music") return "music";
   if (str.includes("🛒") || str === "shop" || str === "gift") return "shop";
   if (str.includes("❓") || str === "help" || str === "info") return "help";
+  if (str === "hint") return "hint";
   if (str.includes("📺") || str === "video") return "video";
   if (str.includes("🥇") || str === "gold") return "gold";
   if (str.includes("🥈") || str === "silver") return "silver";
@@ -553,28 +555,50 @@ export class Colorful3DCircleButton extends Container {
     this.eventMode = "static";
     this.cursor = "pointer";
 
-    this.on("pointerover", () => {
-      gsap.to(this.scale, { x: 1.08, y: 1.08, duration: 0.12 });
+    const resetButtonState = () => {
+      const restX = this._restScaleX ?? this.scale.x;
+      const restY = this._restScaleY ?? this.scale.y;
+      gsap.killTweensOf(this.scale);
+      gsap.killTweensOf(this.face);
+      gsap.to(this.scale, { x: restX, y: restY, duration: 0.1 });
+      gsap.to(this.face, { y: 0, duration: 0.08 });
+    };
+
+    this.on("pointerover", (event) => {
+      if (event.pointerType === "touch") return;
+      this._restScaleX = this.scale.x;
+      this._restScaleY = this.scale.y;
+      gsap.to(this.scale, {
+        x: this._restScaleX * 1.08,
+        y: this._restScaleY * 1.08,
+        duration: 0.12,
+      });
       // soundManager.playClick();
     });
 
-    this.on("pointerout", () => {
-      gsap.to(this.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-      gsap.to(this.face, { y: 0, duration: 0.1 });
-    });
+    this.on("pointerout", resetButtonState);
 
-    this.on("pointerdown", () => {
+    this.on("pointerdown", (event) => {
+      if (event.pointerType === "touch") {
+        this._restScaleX = this.scale.x;
+        this._restScaleY = this.scale.y;
+      }
+      gsap.killTweensOf(this.scale);
+      gsap.to(this.scale, {
+        x: (this._restScaleX ?? this.scale.x) * 0.96,
+        y: (this._restScaleY ?? this.scale.y) * 0.96,
+        duration: 0.05,
+      });
       gsap.to(this.face, { y: shadowOffset - 2, duration: 0.05 });
     });
 
     this.on("pointerup", () => {
-      gsap.to(this.face, { y: 0, duration: 0.1 });
+      resetButtonState();
       if (this.onClick) this.onClick();
     });
 
-    this.on("pointerupoutside", () => {
-      gsap.to(this.face, { y: 0, duration: 0.1 });
-    });
+    this.on("pointerupoutside", resetButtonState);
+    this.on("pointercancel", resetButtonState);
   }
 
   updateStyle(r) {
@@ -698,27 +722,49 @@ export class Colorful3DButton extends Container {
     this.eventMode = "static";
     this.cursor = "pointer";
 
-    this.on("pointerover", () => {
-      gsap.to(this.scale, { x: 1.05, y: 1.05, duration: 0.12 });
+    const resetButtonState = () => {
+      const restX = this._restScaleX ?? this.scale.x;
+      const restY = this._restScaleY ?? this.scale.y;
+      gsap.killTweensOf(this.scale);
+      gsap.killTweensOf(this.face);
+      gsap.to(this.scale, { x: restX, y: restY, duration: 0.1 });
+      gsap.to(this.face, { y: 0, duration: 0.08 });
+    };
+
+    this.on("pointerover", (event) => {
+      if (event.pointerType === "touch") return;
+      this._restScaleX = this.scale.x;
+      this._restScaleY = this.scale.y;
+      gsap.to(this.scale, {
+        x: this._restScaleX * 1.05,
+        y: this._restScaleY * 1.05,
+        duration: 0.12,
+      });
       // soundManager.playClick();
     });
 
-    this.on("pointerout", () => {
-      gsap.to(this.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-      gsap.to(this.face, { y: 0, duration: 0.1 });
-    });
+    this.on("pointerout", resetButtonState);
 
-    this.on("pointerdown", () => {
+    this.on("pointerdown", (event) => {
+      if (event.pointerType === "touch") {
+        this._restScaleX = this.scale.x;
+        this._restScaleY = this.scale.y;
+      }
+      gsap.killTweensOf(this.scale);
+      gsap.to(this.scale, {
+        x: (this._restScaleX ?? this.scale.x) * 0.97,
+        y: (this._restScaleY ?? this.scale.y) * 0.97,
+        duration: 0.05,
+      });
       gsap.to(this.face, { y: shadowOffset - 2, duration: 0.05 });
     });
 
     this.on("pointerup", () => {
-      gsap.to(this.face, { y: 0, duration: 0.1 });
+      resetButtonState();
       if (this.onClick) this.onClick();
     });
 
-    this.on("pointerupoutside", () => {
-      gsap.to(this.face, { y: 0, duration: 0.1 });
-    });
+    this.on("pointerupoutside", resetButtonState);
+    this.on("pointercancel", resetButtonState);
   }
 }

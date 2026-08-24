@@ -383,16 +383,33 @@ export class CombinationManager {
    * @returns {boolean} True nếu còn ít nhất 1 nước đi, ngược lại False.
    */
   hasPossibleMoves() {
+    return this.findPossibleMove() !== null;
+  }
+
+  /**
+   * Return one legal swap that produces a match. This powers the optional
+   * rewarded hint without changing the board or playing the move for players.
+   *
+   * @returns {{ tile1: import('./Tile.js').Tile, tile2: import('./Tile.js').Tile } | null}
+   */
+  findPossibleMove() {
     for (let row = 0; row < this.board.rows; row++) {
       for (let col = 0; col < this.board.cols; col++) {
         const field = this.board.getField(row, col);
         if (!field || !field.tile || field.isVoid) continue;
         const tile = field.tile;
+        if (tile.isStone || tile.frozen) continue;
 
         // Thử đổi chỗ với ô bên phải
         if (col < this.board.cols - 1) {
           const rightField = this.board.getField(row, col + 1);
-          if (rightField && rightField.tile && !rightField.isVoid) {
+          if (
+            rightField &&
+            rightField.tile &&
+            !rightField.isVoid &&
+            !rightField.tile.isStone &&
+            !rightField.tile.frozen
+          ) {
             const rightTile = rightField.tile;
 
             // Swap giả lập
@@ -408,7 +425,7 @@ export class CombinationManager {
             this.board.swap(rightTile, tile);
 
             if (matches.length > 0) {
-              return true;
+              return { tile1: tile, tile2: rightTile };
             }
           }
         }
@@ -416,7 +433,13 @@ export class CombinationManager {
         // Thử đổi chỗ với ô bên dưới
         if (row < this.board.rows - 1) {
           const bottomField = this.board.getField(row + 1, col);
-          if (bottomField && bottomField.tile && !bottomField.isVoid) {
+          if (
+            bottomField &&
+            bottomField.tile &&
+            !bottomField.isVoid &&
+            !bottomField.tile.isStone &&
+            !bottomField.tile.frozen
+          ) {
             const bottomTile = bottomField.tile;
 
             // Swap giả lập
@@ -432,13 +455,13 @@ export class CombinationManager {
             this.board.swap(bottomTile, tile);
 
             if (matches.length > 0) {
-              return true;
+              return { tile1: tile, tile2: bottomTile };
             }
           }
         }
       }
     }
-    return false;
+    return null;
   }
 
   /**

@@ -25,6 +25,13 @@ import {
 import { winkGame } from "../integrations/wink/wink-adapter.js";
 
 function getEffectiveUser() {
+  if (winkGame && winkGame.personalBest?.displayName) {
+    return {
+      id: winkGame.personalBest.userId || "wink_user",
+      name: winkGame.personalBest.displayName,
+    };
+  }
+
   try {
     const savedUser = localStorage.getItem("google_user");
     if (savedUser) {
@@ -342,7 +349,7 @@ export class MainMenuScene {
     this.container = new Container();
     this.container.sortableChildren = true;
 
-    App.setBackgroundColor(0x0a0a1a);
+    App.setBackgroundColor(0xf3d29a);
 
     // Make music slightly louder than click SFX (0.18) on Main Menu
     soundManager.setBGMVolume(0.4);
@@ -360,21 +367,26 @@ export class MainMenuScene {
     this.bg = new Sprite(Texture.WHITE);
     this.bg.width = App.app.screen.width;
     this.bg.height = App.app.screen.height;
-    this.bg.tint = 0x0a0a1a; // dark fallback tint
+    this.bg.tint = 0xf3d29a;
     this.container.addChild(this.bg);
 
-    // Load random background from the 3 new options
-    const bgIndex = Math.floor(Math.random() * 3) + 1;
-    const bgPath = `/assets/backgroud/vietnamese_cultural_landscape_background_${bgIndex}/screen.webp`;
+    // Keep a bright, recognizable home scene instead of changing art every load.
+    const bgPath =
+      "/assets/backgroud/vietnamese_cultural_landscape_background_1/screen.webp";
     Assets.load(bgPath)
       .then((texture) => {
         if (this.bg.destroyed) return;
         this.bg.texture = texture;
-        this.bg.tint = 0x888888; // brighter background for clearer landscape
+        this.bg.tint = 0xffffff;
       })
       .catch((err) => {
         console.error("Failed to load Main Menu background:", err);
       });
+
+    this.bgWash = new Graphics();
+    this.bgWash.rect(0, 0, App.app.screen.width, App.app.screen.height);
+    this.bgWash.fill({ color: 0xffe2ac, alpha: 0.08 });
+    this.container.addChild(this.bgWash);
 
     // === PARTICLES ===
     const tempParticle = new Graphics();
@@ -385,15 +397,16 @@ export class MainMenuScene {
     });
     tempParticle.destroy();
 
-    // Spawn 30 drifting particles
+    // A few warm light motes add life without obscuring the landscape.
     this.particles = [];
-    for (let i = 0; i < 30; i++) {
-      const size = 1 + Math.random() * 3;
+    for (let i = 0; i < 14; i++) {
+      const size = 1 + Math.random() * 2;
       const p = new Sprite(particleTexture);
       p.anchor.set(0.5);
       p.width = size * 2;
       p.height = size * 2;
-      p.alpha = 0.1 + Math.random() * 0.2;
+      p.tint = 0xffd67a;
+      p.alpha = 0.12 + Math.random() * 0.16;
       p.x = Math.random() * App.app.screen.width;
       p.y = Math.random() * App.app.screen.height;
       this.container.addChild(p);
@@ -430,9 +443,9 @@ export class MainMenuScene {
     tempGlow.destroy();
     const glow = new Sprite(glowTexture);
     glow.anchor.set(0.5);
-    glow.y = -100; // Positioned behind the logo
-    glow.tint = 0xffe082; // Warm golden glow to match the new logo
-    glow.alpha = 0.15;
+    glow.y = 105;
+    glow.tint = 0xffdf78;
+    glow.alpha = 0.22;
     this.titleContent.addChild(glow);
 
     gsap.to(glow, {
@@ -457,9 +470,10 @@ export class MainMenuScene {
         if (this.titleContent.destroyed) return;
         const logo = new Sprite(texture);
         logo.anchor.set(0.5);
-        logo.y = -100; // Position above title text
-        logo.width = 140; // Increased size from 120 to 140 for better visibility
-        logo.height = 140;
+        logo.y = 105;
+        logo.width = 210;
+        logo.height = 210;
+        this.menuLogo = logo;
         this.titleContent.addChild(logo);
 
         // Subtle pulsing animation for the logo
@@ -478,64 +492,66 @@ export class MainMenuScene {
 
     // Main title
     const titleGrad = new FillGradient({
-      end: { x: 0, y: 48 },
+      end: { x: 0, y: 110 },
       colorStops: [
-        { color: 0xffffff, offset: 0 },
-        { color: 0xeeeeee, offset: 1 },
+        { color: 0x75e5bd, offset: 0 },
+        { color: 0x14a9c9, offset: 1 },
       ],
     });
 
     const title = new Text({
-      text: "Bộ Lạc CRUSH",
+      text: "BỘ LẠC\nCRUSH",
       style: {
         fontFamily: '"Baloo 2", "Be Vietnam Pro", sans-serif',
-        fontSize: 48,
-        fontWeight: "bold",
+        fontSize: 62,
+        lineHeight: 58,
+        align: "center",
+        fontWeight: "900",
         fill: titleGrad,
+        stroke: { color: 0xffd66b, width: 4, join: "round" },
+        dropShadow: {
+          color: 0x6d4631,
+          alpha: 0.48,
+          blur: 2,
+          distance: 5,
+          angle: Math.PI / 2,
+        },
       },
     });
     title.anchor.set(0.5);
+    title.y = -92;
     this.titleContent.addChild(title);
 
     const subtitle = new Text({
-      text: "DỄ THƯƠNG MATCH-3",
+      text: "MATCH 3",
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
         fontWeight: "bold",
-        fill: "#ffffff",
-
-        letterSpacing: 4,
+        fill: "#684735",
+        letterSpacing: 3,
       },
     });
     subtitle.anchor.set(0.5);
-    subtitle.y = 44;
+    subtitle.y = -24;
+    subtitle.visible = false;
     this.titleContent.addChild(subtitle);
-
-    // Decorative line
-    const line = new Sprite(Texture.WHITE);
-    line.anchor.set(0.5);
-    line.width = 320;
-    line.height = 3;
-    line.tint = 0xffffff;
-    line.alpha = 0.8;
-    line.y = 74;
-    this.titleContent.addChild(line);
 
     // === HIGHEST SCORE DISPLAY ===
     const leaderboard = saveManager.getLeaderboard();
     const topScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
 
+    this.infoPill = new Graphics();
+    this.container.addChild(this.infoPill);
+
     this.infoText = new Text({
-      text:
-        topScore > 0
-          ? `🏆 KỶ LỤC ĐIỂM: ${topScore}`
-          : `🎯 Hãy thiết lập kỷ lục điểm số ngay hôm nay!`,
+      text: `★  ${topScore.toLocaleString("vi-VN")}`,
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
-        fontSize: 18,
-        fontWeight: "bold",
-        fill: "#ffffff",
+        fontSize: 24,
+        fontWeight: "900",
+        fill: "#fff7e9",
+        letterSpacing: 1,
       },
     });
     this.infoText.anchor.set(0.5);
@@ -583,10 +599,11 @@ export class MainMenuScene {
         itemContainer.x = i * spacing;
         this.paradeContainer.addChild(itemContainer);
 
-        // Styled Frame under the sprite to make it stand out - minimal and translucent
+        // Individual frosted cards, matching the reference character dock.
         const frame = new Graphics()
           .roundRect(-30, -30, 60, 60, 10)
-          .fill({ color: 0x000000, alpha: 0.4 });
+          .fill({ color: 0xfff5e6, alpha: 0.2 })
+          .stroke({ color: 0xfff8ee, width: 1.5, alpha: 0.72 });
         itemContainer.addChild(frame);
 
         // Mask for rounded corners on the sprite
@@ -659,21 +676,44 @@ export class MainMenuScene {
       this.bg.width = width;
       this.bg.height = height;
     }
+    if (this.bgWash) {
+      this.bgWash.clear();
+      this.bgWash.rect(0, 0, width, height);
+      this.bgWash.fill({ color: 0xffe2ac, alpha: 0.08 });
+    }
 
-    const scale = Math.min(1.0, width / 450, height / 650);
+    const isPortrait = height > width;
+    const scale = isPortrait
+      ? Math.min(1.0, width / 500, height / 780)
+      : Math.min(1.35, width / 1200, height / 720);
 
     // 2. Title Container
     if (this.titleContainer) {
       this.titleContainer.x = width / 2;
-      this.titleContainer.y = height > width ? height * 0.2 : height * 0.24;
+      this.titleContainer.y = isPortrait ? height * 0.2 : height * 0.26;
       this.titleContainer.scale.set(scale);
     }
 
     // 3. Leaderboard Top Score Info
     if (this.infoText && this.titleContainer) {
       this.infoText.x = width / 2;
-      this.infoText.y = this.titleContainer.y + 115 * scale;
-      this.infoText.style.fontSize = Math.max(12, Math.min(18, 18 * scale));
+      this.infoText.y = this.titleContainer.y + 2 * scale;
+      this.infoText.style.fontSize = Math.max(18, Math.min(24, 24 * scale));
+      if (this.infoPill) {
+        const pillW = Math.max(150, this.infoText.width + 52);
+        const pillH = Math.max(44, 48 * scale);
+        this.infoPill.clear();
+        this.infoPill
+          .roundRect(
+            width / 2 - pillW / 2,
+            this.infoText.y - pillH / 2,
+            pillW,
+            pillH,
+            pillH / 2,
+          )
+          .fill({ color: 0x314a79, alpha: 0.9 })
+          .stroke({ color: 0xffd66b, width: 2.5, alpha: 0.96 });
+      }
     }
 
     // 4. Play Button & Circular buttons below it (Memory Card style layout)
@@ -683,14 +723,18 @@ export class MainMenuScene {
       : this.titleContainer
         ? this.titleContainer.y + 115 * scale
         : height * 0.35;
-    let playY = Math.max(titleBottomY + 80 * scale, height * 0.55);
-    const playH = Math.max(68, Math.min(84, 84 * scale));
+    let playY = Math.max(titleBottomY + 245 * scale, height * 0.65);
+    const playH = isPortrait
+      ? Math.max(68, Math.min(84, 84 * scale))
+      : Math.min(100, Math.max(88, height * 0.1));
 
-    const circR = Math.max(34, Math.min(42, 42 * scale));
+    const circR = isPortrait
+      ? Math.max(34, Math.min(42, 42 * scale))
+      : Math.min(48, Math.max(42, height * 0.05));
     const circGap = 28 * scale;
 
-    // Parade top bound is roughly (height - 85) - 30 = height - 115
-    const maxCircY = height - 115 - 15 - circR;
+    const paradeTop = height - 115;
+    const maxCircY = paradeTop - 20 - circR;
 
     // Determine circY, spacing it nicely below playBtn but avoiding parade
     let circY = Math.max(playY + 110 * scale, height * 0.75);
@@ -732,7 +776,9 @@ export class MainMenuScene {
 
     // 6. Parade bottom banner
     if (this.paradeContainer) {
+      this.paradeContainer.x = 0;
       this.paradeContainer.y = height - 85;
+      this.paradeContainer.scale.set(1);
     }
 
     // 7. Leaderboard Popup Resizing
@@ -924,30 +970,45 @@ export class MainMenuScene {
     }
 
     // Interactivity
-    btn.on("pointerover", (e) => {
-      if (window.matchMedia("(hover: none)").matches) return;
-
-      gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
+    const resetButtonState = () => {
+      const restX = btn._restScaleX ?? btn.scale.x;
+      const restY = btn._restScaleY ?? btn.scale.y;
+      gsap.killTweensOf(btn.scale);
+      gsap.killTweensOf(content);
+      gsap.to(btn.scale, { x: restX, y: restY, duration: 0.1 });
+      gsap.to(content, { y: 0, duration: 0.08 });
+    };
+    btn.on("pointerover", (event) => {
+      if (event.pointerType === "touch") return;
+      btn._restScaleX = btn.scale.x;
+      btn._restScaleY = btn.scale.y;
+      gsap.to(btn.scale, {
+        x: btn._restScaleX * 1.05,
+        y: btn._restScaleY * 1.05,
+        duration: 0.12,
+      });
       // soundManager.playClick();
     });
-    btn.on("pointerout", (e) => {
-      if (window.matchMedia("(hover: none)").matches) return;
-
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-      gsap.to(content, { y: 0, duration: 0.1 });
-    });
-    btn.on("pointerdown", () => {
+    btn.on("pointerout", resetButtonState);
+    btn.on("pointerdown", (event) => {
+      if (event.pointerType === "touch") {
+        btn._restScaleX = btn.scale.x;
+        btn._restScaleY = btn.scale.y;
+      }
+      gsap.killTweensOf(btn.scale);
+      gsap.to(btn.scale, {
+        x: (btn._restScaleX ?? btn.scale.x) * 0.97,
+        y: (btn._restScaleY ?? btn.scale.y) * 0.97,
+        duration: 0.05,
+      });
       gsap.to(content, { y: shadowOffset - 1, duration: 0.05 });
     });
     btn.on("pointerup", () => {
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-      gsap.to(content, { y: 0, duration: 0.1 });
+      resetButtonState();
       onClick();
     });
-    btn.on("pointerupoutside", () => {
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-      gsap.to(content, { y: 0, duration: 0.1 });
-    });
+    btn.on("pointerupoutside", resetButtonState);
+    btn.on("pointercancel", resetButtonState);
 
     // Entrance animation
     btn.alpha = 0;
@@ -1010,17 +1071,17 @@ export class MainMenuScene {
         // Soft black drop shadow
         .roundRect(-width / 2, -r + r * 0.22, width, height, radius)
         .fill({ color: 0x000000, alpha: 0.15 })
-        // Mint Green 3D base
+        // Saturated green 3D base, matching the primary action in the reference.
         .roundRect(-width / 2, -r + r * 0.15, width, height, radius)
-        .fill({ color: 0x4a965e });
+        .fill({ color: 0x218a3b });
 
       // 2. Main Face Background (Mint Green gradient)
       const btnGrad = new FillGradient({
         start: { x: 0, y: -r },
         end: { x: 0, y: r },
         colorStops: [
-          { offset: 0, color: 0x88d399 }, // Mint Top
-          { offset: 1, color: 0x5cb475 }, // Mint Bottom
+          { offset: 0, color: 0x8bea55 },
+          { offset: 1, color: 0x39b94b },
         ],
       });
       bg.clear()
@@ -1038,34 +1099,50 @@ export class MainMenuScene {
       label.y = -r * 0.08;
     };
 
-    btn.on("pointerover", (e) => {
-      if (window.matchMedia("(hover: none)").matches) return;
+    const resetButtonState = () => {
+      const restX = btn._restScaleX ?? btn.scale.x;
+      const restY = btn._restScaleY ?? btn.scale.y;
+      gsap.killTweensOf(btn.scale);
+      gsap.killTweensOf(content);
+      gsap.to(btn.scale, { x: restX, y: restY, duration: 0.1 });
+      gsap.to(content, { y: 0, duration: 0.08 });
+    };
 
-      gsap.to(btn.scale, { x: 1.05, y: 1.05, duration: 0.12 });
+    btn.on("pointerover", (event) => {
+      if (event.pointerType === "touch") return;
+      btn._restScaleX = btn.scale.x;
+      btn._restScaleY = btn.scale.y;
+      gsap.to(btn.scale, {
+        x: btn._restScaleX * 1.05,
+        y: btn._restScaleY * 1.05,
+        duration: 0.12,
+      });
       // soundManager.playClick();
     });
 
-    btn.on("pointerout", (e) => {
-      if (window.matchMedia("(hover: none)").matches) return;
+    btn.on("pointerout", resetButtonState);
 
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-      gsap.to(content, { y: 0, duration: 0.1 });
-    });
-
-    btn.on("pointerdown", () => {
+    btn.on("pointerdown", (event) => {
+      if (event.pointerType === "touch") {
+        btn._restScaleX = btn.scale.x;
+        btn._restScaleY = btn.scale.y;
+      }
+      gsap.killTweensOf(btn.scale);
+      gsap.to(btn.scale, {
+        x: (btn._restScaleX ?? btn.scale.x) * 0.97,
+        y: (btn._restScaleY ?? btn.scale.y) * 0.97,
+        duration: 0.05,
+      });
       gsap.to(content, { y: currentR * 0.12, duration: 0.05 });
     });
 
     btn.on("pointerup", () => {
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-      gsap.to(content, { y: 0, duration: 0.1 });
+      resetButtonState();
       onClick();
     });
 
-    btn.on("pointerupoutside", () => {
-      gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.12 });
-      gsap.to(content, { y: 0, duration: 0.1 });
-    });
+    btn.on("pointerupoutside", resetButtonState);
+    btn.on("pointercancel", resetButtonState);
 
     // Entrance animation
     btn.alpha = 0;
@@ -1088,8 +1165,8 @@ export class MainMenuScene {
     customRadius = 26,
   ) {
     let colorStyle = "blue";
-    if (emojiText === "🏆") colorStyle = "red";
-    else if (emojiText === "⚙️") colorStyle = "blue";
+    if (emojiText === "🏆") colorStyle = "blue";
+    else if (emojiText === "⚙️") colorStyle = "purple";
     else if (emojiText === "🏠" || emojiText === "🏡") colorStyle = "yellow";
     else if (emojiText === "🔄") colorStyle = "green";
     else if (emojiText === "✕") colorStyle = "red";
@@ -1156,7 +1233,9 @@ export class MainMenuScene {
     userText.className = "game-leaderboard-user-text";
     userText.innerText = effUser
       ? `Tài khoản: ${effUser.name} (Đã đăng nhập)`
-      : `Tài khoản: Khách (Điểm lưu thiết bị)`;
+      : winkGame?.isAuthenticated
+        ? "Tài khoản: Thành viên (Đã đăng nhập)"
+        : "Tài khoản: Khách (Điểm lưu thiết bị)";
     card.appendChild(userText);
 
     const list = saveManager.getLeaderboard();
@@ -1164,38 +1243,47 @@ export class MainMenuScene {
     const tableContainer = document.createElement("div");
     tableContainer.className = "game-leaderboard-table-container";
 
-    if (list.length === 0) {
-      const emptyText = document.createElement("div");
-      emptyText.style.padding = "24px";
-      emptyText.style.color = "#360207";
-      emptyText.style.fontSize = "16px";
-      emptyText.style.fontWeight = "bold";
-      emptyText.innerText =
-        "Chưa có thành tích nào.\nHãy chơi game để thiết lập kỷ lục nhé! 🚀";
-      tableContainer.appendChild(emptyText);
-    } else {
-      const table = document.createElement("table");
-      table.className = "game-leaderboard-table";
+    const table = document.createElement("table");
+    table.className = "game-leaderboard-table";
 
-      const thead = document.createElement("thead");
-      thead.innerHTML = `
-        <tr>
-          <th>HẠNG</th>
-          <th>THÀNH VIÊN</th>
-          <th>ĐIỂM SỐ</th>
-        </tr>
-      `;
-      table.appendChild(thead);
+    const thead = document.createElement("thead");
+    thead.innerHTML = `
+      <tr>
+        <th>HẠNG</th>
+        <th>THÀNH VIÊN</th>
+        <th>ĐIỂM SỐ</th>
+      </tr>
+    `;
+    table.appendChild(thead);
 
-      const tbody = document.createElement("tbody");
-      list.forEach((entry, idx) => {
+    const tbody = document.createElement("tbody");
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    card.appendChild(tableContainer);
+
+    const renderTable = (entries) => {
+      tbody.innerHTML = "";
+      if (!entries || entries.length === 0) {
+        const emptyRow = document.createElement("tr");
+        emptyRow.innerHTML = `<td colspan="3" style="padding: 24px; color: #360207; font-size: 16px; font-weight: bold; text-align: center;">Chưa có thành tích nào.<br/>Hãy chơi game để thiết lập kỷ lục nhé! 🚀</td>`;
+        tbody.appendChild(emptyRow);
+        return;
+      }
+
+      entries.forEach((entry, idx) => {
         const row = document.createElement("tr");
         if (idx < 3) row.className = `rank-${idx}`;
 
         const medalText =
-          idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}`;
-        const name = entry.userName || "";
-        const avatarUrl = getAvatarUrl(name);
+          idx === 0
+            ? "🥇"
+            : idx === 1
+              ? "🥈"
+              : idx === 2
+                ? "🥉"
+                : `${entry.rank || idx + 1}`;
+        const name = entry.userName || entry.displayName || "Thành viên";
+        const avatarUrl = entry.avatarUrl || getAvatarUrl(name);
 
         row.innerHTML = `
           <td>${medalText}</td>
@@ -1203,15 +1291,11 @@ export class MainMenuScene {
             <img src="${avatarUrl}" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #0088cc; background: #fff;" alt="" />
             <span>${name}</span>
           </td>
-          <td>${entry.score.toLocaleString()}</td>
+          <td>${(entry.score || 0).toLocaleString()}</td>
         `;
         tbody.appendChild(row);
       });
-      table.appendChild(tbody);
-      tableContainer.appendChild(table);
-    }
-
-    card.appendChild(tableContainer);
+    };
 
     // Personal Best Footer
     const personalList = saveManager.load().leaderboard || [];
@@ -1222,19 +1306,11 @@ export class MainMenuScene {
       activeKey = `match3_pure_leaderboard_${effUser.id}`;
     }
 
-    const activeRankIdx = list.findIndex(
-      (entry) => entry.profileKey === activeKey,
-    );
-    const activeRankVal = activeRankIdx !== -1 ? activeRankIdx + 1 : null;
-    const activeName = effUser ? effUser.name : "Khách";
-    const activeAvatarUrl = getAvatarUrl(activeName);
-
     const footer = document.createElement("div");
     footer.className = "game-leaderboard-footer";
 
     const rankItem = document.createElement("div");
     rankItem.className = "game-leaderboard-footer-item";
-    rankItem.innerText = activeRankVal ? `Hạng: #${activeRankVal}` : "Hạng: -";
     footer.appendChild(rankItem);
 
     const nameItem = document.createElement("div");
@@ -1243,18 +1319,74 @@ export class MainMenuScene {
     nameItem.style.alignItems = "center";
     nameItem.style.justifyContent = "center";
     nameItem.style.gap = "6px";
-    nameItem.innerHTML = `
-      <img src="${activeAvatarUrl}" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #0088cc;" alt="" />
-      <span>${activeName}</span>
-    `;
     footer.appendChild(nameItem);
 
     const scoreItem = document.createElement("div");
     scoreItem.className = "game-leaderboard-footer-item";
-    scoreItem.innerText = `Điểm: ${personalBest.toLocaleString()}`;
     footer.appendChild(scoreItem);
 
     card.appendChild(footer);
+
+    const updateFooter = (pb) => {
+      const activeUser = getEffectiveUser();
+      const pName =
+        pb?.displayName ||
+        (activeUser
+          ? activeUser.name
+          : winkGame?.isAuthenticated
+            ? "Thành viên"
+            : "Bạn (Khách)");
+      const pAvatar = getAvatarUrl(pName);
+      const pScore =
+        pb?.score !== undefined && pb?.score !== null ? pb.score : personalBest;
+      const rankNum = pb?.rank || (pScore > 0 ? 1 : null);
+
+      userText.innerText = activeUser
+        ? `Tài khoản: ${activeUser.name} (Đã đăng nhập)`
+        : winkGame?.isAuthenticated
+          ? "Tài khoản: Thành viên (Đã đăng nhập)"
+          : "Tài khoản: Khách (Điểm lưu thiết bị)";
+
+      rankItem.innerText = rankNum ? `Hạng: #${rankNum}` : "Hạng: -";
+      nameItem.innerHTML = `
+        <img src="${pAvatar}" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #0088cc;" alt="" />
+        <span>${pName}</span>
+      `;
+      scoreItem.innerText = `Điểm: ${(pScore || 0).toLocaleString()}`;
+    };
+
+    // Initial render
+    renderTable(list);
+    updateFooter(winkGame?.personalBest);
+
+    // Async fetch from Wink API
+    if (winkGame) {
+      Promise.all([
+        winkGame.refreshLeaderboard({ limit: 10 }),
+        winkGame.getPersonalBest(),
+      ])
+        .then(([lbRes, pbRes]) => {
+          if (
+            lbRes &&
+            Array.isArray(lbRes.entries) &&
+            lbRes.entries.length > 0
+          ) {
+            const apiEntries = lbRes.entries.map((item, idx) => ({
+              userName:
+                item.displayName ||
+                item.name ||
+                `Thành viên #${item.rank || idx + 1}`,
+              score: item.score || 0,
+              rank: item.rank || idx + 1,
+              avatarUrl: item.avatarUrl,
+            }));
+            renderTable(apiEntries);
+          }
+          const activePb = pbRes?.me || lbRes?.me || winkGame.personalBest;
+          updateFooter(activePb);
+        })
+        .catch(() => {});
+    }
 
     overlay.appendChild(card);
     const appContainer = document.getElementById("app") || document.body;
