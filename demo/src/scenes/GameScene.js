@@ -19,6 +19,7 @@ import { sceneManager } from "../system/SceneManager.js";
 import { soundManager } from "../system/SoundManager.js";
 import { winkGame } from "../integrations/wink/wink-adapter.js";
 import gsap from "gsap";
+import { coverSprite } from "../utils/layout.js";
 import {
   Colorful3DCircleButton,
   Colorful3DButton,
@@ -443,8 +444,7 @@ export class GameScene {
 
     // === CREATE BACKGROUND ===
     this.bg = new Sprite(this.bgTexture);
-    this.bg.width = App.app.screen.width;
-    this.bg.height = App.app.screen.height;
+    coverSprite(this.bg, App.app.screen.width, App.app.screen.height);
     this.bg.tint = 0xffffff;
     this.container.addChild(this.bg);
 
@@ -4067,9 +4067,10 @@ export class GameScene {
     customRadius = 26,
   ) {
     let colorStyle = "blue";
-    if (emojiText === "🏆") colorStyle = "red";
+    if (emojiText === "hint") colorStyle = "blue";
+    else if (emojiText === "🏆") colorStyle = "red";
     else if (emojiText === "⚙️" || emojiText === "settings")
-      colorStyle = "blue";
+      colorStyle = "purple";
     else if (emojiText === "🏠" || emojiText === "🏡" || emojiText === "home")
       colorStyle = "blue";
     else if (emojiText === "🔄" || emojiText === "replay") colorStyle = "green";
@@ -4112,8 +4113,7 @@ export class GameScene {
 
     // 1. Resize Background
     if (this.bg) {
-      this.bg.width = width;
-      this.bg.height = height;
+      coverSprite(this.bg, width, height);
     }
     if (this.bgOverlay) {
       this.bgOverlay.clear();
@@ -4520,7 +4520,7 @@ export class GameScene {
 
       const toggle = document.createElement("div");
       const isMuted = !isEnabled;
-      toggle.style.cssText = `width:90px; height:42px; border-radius:21px; background:${isMuted ? "#E8E3D8" : "#81C784"}; box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s; flex-shrink:0; display:flex; align-items:center;`;
+      toggle.style.cssText = `width:90px; height:42px; border-radius:21px; background:${isMuted ? "linear-gradient(180deg,#d9d6cf,#aaa69e)" : "linear-gradient(180deg,#7eea94,#25b957)"}; border:2px solid #fff; box-shadow: inset 0 2px 0 rgba(255,255,255,.4), 0 4px 0 ${isMuted ? "#7d7972" : "#14873b"}, 0 7px 12px rgba(36,24,42,.2); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s, box-shadow .1s; flex-shrink:0; display:flex; align-items:center;`;
 
       const statusText = document.createElement("span");
       statusText.innerText = isMuted ? "OFF" : "ON";
@@ -4535,7 +4535,10 @@ export class GameScene {
       toggle.onclick = () => {
         const newState = onToggle();
         const nowMuted = !newState;
-        toggle.style.background = nowMuted ? "#E8E3D8" : "#81C784";
+        toggle.style.background = nowMuted
+          ? "linear-gradient(180deg,#d9d6cf,#aaa69e)"
+          : "linear-gradient(180deg,#7eea94,#25b957)";
+        toggle.style.boxShadow = `inset 0 2px 0 rgba(255,255,255,.4), 0 4px 0 ${nowMuted ? "#7d7972" : "#14873b"}, 0 7px 12px rgba(36,24,42,.2)`;
         knob.style.left = nowMuted ? "4px" : "52px";
         statusText.innerText = nowMuted ? "OFF" : "ON";
         statusText.style.paddingRight = nowMuted ? "0" : "28px";
@@ -4584,8 +4587,9 @@ export class GameScene {
       actionContainer.className = "game-paused-action-container";
 
       const homeBtn = document.createElement("button");
-      homeBtn.className = "game-paused-btn";
-      homeBtn.style.backgroundImage = "url(/assets/home_btn.webp)";
+      homeBtn.className = "game-paused-btn game-paused-btn--home";
+      homeBtn.setAttribute("aria-label", "Về trang chính");
+      homeBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`;
       homeBtn.addEventListener("click", async () => {
         overlay.remove();
         this.settingsPopup = null;
@@ -4595,8 +4599,9 @@ export class GameScene {
       actionContainer.appendChild(homeBtn);
 
       const replayBtn = document.createElement("button");
-      replayBtn.className = "game-paused-btn";
-      replayBtn.style.backgroundImage = "url(/assets/replay_btn.webp)";
+      replayBtn.className = "game-paused-btn game-paused-btn--replay";
+      replayBtn.setAttribute("aria-label", "Chơi lại");
+      replayBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg>`;
       replayBtn.addEventListener("click", async () => {
         overlay.remove();
         this.settingsPopup = null;
@@ -4605,8 +4610,9 @@ export class GameScene {
       actionContainer.appendChild(replayBtn);
 
       const continueBtn = document.createElement("button");
-      continueBtn.className = "game-paused-btn";
-      continueBtn.style.backgroundImage = "url(/assets/continue_btn.webp)";
+      continueBtn.className = "game-paused-btn game-paused-btn--continue";
+      continueBtn.setAttribute("aria-label", "Tiếp tục");
+      continueBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
       continueBtn.addEventListener("click", closePopup);
       actionContainer.appendChild(continueBtn);
 

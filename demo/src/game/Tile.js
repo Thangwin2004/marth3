@@ -256,17 +256,23 @@ export class Tile {
         onComplete: () => {
           soundManager.playLand();
           if (this.sprite && !this.sprite.destroyed) {
-            // One compact landing tween replaces the former three-step chain.
-            // Resolve only after it finishes so cascade VFX cannot overlap the
-            // next refill pass on slower mobile devices.
-            this.sprite.scale.set(1.08, 0.92);
-            gsap.to(this.sprite.scale, {
-              x: 1,
-              y: 1,
-              duration: 0.12,
-              ease: "back.out(1.5)",
-              onComplete: resolve,
-            });
+            // Lightweight two-beat squash and bounce. It keeps the landing
+            // readable while using fewer tweens than the old three-stage chain.
+            this.sprite.scale.set(1.1, 0.86);
+            gsap
+              .timeline({ onComplete: resolve })
+              .to(this.sprite.scale, {
+                x: 0.94,
+                y: 1.08,
+                duration: 0.07,
+                ease: "power1.out",
+              })
+              .to(this.sprite.scale, {
+                x: 1,
+                y: 1,
+                duration: 0.1,
+                ease: "back.out(1.7)",
+              });
             return;
           }
           resolve();

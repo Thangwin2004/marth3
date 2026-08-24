@@ -23,6 +23,7 @@ import {
   mapEmojiToIconType,
 } from "../system/UIComponents.js";
 import { winkGame } from "../integrations/wink/wink-adapter.js";
+import { coverSprite } from "../utils/layout.js";
 
 function getEffectiveUser() {
   if (winkGame && winkGame.personalBest?.displayName) {
@@ -365,8 +366,7 @@ export class MainMenuScene {
 
     // === BACKGROUND ===
     this.bg = new Sprite(Texture.WHITE);
-    this.bg.width = App.app.screen.width;
-    this.bg.height = App.app.screen.height;
+    coverSprite(this.bg, App.app.screen.width, App.app.screen.height);
     this.bg.tint = 0xf3d29a;
     this.container.addChild(this.bg);
 
@@ -378,6 +378,7 @@ export class MainMenuScene {
         if (this.bg.destroyed) return;
         this.bg.texture = texture;
         this.bg.tint = 0xffffff;
+        this.resize();
       })
       .catch((err) => {
         console.error("Failed to load Main Menu background:", err);
@@ -464,22 +465,26 @@ export class MainMenuScene {
       ease: "sine.inOut",
     });
 
+    // Dedicated mascot wrapper keeps the character responsive without changing
+    // the title transform or the button layout.
+    this.menuMascotContainer = new Container();
+    this.titleContent.addChild(this.menuMascotContainer);
+
     // Load and add the new logo
     Assets.load("/logo.webp")
       .then((texture) => {
         if (this.titleContent.destroyed) return;
         const logo = new Sprite(texture);
         logo.anchor.set(0.5);
-        logo.y = 105;
-        logo.width = 210;
-        logo.height = 210;
+        logo.width = 300;
+        logo.height = 300;
         this.menuLogo = logo;
-        this.titleContent.addChild(logo);
+        this.menuMascotContainer.addChild(logo);
+        this.resize();
 
-        // Subtle pulsing animation for the logo
-        gsap.to(logo.scale, {
-          x: logo.scale.x * 1.06,
-          y: logo.scale.y * 1.06,
+        // Animate the wrapper so responsive sprite dimensions remain stable.
+        gsap.to(this.menuMascotContainer, {
+          y: this.menuMascotContainer.y + 6,
           duration: 2.5,
           yoyo: true,
           repeat: -1,
@@ -673,8 +678,10 @@ export class MainMenuScene {
 
     // 1. Background
     if (this.bg) {
-      this.bg.width = width;
-      this.bg.height = height;
+      coverSprite(this.bg, width, height, {
+        focusX: height > width ? 0.46 : 0.5,
+        focusY: 0.5,
+      });
     }
     if (this.bgWash) {
       this.bgWash.clear();
@@ -692,6 +699,14 @@ export class MainMenuScene {
       this.titleContainer.x = width / 2;
       this.titleContainer.y = isPortrait ? height * 0.2 : height * 0.26;
       this.titleContainer.scale.set(scale);
+    }
+    if (this.menuLogo && this.menuMascotContainer) {
+      const mascotSize = isPortrait
+        ? Math.max(280, Math.min(330, (width * 0.74) / scale))
+        : Math.min(230, Math.max(190, height * 0.29));
+      this.menuLogo.width = mascotSize;
+      this.menuLogo.height = mascotSize;
+      this.menuMascotContainer.y = isPortrait ? 250 : 112;
     }
 
     // 3. Leaderboard Top Score Info
@@ -842,22 +857,26 @@ export class MainMenuScene {
 
     const shadow = new Graphics();
     const bg = new Graphics();
+    const innerRim = new Graphics();
     const highlight = new Graphics();
 
     content.addChild(shadow);
     content.addChild(bg);
+    content.addChild(innerRim);
     content.addChild(highlight);
 
     const hh = btnHeight / 2;
     const isSmall = width < 150;
     const radius = hh; // Capsule corner radius
-    const shadowOffset = isSmall ? 4 : 5;
+    const shadowOffset = isSmall ? 3 : 4;
 
     const colorStyle = getColorStyle(color, label);
     const theme = palettes[colorStyle] || palettes.blue;
 
     // 1. 3D Base Shadow
     shadow
+      .roundRect(-width / 2, -hh + shadowOffset + 2, width, btnHeight, radius)
+      .fill({ color: 0x24182a, alpha: 0.14 })
       .roundRect(-width / 2, -hh + shadowOffset, width, btnHeight, radius)
       .fill({ color: theme.shadow });
 
@@ -872,12 +891,22 @@ export class MainMenuScene {
     });
     bg.roundRect(-width / 2, -hh, width, btnHeight, radius)
       .fill({ fill: btnGrad })
-      .stroke({ width: 2.5, color: theme.stroke });
+      .stroke({ width: 2.25, color: theme.stroke });
+
+    innerRim
+      .roundRect(
+        -width / 2 + 4,
+        -hh + 4,
+        width - 8,
+        btnHeight - 8,
+        Math.max(6, radius - 4),
+      )
+      .stroke({ width: 1, color: 0xffffff, alpha: 0.28 });
 
     // 3. Glossy highlight sheen on top (ellipse highlight)
     highlight
-      .ellipse(0, -hh / 2, width * 0.42, btnHeight * 0.2)
-      .fill({ color: 0xffffff, alpha: 0.25 });
+      .ellipse(0, -hh * 0.53, width * 0.36, btnHeight * 0.105)
+      .fill({ color: 0xffffff, alpha: 0.3 });
 
     // Add Label / Icon
     let textObj = null;
@@ -1036,10 +1065,12 @@ export class MainMenuScene {
 
     const shadow = new Graphics();
     const bg = new Graphics();
+    const innerRim = new Graphics();
     const highlight = new Graphics();
 
     content.addChild(shadow);
     content.addChild(bg);
+    content.addChild(innerRim);
     content.addChild(highlight);
 
     // Vietnamese label "CHƠI NGAY"
@@ -1068,32 +1099,41 @@ export class MainMenuScene {
       // 1. Draw 3D Base Shadow (Combined bottom shadow and 3D base)
       shadow
         .clear()
-        // Soft black drop shadow
-        .roundRect(-width / 2, -r + r * 0.22, width, height, radius)
-        .fill({ color: 0x000000, alpha: 0.15 })
-        // Saturated green 3D base, matching the primary action in the reference.
-        .roundRect(-width / 2, -r + r * 0.15, width, height, radius)
-        .fill({ color: 0x218a3b });
+        .roundRect(-width / 2, -r + r * 0.2, width, height, radius)
+        .fill({ color: 0x24182a, alpha: 0.14 })
+        .roundRect(-width / 2, -r + r * 0.12, width, height, radius)
+        .fill({ color: 0x2d7d46 });
 
       // 2. Main Face Background (Mint Green gradient)
       const btnGrad = new FillGradient({
         start: { x: 0, y: -r },
         end: { x: 0, y: r },
         colorStops: [
-          { offset: 0, color: 0x8bea55 },
-          { offset: 1, color: 0x39b94b },
+          { offset: 0, color: 0x56bd72 },
+          { offset: 1, color: 0x43aa61 },
         ],
       });
       bg.clear()
         .roundRect(-width / 2, -r, width, height, radius)
         .fill({ fill: btnGrad })
-        .stroke({ width: Math.max(3, r * 0.15), color: 0xffffff }); // White border
+        .stroke({ width: Math.max(2.5, r * 0.09), color: 0xffffff });
+
+      innerRim
+        .clear()
+        .roundRect(
+          -width / 2 + 5,
+          -r + 5,
+          width - 10,
+          height - 10,
+          Math.max(8, radius - 5),
+        )
+        .stroke({ width: 1, color: 0xffffff, alpha: 0.28 });
 
       // 3. Glossy highlight sheen on top (ellipse highlight)
       highlight
         .clear()
-        .ellipse(0, -r / 2, width * 0.42, height * 0.2)
-        .fill({ color: 0xffffff, alpha: 0.25 });
+        .ellipse(0, -r * 0.51, width * 0.36, height * 0.105)
+        .fill({ color: 0xffffff, alpha: 0.31 });
 
       label.style.fontSize = Math.max(14, r * 0.52);
       label.y = -r * 0.08;
@@ -1452,7 +1492,7 @@ export class MainMenuScene {
 
       const toggle = document.createElement("div");
       const isMuted = !isEnabled;
-      toggle.style.cssText = `width:96px; height:46px; border-radius:23px; background:${isMuted ? "#E8E3D8" : "#81C784"}; border:3px solid #fff; box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s; flex-shrink:0; display:flex; align-items:center;`;
+      toggle.style.cssText = `width:96px; height:46px; border-radius:23px; background:${isMuted ? "linear-gradient(180deg,#d9d6cf,#aaa69e)" : "linear-gradient(180deg,#7eea94,#25b957)"}; border:3px solid #fff; box-shadow: inset 0 2px 0 rgba(255,255,255,.42), 0 4px 0 ${isMuted ? "#7d7972" : "#14873b"}, 0 7px 12px rgba(36,24,42,.2); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s, box-shadow .1s; flex-shrink:0; display:flex; align-items:center;`;
 
       const statusText = document.createElement("span");
       statusText.innerText = isMuted ? "OFF" : "ON";
@@ -1467,7 +1507,10 @@ export class MainMenuScene {
       toggle.onclick = () => {
         const newState = onToggle(); // Trả về trạng thái ENABLED sau khi toggle
         const nowMuted = !newState;
-        toggle.style.background = nowMuted ? "#E8E3D8" : "#81C784";
+        toggle.style.background = nowMuted
+          ? "linear-gradient(180deg,#d9d6cf,#aaa69e)"
+          : "linear-gradient(180deg,#7eea94,#25b957)";
+        toggle.style.boxShadow = `inset 0 2px 0 rgba(255,255,255,.42), 0 4px 0 ${nowMuted ? "#7d7972" : "#14873b"}, 0 7px 12px rgba(36,24,42,.2)`;
         knob.style.left = nowMuted ? "3px" : "51px";
         statusText.innerText = nowMuted ? "OFF" : "ON";
         statusText.style.paddingRight = nowMuted ? "0" : "32px";

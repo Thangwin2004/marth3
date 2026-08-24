@@ -14,24 +14,24 @@ const ICONS = {
 // Vibrant Cartoon 3D Bubble UI Color Palettes
 export const palettes = {
   green: {
-    top: 0x88d399,
-    bottom: 0x5cb475,
-    shadow: 0x4a965e,
+    top: 0x56bd72,
+    bottom: 0x43aa61,
+    shadow: 0x2d7d46,
     stroke: 0xffffff,
   },
-  blue: { top: 0x66c2ff, bottom: 0x2da9ff, shadow: 0x1b89d4, stroke: 0xffffff },
-  red: { top: 0xff8a8a, bottom: 0xef5350, shadow: 0xc62828, stroke: 0xffffff },
+  blue: { top: 0x55add5, bottom: 0x3f99c3, shadow: 0x286d92, stroke: 0xffffff },
+  red: { top: 0xff8278, bottom: 0xea3f42, shadow: 0xb9232b, stroke: 0xffffff },
   grey: { top: 0xe0e0e0, bottom: 0xbdbdbd, shadow: 0x9e9e9e, stroke: 0xffffff },
   orange: {
-    top: 0xffb347,
-    bottom: 0xff7b00,
-    shadow: 0xc45600,
+    top: 0xe1a45a,
+    bottom: 0xce8842,
+    shadow: 0x945c2e,
     stroke: 0xffffff,
   },
   purple: {
-    top: 0xe567ee,
-    bottom: 0xae36d4,
-    shadow: 0x7a249f,
+    top: 0xad70bd,
+    bottom: 0x945ba8,
+    shadow: 0x674278,
     stroke: 0xffffff,
   },
 };
@@ -502,10 +502,12 @@ export class Colorful3DCircleButton extends Container {
     this.onClick = onClick;
 
     const color = palettes[colorStyle] || palettes.blue;
-    const shadowOffset = 5;
+    const shadowOffset = 4;
 
     // 1. Base Shadow Graphics
     this.shadow = new Graphics()
+      .circle(0, shadowOffset + 2, radius)
+      .fill({ color: 0x24182a, alpha: 0.14 })
       .circle(0, shadowOffset, radius)
       .fill({ color: color.shadow });
     this.addChild(this.shadow);
@@ -514,7 +516,7 @@ export class Colorful3DCircleButton extends Container {
     this.face = new Container();
     this.addChild(this.face);
 
-    // 3. Face Background with gradient
+    // 3. Opaque colored face with a restrained double rim
     this.faceBg = new Graphics();
     const faceGradient = new FillGradient({
       start: { x: 0, y: -radius },
@@ -527,13 +529,18 @@ export class Colorful3DCircleButton extends Container {
     this.faceBg
       .circle(0, 0, radius)
       .fill({ fill: faceGradient })
-      .stroke({ color: color.stroke, width: 2.5 });
+      .stroke({ color: color.stroke, width: 2.25 });
     this.face.addChild(this.faceBg);
 
-    // 4. White Sheen Highlight
+    // 4. Inner gloss rim and white sheen
+    this.innerRim = new Graphics()
+      .circle(0, 0, radius - 4)
+      .stroke({ color: 0xffffff, width: 1, alpha: 0.28 });
+    this.face.addChild(this.innerRim);
+
     this.sheen = new Graphics()
-      .ellipse(0, -radius * 0.4, radius * 0.72, radius * 0.35)
-      .fill({ color: 0xffffff, alpha: 0.28 });
+      .ellipse(0, -radius * 0.48, radius * 0.7, radius * 0.13)
+      .fill({ color: 0xffffff, alpha: 0.3 });
     this.face.addChild(this.sheen);
 
     // 5. Vector Icon in center (radius * 1.3 to ensure it is large and visible)
@@ -545,7 +552,7 @@ export class Colorful3DCircleButton extends Container {
     if (ICONS[t]) {
       this.iconGraphics.svg(ICONS[t]);
       this.iconGraphics.pivot.set(12, 12);
-      this.iconGraphics.scale.set((radius * 1.3) / 24);
+      this.iconGraphics.scale.set((radius * 1.22) / 24);
       this.iconGraphics.y = 0;
     } else {
       drawVectorIcon(this.iconGraphics, iconType, radius * 1.3);
@@ -604,10 +611,12 @@ export class Colorful3DCircleButton extends Container {
   updateStyle(r) {
     this.radius = r;
     const color = palettes[this.colorStyle] || palettes.blue;
-    const shadowOffset = Math.max(3, r * 0.18);
+    const shadowOffset = Math.max(3, r * 0.14);
 
     this.shadow
       .clear()
+      .circle(0, shadowOffset + 2, r)
+      .fill({ color: 0x24182a, alpha: 0.14 })
       .circle(0, shadowOffset, r)
       .fill({ color: color.shadow });
 
@@ -623,12 +632,17 @@ export class Colorful3DCircleButton extends Container {
       .clear()
       .circle(0, 0, r)
       .fill({ fill: faceGradient })
-      .stroke({ color: color.stroke, width: 2.5 });
+      .stroke({ color: color.stroke, width: 2.25 });
+
+    this.innerRim
+      .clear()
+      .circle(0, 0, r - 4)
+      .stroke({ color: 0xffffff, width: 1, alpha: 0.28 });
 
     this.sheen
       .clear()
-      .ellipse(0, -r * 0.4, r * 0.72, r * 0.35)
-      .fill({ color: 0xffffff, alpha: 0.28 });
+      .ellipse(0, -r * 0.48, r * 0.7, r * 0.13)
+      .fill({ color: 0xffffff, alpha: 0.3 });
 
     this.iconGraphics.clear();
     const tType =
@@ -637,7 +651,7 @@ export class Colorful3DCircleButton extends Container {
     if (ICONS[tType]) {
       this.iconGraphics.svg(ICONS[tType]);
       this.iconGraphics.pivot.set(12, 12);
-      this.iconGraphics.scale.set((r * 1.3) / 24);
+      this.iconGraphics.scale.set((r * 1.22) / 24);
       this.iconGraphics.y = 0;
     } else {
       drawVectorIcon(
@@ -669,10 +683,18 @@ export class Colorful3DButton extends Container {
     this.onClick = onClick;
 
     const color = palettes[colorStyle] || palettes.yellow;
-    const shadowOffset = 6;
+    const shadowOffset = 4;
 
     // 1. Base Shadow
     this.shadow = new Graphics()
+      .roundRect(
+        -width / 2,
+        -height / 2 + shadowOffset + 2,
+        width,
+        height,
+        radius,
+      )
+      .fill({ color: 0x24182a, alpha: 0.14 })
       .roundRect(-width / 2, -height / 2 + shadowOffset, width, height, radius)
       .fill({ color: color.shadow });
     this.addChild(this.shadow);
@@ -694,13 +716,24 @@ export class Colorful3DButton extends Container {
     this.faceBg
       .roundRect(-width / 2, -height / 2, width, height, radius)
       .fill({ fill: faceGradient })
-      .stroke({ color: color.stroke, width: 2.5 });
+      .stroke({ color: color.stroke, width: 2.25 });
     this.face.addChild(this.faceBg);
 
-    // 4. Sheen
+    // 4. Inner gloss rim and sheen
+    this.innerRim = new Graphics()
+      .roundRect(
+        -width / 2 + 4,
+        -height / 2 + 4,
+        width - 8,
+        height - 8,
+        Math.max(4, radius - 4),
+      )
+      .stroke({ color: 0xffffff, width: 1, alpha: 0.28 });
+    this.face.addChild(this.innerRim);
+
     this.sheen = new Graphics()
-      .ellipse(0, -height / 4, width * 0.42, height * 0.2)
-      .fill({ color: 0xffffff, alpha: 0.28 });
+      .ellipse(0, -height * 0.27, width * 0.36, height * 0.105)
+      .fill({ color: 0xffffff, alpha: 0.3 });
     this.face.addChild(this.sheen);
 
     // 5. Label text
