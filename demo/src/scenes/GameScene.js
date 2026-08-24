@@ -3236,35 +3236,120 @@ export class GameScene {
     });
   }
 
-  showFinalGameOverScreen() {
+  async showFinalGameOverScreen() {
+    if (this._showingFinalGameOver) return;
+    this._showingFinalGameOver = true;
     this.isGameOver = true;
     this.disabled = true;
 
+    const finalScore = Math.max(0, Math.floor(this.score));
+    const readLocalBest = () => {
+      const entries = saveManager.getLeaderboard();
+      return entries.reduce(
+        (best, entry) => Math.max(best, Number(entry.score) || 0),
+        0,
+      );
+    };
+    const localBestBefore = readLocalBest();
+    const localRank = this._debugCompletionActive
+      ? 1
+      : saveManager.addScore(finalScore);
+    const localBestAfter = Math.max(
+      localBestBefore,
+      readLocalBest(),
+      finalScore,
+    );
+
+    const syncScoreWithWink = async (score) => {
+      if (!winkGame.canSubmitScore) return null;
+      const normalizedScore = Math.max(0, Math.floor(Number(score) || 0));
+
+      try {
+        const submission = await winkGame.submitFinalScore({
+          score: normalizedScore,
+          playTime: Math.round(
+            (Date.now() - this._winkRound.startedAtMs) / 1000,
+          ),
+          gameMode: "classic",
+        });
+        if (!submission?.entry) return null;
+
+        // The personal-best endpoint is the authoritative source for both
+        // score and global rank. Refresh it after every accepted submission.
+        const personalBestResult = await winkGame.getPersonalBest();
+        const personalBest = personalBestResult?.me || submission.entry;
+
+        return {
+          source: "wink",
+          isNewBest: submission.isNewBest === true,
+          rank: Number(personalBest?.rank) || null,
+          bestScore: Number(personalBest?.score) || normalizedScore,
+        };
+      } catch (error) {
+        console.warn("[Wink] Không thể đồng bộ điểm:", error);
+        return null;
+      }
+    };
+
+    let scoreSync;
     if (!this._winkRoundFinalized) {
       this._winkRoundFinalized = true;
       winkGame.completeRound(this._winkRound, {
-        metadata: { outcome: "game_over", score: Math.floor(this.score) },
+        metadata: { outcome: "game_over", score: finalScore },
       });
-      if (winkGame.canSubmitScore) {
-        winkGame
-          .submitFinalScore({
-            score: Math.floor(this.score),
-            playTime: Math.round(
-              (Date.now() - this._winkRound.startedAtMs) / 1000,
-            ),
-            gameMode: "classic",
-          })
-          .catch(() => {});
-      }
     }
+
+    if (this._debugCompletionActive) {
+      scoreSync = {
+        source: "debug",
+        isNewBest: true,
+        rank: 1,
+        bestScore: finalScore,
+      };
+    } else if (winkGame.canSubmitScore) {
+      scoreSync = await syncScoreWithWink(finalScore);
+      if (!scoreSync) {
+        scoreSync = {
+          source: "offline",
+          isNewBest: finalScore > localBestBefore,
+          rank: localRank,
+          bestScore: localBestAfter,
+        };
+      }
+    } else if (winkGame.isReady) {
+      scoreSync = {
+        source: "guest",
+        isNewBest: false,
+        rank: null,
+        bestScore: null,
+      };
+    } else {
+      scoreSync = {
+        source: "offline",
+        isNewBest: finalScore > localBestBefore,
+        rank: localRank,
+        bestScore: localBestAfter,
+      };
+    }
+
+    const formatStatus = (sync) => {
+      if (sync.isNewBest) {
+        return sync.rank ? `KỶ LỤC MỚI  ·  #${sync.rank}` : "KỶ LỤC MỚI";
+      }
+      if (sync.source === "wink" && sync.bestScore > 0) {
+        return `CAO NHẤT  ·  ${sync.bestScore.toLocaleString("vi-VN")}`;
+      }
+      if (sync.source === "guest") return "ĐĂNG NHẬP ĐỂ LƯU";
+      if (sync.source === "offline" && sync.bestScore > 0) {
+        return `THIẾT BỊ  ·  ${sync.bestScore.toLocaleString("vi-VN")}`;
+      }
+      return "CHƠI TỐT LẮM!";
+    };
 
     // Dừng nhạc nền và phát nhạc kết quả tương ứng
     soundManager.stopBGM();
-    // Debug completion previews a #1 result without polluting saved scores.
-    const rank = this._debugCompletionActive
-      ? 1
-      : saveManager.addScore(this.score);
-    if (rank) {
+    const rank = scoreSync.isNewBest ? scoreSync.rank : null;
+    if (scoreSync.isNewBest) {
       soundManager.playVictory();
     } else {
       soundManager.playGameOver();
@@ -3626,19 +3711,19 @@ export class GameScene {
     }
 
     const cleanCardShadow = new Graphics()
-      .roundRect(-202, -180, 404, 368, 28)
+      .roundRect(-216, -192, 432, 384, 28)
       .fill({ color: 0x10243d, alpha: 0.3 });
     cleanCardShadow.y = 9;
     this.gameOverModal.addChild(cleanCardShadow);
 
     const cleanCard = new Graphics()
-      .roundRect(-202, -180, 404, 368, 28)
+      .roundRect(-216, -192, 432, 384, 28)
       .fill({ color: 0xe8ebef, alpha: 0.82 })
       .stroke({ color: 0xffffff, width: 3, alpha: 0.82 });
     this.gameOverModal.addChild(cleanCard);
 
     const cleanInnerLine = new Graphics()
-      .roundRect(-193, -171, 386, 350, 22)
+      .roundRect(-207, -183, 414, 366, 22)
       .stroke({ color: 0xcbd2dc, width: 1.5, alpha: 0.7 });
     this.gameOverModal.addChild(cleanInnerLine);
 
@@ -3653,16 +3738,11 @@ export class GameScene {
       },
     });
     cleanTitle.anchor.set(0.5);
-    cleanTitle.y = -143;
+    cleanTitle.y = -151;
     this.gameOverModal.addChild(cleanTitle);
 
-    const titleDivider = new Graphics()
-      .roundRect(-86, -117, 172, 3, 1.5)
-      .fill({ color: 0xb9c4d1 });
-    this.gameOverModal.addChild(titleDivider);
-
     const resultMedal = new Container();
-    resultMedal.y = -72;
+    resultMedal.y = -85;
     this.gameOverModal.addChild(resultMedal);
 
     const medalShadow = new Graphics()
@@ -3703,12 +3783,12 @@ export class GameScene {
       },
     });
     finalScoreLabel.anchor.set(0.5);
-    finalScoreLabel.y = 0;
+    finalScoreLabel.y = -8;
     this.gameOverModal.addChild(finalScoreLabel);
 
-    const statusText = rank ? `KỶ LỤC MỚI  ·  #${rank}` : "CHƠI TỐT LẮM!";
+    const statusText = formatStatus(scoreSync);
     const statusPill = new Graphics()
-      .roundRect(-112, 42, 224, 36, 18)
+      .roundRect(-120, 42, 240, 36, 18)
       .fill({ color: 0xffffff })
       .stroke({ color: 0xcbd2dc, width: 1.5 });
     this.gameOverModal.addChild(statusPill);
@@ -3727,13 +3807,13 @@ export class GameScene {
     this.gameOverModal.addChild(statusLabel);
 
     // Three equal action buttons: reward, replay and home.
-    const btnY = 134;
+    const btnY = 140;
 
     // We only show 3 buttons since the player already had their "Thêm Lượt" popup.
     let hasDoubled = false;
     const doubleBtn = this.createCircularButton(
       "video",
-      -86,
+      -102,
       btnY,
       async () => {
         if (hasDoubled) return;
@@ -3744,12 +3824,53 @@ export class GameScene {
           doubleBtn.eventMode = "none";
           this.score = this.score * 2;
           finalScoreLabel.text = String(this.score);
+          const doubledLocalBestBefore = readLocalBest();
+          const doubledLocalRank = saveManager.addScore(this.score);
+          const doubledLocalBestAfter = Math.max(
+            doubledLocalBestBefore,
+            readLocalBest(),
+            this.score,
+          );
+          const doubledWinkSync = await syncScoreWithWink(this.score);
+          scoreSync =
+            doubledWinkSync ||
+            (winkGame.isReady && !winkGame.canSubmitScore
+              ? {
+                  source: "guest",
+                  isNewBest: false,
+                  rank: null,
+                  bestScore: null,
+                }
+              : {
+                  source: "offline",
+                  isNewBest: this.score > doubledLocalBestBefore,
+                  rank: doubledLocalRank,
+                  bestScore: doubledLocalBestAfter,
+                });
+          statusLabel.text = formatStatus(scoreSync);
           await gameAlert("Điểm đã được nhân đôi!");
         }
       },
       this.gameOverModal,
       34,
     );
+
+    // Reuse the same clapperboard asset as the rewarded "Thêm lượt" action.
+    // Keep the vector icon as a fallback if the texture cannot be loaded.
+    Assets.load("/assest/iconbtn/images.webp")
+      .then((texture) => {
+        if (doubleBtn.destroyed || doubleBtn.face?.destroyed) return;
+        doubleBtn.iconGraphics.visible = false;
+        const rewardIcon = new Sprite(texture);
+        rewardIcon.anchor.set(0.5);
+        rewardIcon.width = 29;
+        rewardIcon.height = 29;
+        rewardIcon.y = 1;
+        doubleBtn.face.addChild(rewardIcon);
+      })
+      .catch(() => {
+        if (!doubleBtn.destroyed) doubleBtn.iconGraphics.visible = true;
+      });
 
     const doubleBadge = new Graphics()
       .roundRect(12, -38, 34, 22, 11)
@@ -3791,7 +3912,7 @@ export class GameScene {
 
     const homeBtn = this.createCircularButton(
       "home",
-      86,
+      102,
       btnY,
       async () => {
         if (this.gameOverIntervalId) {
@@ -4448,7 +4569,7 @@ export class GameScene {
         this.gameOverModal.y = height / 2;
         const modalScale =
           width < 600 || height > width
-            ? Math.min(1.0, (width - 28) / 420, (height - 32) / 410)
+            ? Math.min(1.0, (width - 18) / 432, (height - 24) / 408)
             : 1.0;
         this.gameOverModal.scale.set(modalScale);
       }

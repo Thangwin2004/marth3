@@ -546,13 +546,23 @@ export class MainMenuScene {
 
     // === HIGHEST SCORE DISPLAY ===
     const leaderboard = saveManager.getLeaderboard();
-    const topScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
+    const localTopScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
+    const cachedWinkScore = Number(winkGame.personalBest?.score);
+    const topScore =
+      Number.isFinite(cachedWinkScore) && cachedWinkScore > 0
+        ? cachedWinkScore
+        : winkGame.isReady
+          ? null
+          : localTopScore;
 
     this.infoPill = new Graphics();
     this.container.addChild(this.infoPill);
 
     this.infoText = new Text({
-      text: `★  ${topScore.toLocaleString("vi-VN")}`,
+      text:
+        topScore && topScore > 0
+          ? `★  ${topScore.toLocaleString("vi-VN")}`
+          : "★  —",
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
@@ -649,6 +659,18 @@ export class MainMenuScene {
 
     // Tự động căn chỉnh toàn bộ vị trí các nút và tiêu đề
     this.resize();
+
+    // Refresh once when entering Home and again when the scoped Wink session
+    // becomes ready. Never poll this endpoint from the render loop.
+    this._stopWinkScoreObserver = winkGame.observe((state) => {
+      if (
+        state?.phase === "ready_authenticated" ||
+        state?.phase === "ready_anonymous"
+      ) {
+        this.refreshWinkPersonalBest();
+      }
+    });
+    this.refreshWinkPersonalBest();
 
     // Bỏ qua khởi tạo DOM overlay Google login
 
@@ -1289,10 +1311,12 @@ export class MainMenuScene {
       ? `Tài khoản: ${effUser.name} (Đã đăng nhập)`
       : winkGame?.isAuthenticated
         ? "Tài khoản: Thành viên (Đã đăng nhập)"
-        : "Tài khoản: Khách (Điểm lưu thiết bị)";
+        : winkGame.isReady
+          ? "Đăng nhập Wink để lưu thành tích"
+          : "Ngoại tuyến (đang dùng dữ liệu thiết bị)";
     card.appendChild(userText);
 
-    const list = saveManager.getLeaderboard();
+    const list = winkGame.isReady ? [] : saveManager.getLeaderboard();
 
     const tableContainer = document.createElement("div");
     tableContainer.className = "game-leaderboard-table-container";
@@ -1353,12 +1377,8 @@ export class MainMenuScene {
 
     // Personal Best Footer
     const personalList = saveManager.load().leaderboard || [];
-    const personalBest = personalList.length > 0 ? personalList[0].score : 0;
-
-    let activeKey = "match3_pure_leaderboard";
-    if (effUser && effUser.id) {
-      activeKey = `match3_pure_leaderboard_${effUser.id}`;
-    }
+    const localPersonalBest =
+      personalList.length > 0 ? personalList[0].score : 0;
 
     const footer = document.createElement("div");
     footer.className = "game-leaderboard-footer";
@@ -1390,23 +1410,32 @@ export class MainMenuScene {
           : winkGame?.isAuthenticated
             ? "Thành viên"
             : "Bạn (Khách)");
-      const pAvatar = getAvatarUrl(pName);
+      const pAvatar = pb?.avatarUrl || getAvatarUrl(pName);
       const pScore =
-        pb?.score !== undefined && pb?.score !== null ? pb.score : personalBest;
-      const rankNum = pb?.rank || (pScore > 0 ? 1 : null);
+        pb?.score !== undefined && pb?.score !== null
+          ? pb.score
+          : winkGame.isReady
+            ? null
+            : localPersonalBest;
+      const rankNum = pb?.rank || null;
 
       userText.innerText = activeUser
         ? `Tài khoản: ${activeUser.name} (Đã đăng nhập)`
         : winkGame?.isAuthenticated
           ? "Tài khoản: Thành viên (Đã đăng nhập)"
-          : "Tài khoản: Khách (Điểm lưu thiết bị)";
+          : winkGame.isReady
+            ? "Đăng nhập Wink để lưu thành tích"
+            : "Ngoại tuyến (đang dùng dữ liệu thiết bị)";
 
       rankItem.innerText = rankNum ? `Hạng: #${rankNum}` : "Hạng: -";
       nameItem.innerHTML = `
         <img src="${pAvatar}" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #0088cc;" alt="" />
         <span>${pName}</span>
       `;
-      scoreItem.innerText = `Điểm: ${(pScore || 0).toLocaleString()}`;
+      scoreItem.innerText =
+        pScore !== null && pScore !== undefined
+          ? `Điểm: ${Number(pScore).toLocaleString("vi-VN")}`
+          : "Điểm: —";
     };
 
     // Initial render
@@ -1420,11 +1449,7 @@ export class MainMenuScene {
         winkGame.getPersonalBest(),
       ])
         .then(([lbRes, pbRes]) => {
-          if (
-            lbRes &&
-            Array.isArray(lbRes.entries) &&
-            lbRes.entries.length > 0
-          ) {
+          if (lbRes && Array.isArray(lbRes.entries)) {
             const apiEntries = lbRes.entries.map((item, idx) => ({
               userName:
                 item.displayName ||
@@ -1604,6 +1629,11 @@ export class MainMenuScene {
     );
     if (leaderboardOverlay) leaderboardOverlay.remove();
 
+    if (this._stopWinkScoreObserver) {
+      this._stopWinkScoreObserver();
+      this._stopWinkScoreObserver = null;
+    }
+
     killTweensRecursive(this.container);
 
     this.particles.forEach((p) => {
@@ -1613,17 +1643,46 @@ export class MainMenuScene {
     this.container.destroy({ children: true });
   }
 
-  updateUserUI() {
-    // Update the highest score banner display
-    const leaderboard = saveManager.getLeaderboard();
-    const topScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
-    if (this.infoText) {
-      this.infoText.text =
-        topScore > 0
-          ? `🏆 KỶ LỤC ĐIỂM: ${topScore}`
-          : `🎯 Hãy thiết lập kỷ lục điểm số ngay hôm nay!`;
+  setDisplayedBestScore(score) {
+    if (!this.infoText || this.infoText.destroyed) return;
+    const normalized = Number(score);
+    this.infoText.text =
+      Number.isFinite(normalized) && normalized > 0
+        ? `★  ${normalized.toLocaleString("vi-VN")}`
+        : "★  —";
+    this.resize();
+  }
+
+  async refreshWinkPersonalBest() {
+    const requestId = (this._winkBestRequestId || 0) + 1;
+    this._winkBestRequestId = requestId;
+
+    const result = await winkGame.getPersonalBest();
+    if (
+      requestId !== this._winkBestRequestId ||
+      !this.container ||
+      this.container.destroyed
+    ) {
+      return;
     }
 
-    this.resize();
+    if (result?.me) {
+      this.setDisplayedBestScore(result.me.score);
+      return;
+    }
+
+    if (winkGame.isReady) {
+      // Authenticated without a score and anonymous sessions both have no
+      // server-side personal best. Do not fabricate a 0 or a local rank.
+      this.setDisplayedBestScore(null);
+      return;
+    }
+
+    const localLeaderboard = saveManager.getLeaderboard();
+    this.setDisplayedBestScore(localLeaderboard[0]?.score || null);
+  }
+
+  updateUserUI() {
+    this.refreshWinkPersonalBest();
   }
 }
