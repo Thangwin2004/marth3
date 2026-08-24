@@ -29,6 +29,7 @@ class GameApp {
     await this.app.init({
       resizeTo: container,
       backgroundColor: 0x0a0a1a,
+      antialias: true,
       resolution: Math.max(window.devicePixelRatio || 1, 2),
       autoDensity: true,
       preference: "webgl",

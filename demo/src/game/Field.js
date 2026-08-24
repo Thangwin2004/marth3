@@ -65,10 +65,10 @@ export class Field {
 
     // === NỀN Ô (PixiJS v8 Graphics API) ===
     this.sprite = new Graphics();
-    // Main background
+    // Warm frosted cell, matching the translucent board frame.
     this.sprite.roundRect(0, 0, tileSize, tileSize, 14);
-    this.sprite.fill({ color: 0x000000, alpha: 0.1 });
-    this.sprite.stroke({ color: 0xffffff, width: 2, alpha: 0.25 });
+    this.sprite.fill({ color: 0x5d3b34, alpha: 0.24 });
+    this.sprite.stroke({ color: 0xfff2de, width: 1.8, alpha: 0.62 });
 
     // Ánh sáng nhẹ ở góc trên bên trái giống hiệu ứng đá quý
     this.sprite.roundRect(
@@ -78,7 +78,7 @@ export class Field {
       tileSize * 0.18,
       8,
     );
-    this.sprite.fill({ color: 0xffffff, alpha: 0.08 });
+    this.sprite.fill({ color: 0xfff8ea, alpha: 0.1 });
 
     this.sprite.x = this.position.x;
     this.sprite.y = this.position.y;

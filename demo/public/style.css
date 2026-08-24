@@ -14,7 +14,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #070714;
+  background-color: #ead9b6;
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
@@ -27,7 +27,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle at center, #1b1b3a 0%, #070714 100%);
+  background: #ead9b6;
   position: relative;
 }
 
@@ -299,42 +299,139 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at center, #3c1e70 0%, #170b2e 100%);
+  background-color: #ead9b6;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255, 248, 226, 0.12) 0%,
+      rgba(239, 217, 166, 0.2) 100%
+    ),
+    url("/assets/backgroud/vietnamese_cultural_landscape_background_1/screen.webp");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 999999;
   transition: opacity 0.5s ease;
+  overflow: hidden;
 }
 
 .splash-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  width: min(82vw, 360px);
+  gap: 12px;
+  transform: translateY(-2vh);
 }
 
-.splash-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #ffdd57;
+.splash-mascot-wrap {
+  width: clamp(112px, 24vw, 154px);
+  height: clamp(112px, 24vw, 154px);
   border-radius: 50%;
-  animation: splash-spin 1s linear infinite;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 248, 226, 0.72);
+  border: 3px solid rgba(255, 255, 255, 0.86);
+  box-shadow:
+    0 8px 0 rgba(61, 107, 83, 0.22),
+    0 14px 32px rgba(54, 72, 61, 0.2);
+  animation: splash-float 1.8s ease-in-out infinite;
 }
 
-@keyframes splash-spin {
-  to {
-    transform: rotate(360deg);
+.splash-mascot {
+  width: 122%;
+  height: 122%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 10px rgba(27, 54, 93, 0.16));
+}
+
+.splash-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 2px 0 4px;
+  font-family: "Baloo 2", "Be Vietnam Pro", sans-serif;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: 0.8px;
+  filter: drop-shadow(0 3px 0 rgba(112, 80, 34, 0.28));
+}
+
+.splash-title span {
+  color: #43c7a5;
+  font-size: clamp(25px, 6vw, 34px);
+}
+
+.splash-title strong {
+  color: #f1c95b;
+  font-size: clamp(38px, 9vw, 52px);
+}
+
+.splash-progress-track {
+  width: 100%;
+  height: 18px;
+  padding: 3px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: rgba(255, 250, 235, 0.88);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  box-shadow:
+    0 4px 0 rgba(48, 123, 78, 0.28),
+    0 8px 18px rgba(54, 72, 61, 0.16);
+}
+
+#splash-progress {
+  position: relative;
+  width: 0%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #72df75 0%, #36b95c 100%);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4);
+  transition: width 0.14s ease-out;
+}
+
+#splash-progress::after {
+  content: "";
+  position: absolute;
+  inset: 1px 8px auto 8px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.36);
+}
+
+@keyframes splash-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
   }
 }
 
 .splash-text {
-  color: #ffdd57;
-  font-family:Be Vietnam Pro, sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 2px;
+  color: #355b50;
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+@media (max-height: 620px) {
+  .splash-content {
+    gap: 8px;
+  }
+
+  .splash-mascot-wrap {
+    width: 98px;
+    height: 98px;
+  }
 }
 
 /* --- GAME POPUP OVERLAYS --- */
@@ -342,7 +439,7 @@ body {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(16, 28, 44, 0.6);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex; justify-content: center; align-items: center;
@@ -352,11 +449,11 @@ body {
   box-sizing: border-box;
 }
 .game-popup-card {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(232, 235, 239, 0.8);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.78);
+  box-shadow: 0 14px 42px rgba(16, 36, 61, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.48);
   border-radius: 24px;
   padding: 40px 24px 24px 24px;
   width: 90%; max-width: 380px;
@@ -391,19 +488,39 @@ body {
   right: 12px;
   width: 32px;
   height: 32px;
-  border: none;
-  background: url(/assets/close_btn.webp) no-repeat center center;
-  background-size: contain;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ff8278, #ea3f42);
+  box-shadow: 0 3px 0 #b9232b, 0 6px 10px rgba(36, 24, 42, 0.2);
   cursor: pointer;
   transition: transform 0.15s ease;
   z-index: 100100;
-  opacity: 0.6;
+  opacity: 1;
+  color: #fff;
+  font-size: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-popup-close-btn::before,
+.game-popup-close-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 15px;
+  height: 3px;
+  border-radius: 2px;
+  background: #fff;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.game-popup-close-btn::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 .game-popup-close-btn:hover {
   transform: scale(1.1);
 }
 .game-popup-close-btn:active {
-  transform: scale(0.9);
+  transform: translateY(3px) scale(0.96);
+  box-shadow: 0 1px 0 #b9232b, 0 3px 6px rgba(36, 24, 42, 0.18);
 }
 .game-settings-row-container {
   margin-top: 18px;
@@ -451,9 +568,9 @@ body {
   transform: scale(0.95);
 }
 .game-settings-reset-btn {
-  background: linear-gradient(180deg, #88D399 0%, #5CB475 100%);
-  border: 2px solid #FFFFFF;
-  box-shadow: 0 4px 0 #3d8251;
+  background: linear-gradient(180deg, #7eea94 0%, #25b957 100%);
+  border: 3px solid #FFFFFF;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.38), 0 4px 0 #14873b, 0 7px 12px rgba(36,24,42,.2);
   border-radius: 12px;
   color: #ffffff;
   font-family:Be Vietnam Pro, sans-serif;
@@ -492,21 +609,67 @@ body {
   margin-top: 24px;
 }
 .game-paused-btn {
-  width: 52px;
-  height: 52px;
-  border: none;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-color: transparent;
+  --button-top: #55add5;
+  --button-bottom: #3f99c3;
+  --button-base: #286d92;
+  position: relative;
+  width: 58px;
+  height: 58px;
+  padding: 13px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(180deg, var(--button-top), var(--button-bottom));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.26),
+    0 3px 0 var(--button-base),
+    0 6px 10px rgba(36, 24, 42, 0.16);
   cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-paused-btn::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 15%;
+  width: 70%;
+  height: 11%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+.game-paused-btn svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  filter: drop-shadow(0 2px 1px rgba(36, 24, 42, 0.18));
+}
+.game-paused-btn--replay {
+  --button-top: #e1a45a;
+  --button-bottom: #ce8842;
+  --button-base: #945c2e;
+}
+.game-paused-btn--continue {
+  --button-top: #56bd72;
+  --button-bottom: #43aa61;
+  --button-base: #2d7d46;
 }
 .game-paused-btn:hover {
-  transform: scale(1.1);
+  transform: translateY(-2px) scale(1.05);
+  filter: brightness(1.05) saturate(1.05);
 }
 .game-paused-btn:active {
-  transform: scale(0.9);
+  transform: translateY(4px) scale(0.98);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.38),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.18),
+    0 1px 0 var(--button-base),
+    0 4px 8px rgba(36, 24, 42, 0.2);
 }
 
 /* Leaderboard popup styles */
@@ -698,14 +861,14 @@ body {
   transform: scale(0.95);
 }
 .btn-resume {
-  background: linear-gradient(to bottom, #88D399, #5CB475);
-  box-shadow: 0 4px 0 #4A965E;
+  background: linear-gradient(to bottom, #7eea94, #25b957);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.38), 0 4px 0 #14873b;
 }
 .btn-restart {
-  background: linear-gradient(to bottom, #66C2FF, #2DA9FF);
-  box-shadow: 0 4px 0 #1B89D4;
+  background: linear-gradient(to bottom, #72d8ff, #159fe8);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.38), 0 4px 0 #0879bd;
 }
 .btn-quit {
-  background: linear-gradient(to bottom, #E0E0E0, #BDBDBD);
-  box-shadow: 0 4px 0 #9E9E9E;
+  background: linear-gradient(to bottom, #ff8278, #ea3f42);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.38), 0 4px 0 #b9232b;
 }

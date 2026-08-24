@@ -19,6 +19,7 @@ import { sceneManager } from "../system/SceneManager.js";
 import { soundManager } from "../system/SoundManager.js";
 import { winkGame } from "../integrations/wink/wink-adapter.js";
 import gsap from "gsap";
+import { coverSprite } from "../utils/layout.js";
 import {
   Colorful3DCircleButton,
   Colorful3DButton,
@@ -38,7 +39,7 @@ function gameAlert(message) {
           left: 0;
           width: 100dvw;
           height: 100dvh;
-          background: rgba(0, 0, 0, 0.65);
+          background: rgba(16, 28, 44, 0.6);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
           display: flex;
@@ -49,10 +50,12 @@ function gameAlert(message) {
           transition: opacity 0.25s ease;
         }
         .game-alert-card {
-          background: #fbfaf5;
-          border: 5px solid #0088cc;
-          box-shadow: inset 0 0 0 2.5px #33ccff, 0 10px 25px rgba(0, 0, 0, 0.35);
-          border-radius: 20px;
+          background: rgba(232, 235, 239, 0.8);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 2px solid rgba(255, 255, 255, 0.78);
+          box-shadow: 0 14px 42px rgba(16, 36, 61, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.48);
+          border-radius: 24px;
           padding: 28px 24px;
           width: 85%;
           max-width: 340px;
@@ -131,9 +134,23 @@ function gameAlert(message) {
   });
 }
 
+function isDebugCompletionEnabled() {
+  const host = window.location.hostname;
+  return (
+    import.meta.env.DEV ||
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    new window.URLSearchParams(window.location.search).has("debug-ui")
+  );
+}
+
 export const AdManager = {
-  showRewardedVideo: async () => {
+  showRewardedVideo: async (placement = "reward") => {
     console.log("[AdManager] Requesting Rewarded Video Ad...");
+    const hostRewarded = window.AdManager?.showRewardedVideo;
+    if (typeof hostRewarded === "function") {
+      return Boolean(await hostRewarded({ placement }));
+    }
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(true);
@@ -282,8 +299,9 @@ export class GameScene {
     this.container.sortableChildren = true;
     this._winkRound = winkGame.startRound();
     this._winkRoundFinalized = false;
+    this.activeParticleCount = 0;
 
-    App.setBackgroundColor(0x0a0a1a);
+    App.setBackgroundColor(0x6d4039);
 
     // Hide the user profile widget during gameplay to prevent overlapping with HUD
     const profileWidget = document.getElementById("user-profile");
@@ -382,14 +400,18 @@ export class GameScene {
 
   async loadResources() {
     try {
-      // 1. Randomize and select a background
-      const bgIndex = Math.floor(Math.random() * 3) + 1;
-      const bgPath = `/assets/backgroud/vietnamese_cultural_landscape_background_${bgIndex}/screen.webp`;
+      // Sunset river scene keeps the board readable and matches the warm glass UI.
+      const bgPath =
+        "/assets/backgroud/vietnamese_cultural_landscape_background_2/screen.webp";
       this.bgTexture = await Assets.load(bgPath);
 
       // 2. Randomize and select 6 distinct avatars from the 44, avoiding duplicates (e.g., cat_lick1 and cat_lick2)
       const getBaseName = (filename) => {
-        const name = filename.replace(".webp", "").split("_").slice(2).join("_");
+        const name = filename
+          .replace(".webp", "")
+          .split("_")
+          .slice(2)
+          .join("_");
         return name.replace(/\d+$/, ""); // Remove trailing numbers
       };
 
@@ -434,15 +456,14 @@ export class GameScene {
 
     // === CREATE BACKGROUND ===
     this.bg = new Sprite(this.bgTexture);
-    this.bg.width = App.app.screen.width;
-    this.bg.height = App.app.screen.height;
-    this.bg.tint = 0x888888; // brighter background for clearer landscape
+    coverSprite(this.bg, App.app.screen.width, App.app.screen.height);
+    this.bg.tint = 0xffffff;
     this.container.addChild(this.bg);
 
     // Add Happy Color overlay tint
     this.bgOverlay = new Graphics();
     this.bgOverlay.rect(0, 0, App.app.screen.width, App.app.screen.height);
-    this.bgOverlay.fill({ color: 0x000000, alpha: 0.18 });
+    this.bgOverlay.fill({ color: 0x3d2322, alpha: 0.12 });
     this.container.addChild(this.bgOverlay);
 
     // === CREATE AMBIENT PARTICLES ===
@@ -468,6 +489,9 @@ export class GameScene {
     this.comboCount = 0;
     this.isGameOver = false;
     this.hasContinued = false;
+    this.pointerGesture = null;
+    this.hintBusy = false;
+    this.hintTiles = [];
 
     // === REMOVE INITIAL MATCHES ===
     this.removeStartMatches();
@@ -481,7 +505,23 @@ export class GameScene {
     this.createUI();
 
     // === LISTEN FOR GRID EVENTS ===
-    this.board.container.on("tile-touch-start", this.onTileClick.bind(this));
+    this.board.container.on(
+      "tile-pointer-down",
+      this.onTilePointerDown.bind(this),
+    );
+    this.board.container.on(
+      "globalpointermove",
+      this.onTilePointerMove.bind(this),
+    );
+    this.board.container.on("pointerup", this.onTilePointerUp.bind(this));
+    this.board.container.on(
+      "pointerupoutside",
+      this.onTilePointerCancel.bind(this),
+    );
+    this.board.container.on(
+      "pointercancel",
+      this.onTilePointerCancel.bind(this),
+    );
 
     // Adjust all components positions and scaling
     this.resize();
@@ -502,22 +542,20 @@ export class GameScene {
     const h = boardHeight + padding * 2;
     const shadowOffset = 8;
 
-    const theme = palettes.purple;
-
     this.boardBg = new Graphics();
 
     // 1. 3D Shadow Base
     this.boardBg.roundRect(0, shadowOffset, w, h, 24);
-    this.boardBg.fill({ color: 0x000000, alpha: 0.15 });
+    this.boardBg.fill({ color: 0x4d302c, alpha: 0.34 });
 
-    // 2. Main Face Background (translucent light to show background)
+    // 2. Warm frosted glass frame inspired by the reference layout.
     this.boardBg.roundRect(0, 0, w, h, 24);
-    this.boardBg.fill({ color: 0xffffff, alpha: 0.15 });
-    this.boardBg.stroke({ width: 2, color: 0xffffff, alpha: 0.5 });
+    this.boardBg.fill({ color: 0xffead8, alpha: 0.32 });
+    this.boardBg.stroke({ width: 3, color: 0xfff6e9, alpha: 0.92 });
 
     // 3. Highlight Sheen
     this.boardBg.ellipse(w / 2, h * 0.12, w * 0.45, h * 0.08);
-    this.boardBg.fill({ color: 0xffffff, alpha: 0.15 });
+    this.boardBg.fill({ color: 0xffffff, alpha: 0.16 });
 
     // Scale background with the board container
     const scale = this.board.container.scale.x;
@@ -618,15 +656,33 @@ export class GameScene {
     this.scorePanel = new Graphics();
     this.uiContainer.addChild(this.scorePanel);
 
+    this.scoreHudIcon = new Graphics()
+      .star(0, 0, 5, 15, 7)
+      .fill({ color: 0xffcf55 })
+      .stroke({ color: 0x9a5d28, width: 1.8, join: "round" });
+    this.uiContainer.addChild(this.scoreHudIcon);
+
     // === SCORE LABEL ===
-    this.scoreText = new Text({
-      text: "⭐ " + this.score,
+    this.scoreLabel = new Text({
+      text: "",
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
-        fontSize: 24,
+        fontSize: 11,
+        fontWeight: "800",
+        fill: "#fff4e8",
+        letterSpacing: 1.5,
+      },
+    });
+    this.scoreLabel.anchor.set(0.5);
+    this.uiContainer.addChild(this.scoreLabel);
+
+    this.scoreText = new Text({
+      text: String(this.score),
+      style: {
+        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontSize: 26,
         fontWeight: "900",
-        fill: "#ffffff",
-        padding: 24,
+        fill: "#fff9f0",
       },
     });
     this.scoreText.anchor.set(0.5);
@@ -636,15 +692,41 @@ export class GameScene {
     this.movesPanel = new Graphics();
     this.uiContainer.addChild(this.movesPanel);
 
+    this.movesHudIcon = new Graphics()
+      .moveTo(-14, 4)
+      .lineTo(-7, -10)
+      .lineTo(4, -7)
+      .lineTo(7, 0)
+      .lineTo(15, 4)
+      .quadraticCurveTo(14, 11, 5, 12)
+      .lineTo(-8, 10)
+      .quadraticCurveTo(-15, 9, -14, 4)
+      .closePath()
+      .fill({ color: 0xa9d9ff })
+      .stroke({ color: 0x496d94, width: 1.8, join: "round" });
+    this.uiContainer.addChild(this.movesHudIcon);
+
     // === MOVES LABEL ===
-    this.movesText = new Text({
-      text: "👟 " + this.moves,
+    this.movesLabel = new Text({
+      text: "",
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
-        fontSize: 24,
+        fontSize: 11,
+        fontWeight: "800",
+        fill: "#fff4e8",
+        letterSpacing: 1.5,
+      },
+    });
+    this.movesLabel.anchor.set(0.5);
+    this.uiContainer.addChild(this.movesLabel);
+
+    this.movesText = new Text({
+      text: String(this.moves),
+      style: {
+        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontSize: 26,
         fontWeight: "900",
-        fill: "#ffffff",
-        padding: 24,
+        fill: "#fff9f0",
       },
     });
     this.movesText.anchor.set(0.5);
@@ -669,7 +751,7 @@ export class GameScene {
     this.uiContainer.addChild(this.tutorialBg);
 
     this.tutorialText = new Text({
-      text: "✨ Nhấp hai con thú cạnh nhau để đổi chỗ và tạo nhóm 3 cùng loại!",
+      text: "Chạm 2 thú hoặc vuốt để đổi chỗ",
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
@@ -690,14 +772,81 @@ export class GameScene {
       },
       this.uiContainer,
     );
+
+    // Rewarded Hint: highlights a valid pair but never makes the move.
+    this.hintBtn = this.createCircularButton(
+      "hint",
+      0,
+      0,
+      () => this.requestHint(),
+      this.uiContainer,
+    );
+    const hintBadge = new Container();
+    const hintBadgeBg = new Graphics()
+      .roundRect(-13, -8, 26, 16, 8)
+      .fill({ color: 0xffffff })
+      .stroke({ color: 0x1b89d4, width: 1.5 });
+    hintBadge.position.set(18, -19);
+    hintBadge.addChild(hintBadgeBg);
+    const hintBadgeText = new Text({
+      text: "AD",
+      style: {
+        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontSize: 8,
+        fontWeight: "900",
+        fill: 0x1678b7,
+      },
+    });
+    hintBadgeText.anchor.set(0.5);
+    hintBadge.addChild(hintBadgeText);
+    this.hintBtn.addChild(hintBadge);
+
+    // Local-only shortcut for exercising the full completion popup flow.
+    if (isDebugCompletionEnabled()) {
+      this.debugCompleteBtn = new Colorful3DButton({
+        width: 126,
+        height: 38,
+        radius: 19,
+        text: "TEST XONG",
+        colorStyle: "orange",
+        fontSize: 13,
+        onClick: () => this.completeRunForPopupTest(),
+      });
+      this.debugCompleteBtn.label.style.fontWeight = "800";
+      this.debugCompleteBtn.zIndex = 20;
+      this.uiContainer.addChild(this.debugCompleteBtn);
+    }
+  }
+
+  completeRunForPopupTest() {
+    if (this.isGameOver || this._debugCompletionActive) return;
+
+    const leaderboard = saveManager.getLeaderboard();
+    const currentBest = leaderboard.reduce(
+      (best, entry) => Math.max(best, Number(entry.score) || 0),
+      0,
+    );
+
+    this._debugCompletionActive = true;
+    this._winkRoundFinalized = true;
+    this.score = Math.max(1000, Math.ceil((currentBest + 1) / 100) * 100);
+    this.moves = 0;
+    this.updateUI();
+
+    if (this.debugCompleteBtn) {
+      this.debugCompleteBtn.eventMode = "none";
+      this.debugCompleteBtn.alpha = 0.55;
+    }
+
+    this.showGameOver();
   }
 
   /**
    * Update HUD texts with scale pulsing effects.
    */
   updateUI() {
-    const newScoreStr = `⭐ ${this.score}`;
-    const newMovesStr = `👟 ${this.moves}`;
+    const newScoreStr = String(this.score);
+    const newMovesStr = String(this.moves);
 
     if (this.scoreText.text !== newScoreStr) {
       this.scoreText.text = newScoreStr;
@@ -765,8 +914,75 @@ export class GameScene {
   //  INPUT HANDLING
   // ============================================================
 
+  onTilePointerDown(tile, event) {
+    if (this.disabled || this.isGameOver || !event?.global) return;
+    this.clearHint();
+    this.pointerGesture = {
+      tile,
+      pointerId: event.pointerId,
+      startX: event.global.x,
+      startY: event.global.y,
+      swiped: false,
+    };
+  }
+
+  onTilePointerMove(event) {
+    const gesture = this.pointerGesture;
+    if (
+      !gesture ||
+      gesture.swiped ||
+      this.disabled ||
+      event.pointerId !== gesture.pointerId
+    ) {
+      return;
+    }
+
+    const dx = event.global.x - gesture.startX;
+    const dy = event.global.y - gesture.startY;
+    const threshold = Math.max(
+      14,
+      App.config.tileSize * this.board.container.scale.x * 0.28,
+    );
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < threshold) return;
+
+    gesture.swiped = true;
+    const horizontal = Math.abs(dx) >= Math.abs(dy);
+    const rowOffset = horizontal ? 0 : dy > 0 ? 1 : -1;
+    const colOffset = horizontal ? (dx > 0 ? 1 : -1) : 0;
+    const targetField = this.board.getField(
+      gesture.tile.field.row + rowOffset,
+      gesture.tile.field.col + colOffset,
+    );
+    const targetTile = targetField?.tile;
+
+    if (
+      !targetField?.isVoid &&
+      targetTile &&
+      !gesture.tile.isStone &&
+      !targetTile.isStone &&
+      !gesture.tile.frozen &&
+      !targetTile.frozen
+    ) {
+      this.swap(gesture.tile, targetTile);
+    }
+  }
+
+  onTilePointerUp(event) {
+    const gesture = this.pointerGesture;
+    if (!gesture || event.pointerId !== gesture.pointerId) return;
+    this.pointerGesture = null;
+    if (!gesture.swiped) this.onTileClick(gesture.tile);
+  }
+
+  onTilePointerCancel() {
+    this.pointerGesture = null;
+  }
+
   onTileClick(tile) {
     if (this.disabled || this.isGameOver) return;
+    if (tile.isStone || tile.frozen) return;
+
+    this.clearHint();
 
     soundManager.playClick();
 
@@ -828,6 +1044,67 @@ export class GameScene {
     const rowDiff = Math.abs(tile1.field.row - tile2.field.row);
     const colDiff = Math.abs(tile1.field.col - tile2.field.col);
     return rowDiff + colDiff === 1;
+  }
+
+  async requestHint() {
+    if (this.hintBusy || this.disabled || this.isGameOver) return;
+
+    this.hintBusy = true;
+    this.hintBtn.eventMode = "none";
+    this.hintBtn.alpha = 0.55;
+    soundManager.playClick();
+
+    try {
+      const rewarded = await AdManager.showRewardedVideo("match_hint");
+      if (rewarded && !this.isGameOver && !this.disabled) {
+        this.showHint();
+      }
+    } finally {
+      this.hintBusy = false;
+      if (this.hintBtn && !this.hintBtn.destroyed) {
+        this.hintBtn.eventMode = "static";
+        this.hintBtn.alpha = 1;
+      }
+    }
+  }
+
+  showHint() {
+    this.clearSelection();
+    this.clearHint();
+    const move = this.combinationManager.findPossibleMove();
+    if (!move) return false;
+
+    this.hintTiles = [move.tile1, move.tile2];
+    for (const tile of this.hintTiles) {
+      tile.field.select();
+      gsap.killTweensOf(tile.sprite.scale);
+      tile.sprite.scale.set(1);
+      gsap.to(tile.sprite.scale, {
+        x: 1.13,
+        y: 1.13,
+        duration: 0.28,
+        repeat: 5,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+    }
+
+    this.hintTimeoutId = setTimeout(() => this.clearHint(), 2200);
+    return true;
+  }
+
+  clearHint() {
+    if (this.hintTimeoutId) {
+      clearTimeout(this.hintTimeoutId);
+      this.hintTimeoutId = null;
+    }
+    for (const tile of this.hintTiles || []) {
+      if (!tile?.sprite || tile.sprite.destroyed) continue;
+      gsap.killTweensOf(tile.sprite.scale);
+      tile.sprite.scale.set(1);
+      if (this.selectedTile !== tile) tile.field?.unselect();
+    }
+    this.hintTiles = [];
   }
 
   // ============================================================
@@ -1836,15 +2113,17 @@ export class GameScene {
         cols[f.col].push(f);
       });
 
-      let colDelayIndex = 0;
+      let globalSpawnIndex = 0;
       Object.keys(cols).forEach((col) => {
         const fieldsInCol = cols[col];
         // Sort from bottom to top (highest row index to lowest)
         fieldsInCol.sort((a, b) => b.row - a.row);
 
-        fieldsInCol.forEach((field, index) => {
+        fieldsInCol.forEach((field) => {
           // Distributed instantiation to prevent Main Thread freeze
-          const spawnDelayMs = colDelayIndex * 40 + index * 40;
+          // A single global sequence prevents several columns from allocating
+          // new tiles in the same frame during large board clears.
+          const spawnDelayMs = globalSpawnIndex++ * 20;
 
           setTimeout(() => {
             if (!this.board || !this.board.fields) return;
@@ -1862,7 +2141,6 @@ export class GameScene {
             });
           }, spawnDelayMs);
         });
-        colDelayIndex++;
       });
     });
   }
@@ -1898,8 +2176,16 @@ export class GameScene {
     ];
     const particleColor = slotIndex !== -1 ? palette[slotIndex] : 0xffffff;
 
-    const count = 5; // Optimized count (from 10) to prevent CPU hitching during cascades
+    const particleLimit = App.app.screen.width < 600 ? 32 : 48;
+    const availableSlots = Math.max(
+      0,
+      particleLimit - this.activeParticleCount,
+    );
+    const count = Math.min(5, availableSlots);
+    if (count === 0) return;
+
     for (let i = 0; i < count; i++) {
+      this.activeParticleCount++;
       const p = new Graphics();
       const isLeaf = Math.random() > 0.4; // 60% leaves, 40% sparks
 
@@ -1929,12 +2215,14 @@ export class GameScene {
       gsap.to(p, {
         x: x + Math.cos(angle) * speed,
         y: y + Math.sin(angle) * speed + 80, // Gravity pull
+        rotation: (Math.random() - 0.5) * 15,
         alpha: 0,
         duration: 0.7 + Math.random() * 0.3,
         ease: "power2.out",
         onComplete: () => {
           killTweensRecursive(p);
           p.destroy();
+          this.activeParticleCount = Math.max(0, this.activeParticleCount - 1);
         },
       });
 
@@ -1943,11 +2231,6 @@ export class GameScene {
         y: 0.1,
         duration: 0.65,
         delay: 0.1,
-      });
-
-      gsap.to(p, {
-        rotation: (Math.random() - 0.5) * 15,
-        duration: 0.8,
       });
     }
   }
@@ -2878,11 +3161,11 @@ export class GameScene {
     const overlay = document.createElement("div");
     overlay.id = "game-revive-overlay-id";
     overlay.style.cssText =
-      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(16,28,44,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;";
 
     const card = document.createElement("div");
     card.style.cssText =
-      "background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.6);border-radius:24px;width:90%;max-width:350px;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 12px 40px rgba(0,0,0,0.15), inset 0 0 0 2px rgba(255,255,255,0.5);";
+      "background:rgba(232,235,239,0.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:2px solid rgba(255,255,255,0.78);border-radius:24px;width:90%;max-width:350px;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 14px 42px rgba(16,36,61,0.22), inset 0 0 0 1px rgba(255,255,255,0.48);";
 
     const title = document.createElement("div");
     title.innerText = "TIẾP TỤC?";
@@ -2953,32 +3236,120 @@ export class GameScene {
     });
   }
 
-  showFinalGameOverScreen() {
+  async showFinalGameOverScreen() {
+    if (this._showingFinalGameOver) return;
+    this._showingFinalGameOver = true;
     this.isGameOver = true;
     this.disabled = true;
 
+    const finalScore = Math.max(0, Math.floor(this.score));
+    const readLocalBest = () => {
+      const entries = saveManager.getLeaderboard();
+      return entries.reduce(
+        (best, entry) => Math.max(best, Number(entry.score) || 0),
+        0,
+      );
+    };
+    const localBestBefore = readLocalBest();
+    const localRank = this._debugCompletionActive
+      ? 1
+      : saveManager.addScore(finalScore);
+    const localBestAfter = Math.max(
+      localBestBefore,
+      readLocalBest(),
+      finalScore,
+    );
+
+    const syncScoreWithWink = async (score) => {
+      if (!winkGame.canSubmitScore) return null;
+      const normalizedScore = Math.max(0, Math.floor(Number(score) || 0));
+
+      try {
+        const submission = await winkGame.submitFinalScore({
+          score: normalizedScore,
+          playTime: Math.round(
+            (Date.now() - this._winkRound.startedAtMs) / 1000,
+          ),
+          gameMode: "classic",
+        });
+        if (!submission?.entry) return null;
+
+        // The personal-best endpoint is the authoritative source for both
+        // score and global rank. Refresh it after every accepted submission.
+        const personalBestResult = await winkGame.getPersonalBest();
+        const personalBest = personalBestResult?.me || submission.entry;
+
+        return {
+          source: "wink",
+          isNewBest: submission.isNewBest === true,
+          rank: Number(personalBest?.rank) || null,
+          bestScore: Number(personalBest?.score) || normalizedScore,
+        };
+      } catch (error) {
+        console.warn("[Wink] Không thể đồng bộ điểm:", error);
+        return null;
+      }
+    };
+
+    let scoreSync;
     if (!this._winkRoundFinalized) {
       this._winkRoundFinalized = true;
       winkGame.completeRound(this._winkRound, {
-        metadata: { outcome: "game_over", score: Math.floor(this.score) },
+        metadata: { outcome: "game_over", score: finalScore },
       });
-      if (winkGame.canSubmitScore) {
-        winkGame
-          .submitFinalScore({
-            score: Math.floor(this.score),
-            playTime: Math.round(
-              (Date.now() - this._winkRound.startedAtMs) / 1000,
-            ),
-            gameMode: "classic",
-          })
-          .catch(() => {});
-      }
     }
+
+    if (this._debugCompletionActive) {
+      scoreSync = {
+        source: "debug",
+        isNewBest: true,
+        rank: 1,
+        bestScore: finalScore,
+      };
+    } else if (winkGame.canSubmitScore) {
+      scoreSync = await syncScoreWithWink(finalScore);
+      if (!scoreSync) {
+        scoreSync = {
+          source: "offline",
+          isNewBest: finalScore > localBestBefore,
+          rank: localRank,
+          bestScore: localBestAfter,
+        };
+      }
+    } else if (winkGame.isReady) {
+      scoreSync = {
+        source: "guest",
+        isNewBest: false,
+        rank: null,
+        bestScore: null,
+      };
+    } else {
+      scoreSync = {
+        source: "offline",
+        isNewBest: finalScore > localBestBefore,
+        rank: localRank,
+        bestScore: localBestAfter,
+      };
+    }
+
+    const formatStatus = (sync) => {
+      if (sync.isNewBest) {
+        return sync.rank ? `KỶ LỤC MỚI  ·  #${sync.rank}` : "KỶ LỤC MỚI";
+      }
+      if (sync.source === "wink" && sync.bestScore > 0) {
+        return `CAO NHẤT  ·  ${sync.bestScore.toLocaleString("vi-VN")}`;
+      }
+      if (sync.source === "guest") return "ĐĂNG NHẬP ĐỂ LƯU";
+      if (sync.source === "offline" && sync.bestScore > 0) {
+        return `THIẾT BỊ  ·  ${sync.bestScore.toLocaleString("vi-VN")}`;
+      }
+      return "CHƠI TỐT LẮM!";
+    };
 
     // Dừng nhạc nền và phát nhạc kết quả tương ứng
     soundManager.stopBGM();
-    const rank = saveManager.addScore(this.score);
-    if (rank) {
+    const rank = scoreSync.isNewBest ? scoreSync.rank : null;
+    if (scoreSync.isNewBest) {
       soundManager.playVictory();
     } else {
       soundManager.playGameOver();
@@ -2996,7 +3367,7 @@ export class GameScene {
       App.app.screen.width,
       App.app.screen.height,
     );
-    this.gameOverOverlay.fill({ color: 0x000000, alpha: 0.8 });
+    this.gameOverOverlay.fill({ color: 0x101c2c, alpha: 0.6 });
     this.gameOverScreen.addChild(this.gameOverOverlay);
 
     // Premium modal container
@@ -3325,14 +3696,124 @@ export class GameScene {
       this.gameOverModal.addChild(normalLabel);
     }
 
-    // 4. Action Buttons (Circular Icon style in a single row)
-    const btnY = 165;
+    // Replace the old ceremonial layout with one compact, readable result card.
+    const disposeOldResultArt = (displayObject) => {
+      gsap.killTweensOf(displayObject);
+      gsap.killTweensOf(displayObject.scale);
+      for (const child of displayObject.children ?? []) {
+        disposeOldResultArt(child);
+      }
+    };
+    const oldResultArt = this.gameOverModal.removeChildren();
+    for (const displayObject of oldResultArt) {
+      disposeOldResultArt(displayObject);
+      displayObject.destroy({ children: true });
+    }
+
+    const cleanCardShadow = new Graphics()
+      .roundRect(-216, -192, 432, 384, 28)
+      .fill({ color: 0x10243d, alpha: 0.3 });
+    cleanCardShadow.y = 9;
+    this.gameOverModal.addChild(cleanCardShadow);
+
+    const cleanCard = new Graphics()
+      .roundRect(-216, -192, 432, 384, 28)
+      .fill({ color: 0xe8ebef, alpha: 0.82 })
+      .stroke({ color: 0xffffff, width: 3, alpha: 0.82 });
+    this.gameOverModal.addChild(cleanCard);
+
+    const cleanInnerLine = new Graphics()
+      .roundRect(-207, -183, 414, 366, 22)
+      .stroke({ color: 0xcbd2dc, width: 1.5, alpha: 0.7 });
+    this.gameOverModal.addChild(cleanInnerLine);
+
+    const cleanTitle = new Text({
+      text: "KẾT THÚC",
+      style: {
+        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontSize: 30,
+        fontWeight: "900",
+        fill: "#1B365D",
+        letterSpacing: 1.2,
+      },
+    });
+    cleanTitle.anchor.set(0.5);
+    cleanTitle.y = -151;
+    this.gameOverModal.addChild(cleanTitle);
+
+    const resultMedal = new Container();
+    resultMedal.y = -85;
+    this.gameOverModal.addChild(resultMedal);
+
+    const medalShadow = new Graphics()
+      .circle(0, 4, 38)
+      .fill({ color: 0x1b365d, alpha: 0.2 });
+    resultMedal.addChild(medalShadow);
+
+    const medalOuter = new Graphics()
+      .circle(0, 0, 38)
+      .fill({ color: 0xffffff })
+      .stroke({ color: 0xcbd2dc, width: 2 });
+    resultMedal.addChild(medalOuter);
+
+    const medalInner = new Graphics()
+      .circle(0, 0, 30)
+      .fill({ color: 0xf5c553 });
+    resultMedal.addChild(medalInner);
+
+    const medalStar = new Graphics()
+      .star(0, 0, 5, 21, 10)
+      .fill({ color: 0xffffff });
+    resultMedal.addChild(medalStar);
+
+    const finalScoreLabel = new Text({
+      text: String(this.score),
+      style: {
+        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontSize: 54,
+        fontWeight: "900",
+        fill: "#1B365D",
+        dropShadow: {
+          color: "#1B365D",
+          alpha: 0.16,
+          blur: 0,
+          distance: 2,
+          angle: Math.PI / 2,
+        },
+      },
+    });
+    finalScoreLabel.anchor.set(0.5);
+    finalScoreLabel.y = -8;
+    this.gameOverModal.addChild(finalScoreLabel);
+
+    const statusText = formatStatus(scoreSync);
+    const statusPill = new Graphics()
+      .roundRect(-120, 42, 240, 36, 18)
+      .fill({ color: 0xffffff })
+      .stroke({ color: 0xcbd2dc, width: 1.5 });
+    this.gameOverModal.addChild(statusPill);
+
+    const statusLabel = new Text({
+      text: statusText,
+      style: {
+        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontSize: 14,
+        fontWeight: "800",
+        fill: "#52657C",
+      },
+    });
+    statusLabel.anchor.set(0.5);
+    statusLabel.y = 60;
+    this.gameOverModal.addChild(statusLabel);
+
+    // Three equal action buttons: reward, replay and home.
+    const btnY = 140;
 
     // We only show 3 buttons since the player already had their "Thêm Lượt" popup.
     let hasDoubled = false;
     const doubleBtn = this.createCircularButton(
-      "X2",
-      -80,
+      "video",
+      -102,
       btnY,
       async () => {
         if (hasDoubled) return;
@@ -3342,13 +3823,72 @@ export class GameScene {
           doubleBtn.alpha = 0.5;
           doubleBtn.eventMode = "none";
           this.score = this.score * 2;
-          scoreLabel.text = `ĐIỂM SỐ: ${this.score}`;
-          await gameAlert("🎉 Điểm số của bạn đã được x2!");
+          finalScoreLabel.text = String(this.score);
+          const doubledLocalBestBefore = readLocalBest();
+          const doubledLocalRank = saveManager.addScore(this.score);
+          const doubledLocalBestAfter = Math.max(
+            doubledLocalBestBefore,
+            readLocalBest(),
+            this.score,
+          );
+          const doubledWinkSync = await syncScoreWithWink(this.score);
+          scoreSync =
+            doubledWinkSync ||
+            (winkGame.isReady && !winkGame.canSubmitScore
+              ? {
+                  source: "guest",
+                  isNewBest: false,
+                  rank: null,
+                  bestScore: null,
+                }
+              : {
+                  source: "offline",
+                  isNewBest: this.score > doubledLocalBestBefore,
+                  rank: doubledLocalRank,
+                  bestScore: doubledLocalBestAfter,
+                });
+          statusLabel.text = formatStatus(scoreSync);
+          await gameAlert("Điểm đã được nhân đôi!");
         }
       },
       this.gameOverModal,
-      32,
+      34,
     );
+
+    // Reuse the same clapperboard asset as the rewarded "Thêm lượt" action.
+    // Keep the vector icon as a fallback if the texture cannot be loaded.
+    Assets.load("/assest/iconbtn/images.webp")
+      .then((texture) => {
+        if (doubleBtn.destroyed || doubleBtn.face?.destroyed) return;
+        doubleBtn.iconGraphics.visible = false;
+        const rewardIcon = new Sprite(texture);
+        rewardIcon.anchor.set(0.5);
+        rewardIcon.width = 29;
+        rewardIcon.height = 29;
+        rewardIcon.y = 1;
+        doubleBtn.face.addChild(rewardIcon);
+      })
+      .catch(() => {
+        if (!doubleBtn.destroyed) doubleBtn.iconGraphics.visible = true;
+      });
+
+    const doubleBadge = new Graphics()
+      .roundRect(12, -38, 34, 22, 11)
+      .fill({ color: 0xfff5cf })
+      .stroke({ color: 0xe46d24, width: 2 });
+    doubleBtn.addChild(doubleBadge);
+    const doubleBadgeText = new Text({
+      text: "x2",
+      style: {
+        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontSize: 12,
+        fontWeight: "900",
+        fill: "#9A421F",
+      },
+    });
+    doubleBadgeText.anchor.set(0.5);
+    doubleBadgeText.position.set(29, -27);
+    doubleBtn.addChild(doubleBadgeText);
 
     const replayBtn = this.createCircularButton(
       "replay",
@@ -3367,12 +3907,12 @@ export class GameScene {
         await sceneManager.switchTo(GameScene);
       },
       this.gameOverModal,
-      32,
+      34,
     );
 
     const homeBtn = this.createCircularButton(
       "home",
-      80,
+      102,
       btnY,
       async () => {
         if (this.gameOverIntervalId) {
@@ -3383,35 +3923,10 @@ export class GameScene {
         await sceneManager.switchTo(MainMenuScene);
       },
       this.gameOverModal,
-      32,
+      34,
     );
 
-    // 5. Spawn Confetti Fireworks Loop
-    this.gameOverIntervalId = setInterval(() => {
-      if (!this.isGameOver || !this.gameOverScreen) {
-        clearInterval(this.gameOverIntervalId);
-        this.gameOverIntervalId = null;
-        return;
-      }
-      this.spawnFireworkBurst(
-        Math.random() * App.app.screen.width,
-        Math.random() * App.app.screen.height * 0.65,
-        16,
-      );
-    }, 850);
-
-    // Initial big explosions
-    for (let i = 0; i < 4; i++) {
-      gsap.delayedCall(i * 0.3, () => {
-        if (this.isGameOver && this.gameOverScreen) {
-          this.spawnFireworkBurst(
-            App.app.screen.width / 2 + (Math.random() - 0.5) * 320,
-            App.app.screen.height / 2 - 80 + (Math.random() - 0.5) * 240,
-            28,
-          );
-        }
-      });
-    }
+    this.gameOverIntervalId = null;
 
     // Apply responsive layout immediately
     this.resize();
@@ -3425,8 +3940,8 @@ export class GameScene {
     gsap.to(this.gameOverModal.scale, {
       x: targetScale,
       y: targetScale,
-      duration: 0.5,
-      ease: "back.out(1.5)",
+      duration: 0.42,
+      ease: "power3.out",
     });
   }
 
@@ -3685,12 +4200,13 @@ export class GameScene {
     customRadius = 26,
   ) {
     let colorStyle = "blue";
-    if (emojiText === "🏆") colorStyle = "red";
+    if (emojiText === "hint") colorStyle = "blue";
+    else if (emojiText === "🏆") colorStyle = "red";
     else if (emojiText === "⚙️" || emojiText === "settings")
-      colorStyle = "blue";
+      colorStyle = "purple";
     else if (emojiText === "🏠" || emojiText === "🏡" || emojiText === "home")
-      colorStyle = "grey";
-    else if (emojiText === "🔄" || emojiText === "replay") colorStyle = "blue";
+      colorStyle = "blue";
+    else if (emojiText === "🔄" || emojiText === "replay") colorStyle = "green";
     else if (emojiText === "✕" || emojiText === "close") colorStyle = "red";
     else if (
       emojiText === "star" ||
@@ -3730,13 +4246,12 @@ export class GameScene {
 
     // 1. Resize Background
     if (this.bg) {
-      this.bg.width = width;
-      this.bg.height = height;
+      coverSprite(this.bg, width, height);
     }
     if (this.bgOverlay) {
       this.bgOverlay.clear();
       this.bgOverlay.rect(0, 0, width, height);
-      this.bgOverlay.fill({ color: 0x2b1441, alpha: 0.18 });
+      this.bgOverlay.fill({ color: 0x3d2322, alpha: 0.12 });
     }
 
     // 2.5. Aspect-Ratio Aware Adaptive Loading Avatar Scaling
@@ -3778,7 +4293,9 @@ export class GameScene {
       this.scorePanel &&
       this.movesPanel &&
       this.scoreText &&
-      this.movesText
+      this.movesText &&
+      this.scoreLabel &&
+      this.movesLabel
     ) {
       const isMobileLandscape = width > height && height < 500;
       const isMobilePortrait = width < 600 || height > width;
@@ -3835,14 +4352,14 @@ export class GameScene {
         this.movesPanel.y = topY;
       }
 
-      // Vẽ lại khung cho 2 bảng (Dạng hộp 3D cartoon bubble!)
+      // Frosted HUD cards: one restrained palette for score and moves.
       const shadowOffset = 5;
 
       this.scorePanel
         .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
-        .fill({ color: 0x4a965e })
+        .fill({ color: 0x6d4039, alpha: 0.62 })
         // Main Face Background (gradient)
         .roundRect(0, 0, panelWidth, panelHeight, 12)
         .fill({
@@ -3850,12 +4367,12 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0x88d399 },
-              { offset: 1, color: 0x5cb475 },
+              { offset: 0, color: 0xa8756f },
+              { offset: 1, color: 0x75504d },
             ],
           }),
         })
-        .stroke({ width: 2.5, color: 0xffffff })
+        .stroke({ width: 2.5, color: 0xfff5e8 })
         // Highlight Sheen
         .ellipse(
           panelWidth / 2,
@@ -3863,13 +4380,13 @@ export class GameScene {
           panelWidth * 0.42,
           panelHeight * 0.15,
         )
-        .fill({ color: 0xffffff, alpha: 0.25 });
+        .fill({ color: 0xffffff, alpha: 0.2 });
 
       this.movesPanel
         .clear()
         // 3D Shadow Base
         .roundRect(0, shadowOffset, panelWidth, panelHeight, 12)
-        .fill({ color: 0x4a965e })
+        .fill({ color: 0x6d4039, alpha: 0.62 })
         // Main Face Background (gradient)
         .roundRect(0, 0, panelWidth, panelHeight, 12)
         .fill({
@@ -3877,12 +4394,12 @@ export class GameScene {
             start: { x: 0, y: 0 },
             end: { x: 0, y: panelHeight },
             colorStops: [
-              { offset: 0, color: 0x88d399 },
-              { offset: 1, color: 0x5cb475 },
+              { offset: 0, color: 0xa8756f },
+              { offset: 1, color: 0x75504d },
             ],
           }),
         })
-        .stroke({ width: 2.5, color: 0xffffff })
+        .stroke({ width: 2.5, color: 0xfff5e8 })
         // Highlight Sheen
         .ellipse(
           panelWidth / 2,
@@ -3890,22 +4407,50 @@ export class GameScene {
           panelWidth * 0.42,
           panelHeight * 0.15,
         )
-        .fill({ color: 0xffffff, alpha: 0.25 });
+        .fill({ color: 0xffffff, alpha: 0.2 });
 
       // Định vị lại chữ vào giữa bảng tương ứng
       this.scoreText.style.fontSize = fontSize;
-      this.scoreText.x = this.scorePanel.x + panelWidth / 2;
-      this.scoreText.y = this.scorePanel.y + panelHeight / 2;
+      this.scoreText.x = this.scorePanel.x + panelWidth * 0.62;
+      this.scoreText.y = this.scorePanel.y + panelHeight * 0.5;
+
+      this.scoreLabel.style.fontSize = Math.max(9, fontSize * 0.46);
+      this.scoreLabel.x = this.scorePanel.x + panelWidth * 0.62;
+      this.scoreLabel.y = this.scorePanel.y + panelHeight * 0.25;
+
+      this.scoreHudIcon.position.set(
+        this.scorePanel.x + panelWidth * 0.2,
+        this.scorePanel.y + panelHeight * 0.5,
+      );
+      this.scoreHudIcon.scale.set(panelHeight / 60);
 
       this.movesText.style.fontSize = fontSize;
-      this.movesText.x = this.movesPanel.x + panelWidth / 2;
-      this.movesText.y = this.movesPanel.y + panelHeight / 2;
+      this.movesText.x = this.movesPanel.x + panelWidth * 0.62;
+      this.movesText.y = this.movesPanel.y + panelHeight * 0.5;
+
+      this.movesLabel.style.fontSize = Math.max(9, fontSize * 0.46);
+      this.movesLabel.x = this.movesPanel.x + panelWidth * 0.62;
+      this.movesLabel.y = this.movesPanel.y + panelHeight * 0.25;
+
+      this.movesHudIcon.position.set(
+        this.movesPanel.x + panelWidth * 0.2,
+        this.movesPanel.y + panelHeight * 0.5,
+      );
+      this.movesHudIcon.scale.set(panelHeight / 60);
     }
 
     // 4.5. Position Settings Button in Gameplay
     if (this.settingsBtn) {
       this.settingsBtn.x = width - 42;
       this.settingsBtn.y = height - 42;
+    }
+    if (this.hintBtn) {
+      this.hintBtn.x = 42;
+      this.hintBtn.y = height - 42;
+    }
+    if (this.debugCompleteBtn) {
+      this.debugCompleteBtn.x = width / 2;
+      this.debugCompleteBtn.y = height - 42;
     }
 
     // 5. Position Combo Text
@@ -3960,20 +4505,27 @@ export class GameScene {
           // Fallback if screen is extremely squished: place it slightly above settings button
           this.tutorialText.y = settingsBtnTop - 20;
         }
-        this.tutorialText.visible = true;
+        this.tutorialText.visible = !this.debugCompleteBtn;
 
         if (this.tutorialBg) {
           this.tutorialBg.clear();
-          const tw = this.tutorialText.width + 40;
-          const th = this.tutorialText.height + 20;
-          this.tutorialBg.roundRect(
-            this.tutorialText.x - tw / 2,
-            this.tutorialText.y - th / 2,
-            tw,
-            th,
-            20,
-          );
-          this.tutorialBg.fill({ color: 0x301a48, alpha: 0.75 });
+          if (!this.debugCompleteBtn) {
+            const tw = this.tutorialText.width + 40;
+            const th = this.tutorialText.height + 20;
+            this.tutorialBg.roundRect(
+              this.tutorialText.x - tw / 2,
+              this.tutorialText.y - th / 2,
+              tw,
+              th,
+              20,
+            );
+            this.tutorialBg.fill({ color: 0x704b55, alpha: 0.84 });
+            this.tutorialBg.stroke({
+              color: 0xffe3c8,
+              width: 1.5,
+              alpha: 0.82,
+            });
+          }
         }
       } else {
         if (this.tutorialBg) this.tutorialBg.clear();
@@ -4010,14 +4562,14 @@ export class GameScene {
       if (this.gameOverOverlay) {
         this.gameOverOverlay.clear();
         this.gameOverOverlay.rect(0, 0, width, height);
-        this.gameOverOverlay.fill({ color: 0x000000, alpha: 0.8 });
+        this.gameOverOverlay.fill({ color: 0x24191a, alpha: 0.7 });
       }
       if (this.gameOverModal) {
         this.gameOverModal.x = width / 2;
         this.gameOverModal.y = height / 2;
         const modalScale =
           width < 600 || height > width
-            ? Math.min(1.0, (width - 40) / 480)
+            ? Math.min(1.0, (width - 18) / 432, (height - 24) / 408)
             : 1.0;
         this.gameOverModal.scale.set(modalScale);
       }
@@ -4111,7 +4663,7 @@ export class GameScene {
 
       const toggle = document.createElement("div");
       const isMuted = !isEnabled;
-      toggle.style.cssText = `width:90px; height:42px; border-radius:21px; background:${isMuted ? "#E8E3D8" : "#81C784"}; box-shadow: inset 0 3px 6px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s; flex-shrink:0; display:flex; align-items:center;`;
+      toggle.style.cssText = `width:90px; height:42px; border-radius:21px; background:${isMuted ? "linear-gradient(180deg,#d9d6cf,#aaa69e)" : "linear-gradient(180deg,#7eea94,#25b957)"}; border:2px solid #fff; box-shadow: inset 0 2px 0 rgba(255,255,255,.4), 0 4px 0 ${isMuted ? "#7d7972" : "#14873b"}, 0 7px 12px rgba(36,24,42,.2); cursor:pointer; position:relative; transition: background 0.25s, transform 0.1s, box-shadow .1s; flex-shrink:0; display:flex; align-items:center;`;
 
       const statusText = document.createElement("span");
       statusText.innerText = isMuted ? "OFF" : "ON";
@@ -4126,7 +4678,10 @@ export class GameScene {
       toggle.onclick = () => {
         const newState = onToggle();
         const nowMuted = !newState;
-        toggle.style.background = nowMuted ? "#E8E3D8" : "#81C784";
+        toggle.style.background = nowMuted
+          ? "linear-gradient(180deg,#d9d6cf,#aaa69e)"
+          : "linear-gradient(180deg,#7eea94,#25b957)";
+        toggle.style.boxShadow = `inset 0 2px 0 rgba(255,255,255,.4), 0 4px 0 ${nowMuted ? "#7d7972" : "#14873b"}, 0 7px 12px rgba(36,24,42,.2)`;
         knob.style.left = nowMuted ? "4px" : "52px";
         statusText.innerText = nowMuted ? "OFF" : "ON";
         statusText.style.paddingRight = nowMuted ? "0" : "28px";
@@ -4175,8 +4730,9 @@ export class GameScene {
       actionContainer.className = "game-paused-action-container";
 
       const homeBtn = document.createElement("button");
-      homeBtn.className = "game-paused-btn";
-      homeBtn.style.backgroundImage = "url(/assets/home_btn.webp)";
+      homeBtn.className = "game-paused-btn game-paused-btn--home";
+      homeBtn.setAttribute("aria-label", "Về trang chính");
+      homeBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`;
       homeBtn.addEventListener("click", async () => {
         overlay.remove();
         this.settingsPopup = null;
@@ -4186,8 +4742,9 @@ export class GameScene {
       actionContainer.appendChild(homeBtn);
 
       const replayBtn = document.createElement("button");
-      replayBtn.className = "game-paused-btn";
-      replayBtn.style.backgroundImage = "url(/assets/replay_btn.webp)";
+      replayBtn.className = "game-paused-btn game-paused-btn--replay";
+      replayBtn.setAttribute("aria-label", "Chơi lại");
+      replayBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg>`;
       replayBtn.addEventListener("click", async () => {
         overlay.remove();
         this.settingsPopup = null;
@@ -4196,8 +4753,9 @@ export class GameScene {
       actionContainer.appendChild(replayBtn);
 
       const continueBtn = document.createElement("button");
-      continueBtn.className = "game-paused-btn";
-      continueBtn.style.backgroundImage = "url(/assets/continue_btn.webp)";
+      continueBtn.className = "game-paused-btn game-paused-btn--continue";
+      continueBtn.setAttribute("aria-label", "Tiếp tục");
+      continueBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
       continueBtn.addEventListener("click", closePopup);
       actionContainer.appendChild(continueBtn);
 
@@ -4237,6 +4795,9 @@ export class GameScene {
   }
 
   destroy() {
+    this.clearHint();
+    this.pointerGesture = null;
+
     if (this.gameOverIntervalId) {
       clearInterval(this.gameOverIntervalId);
       this.gameOverIntervalId = null;

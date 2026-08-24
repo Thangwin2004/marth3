@@ -48,7 +48,7 @@
  * - setInputEnabled — lock/unlock board input
  */
 
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, Rectangle } from "pixi.js";
 import { Field } from "./Field.js";
 import { Tile } from "./Tile.js";
 import { App } from "../system/App.js";
@@ -105,6 +105,16 @@ export class Board {
     }
 
     this.allowedTiles = customColors || allowed;
+
+    // One hit area handles drag tracking for the whole grid. Children remain
+    // interactive, while global pointer moves keep working after leaving a tile.
+    this.container.eventMode = "static";
+    this.container.hitArea = new Rectangle(
+      0,
+      0,
+      this.cols * App.config.tileSize,
+      this.rows * App.config.tileSize,
+    );
 
     /** Whether player input (tile clicks) is currently enabled */
     this.inputEnabled = true;
@@ -250,9 +260,9 @@ export class Board {
 
     // 7. Lắng nghe click → emit event lên container
     tile.sprite.off("pointerdown");
-    tile.sprite.on("pointerdown", () => {
+    tile.sprite.on("pointerdown", (event) => {
       if (!this.inputEnabled) return; // Skip if input is disabled
-      this.container.emit("tile-touch-start", tile);
+      this.container.emit("tile-pointer-down", tile, event);
     });
 
     return tile;
