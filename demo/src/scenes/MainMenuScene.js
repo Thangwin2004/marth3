@@ -160,7 +160,7 @@ function gameConfirm(message) {
           left: 0;
           width: 100dvw;
           height: 100dvh;
-          background: rgba(0, 0, 0, 0.65);
+          background: rgba(16, 28, 44, 0.6);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
           display: flex;
@@ -171,10 +171,12 @@ function gameConfirm(message) {
           transition: opacity 0.25s ease;
         }
         .game-alert-card {
-          background: #fbfaf5;
-          border: 5px solid #0088cc;
-          box-shadow: inset 0 0 0 2.5px #33ccff, 0 10px 25px rgba(0, 0, 0, 0.35);
-          border-radius: 20px;
+          background: rgba(232, 235, 239, 0.8);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 2px solid rgba(255, 255, 255, 0.78);
+          box-shadow: 0 14px 42px rgba(16, 36, 61, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.48);
+          border-radius: 24px;
           padding: 28px 24px;
           width: 85%;
           max-width: 340px;
@@ -444,10 +446,9 @@ export class MainMenuScene {
     tempGlow.destroy();
     const glow = new Sprite(glowTexture);
     glow.anchor.set(0.5);
-    glow.y = 105;
     glow.tint = 0xffdf78;
     glow.alpha = 0.22;
-    this.titleContent.addChild(glow);
+    this.menuGlow = glow;
 
     gsap.to(glow, {
       alpha: 0.25,
@@ -469,6 +470,7 @@ export class MainMenuScene {
     // the title transform or the button layout.
     this.menuMascotContainer = new Container();
     this.titleContent.addChild(this.menuMascotContainer);
+    this.menuMascotContainer.addChild(glow);
 
     // Load and add the new logo
     Assets.load("/logo.webp")
@@ -708,11 +710,23 @@ export class MainMenuScene {
       this.menuLogo.height = mascotSize;
       this.menuMascotContainer.y = isPortrait ? 250 : 112;
     }
+    if (this.menuGlow) {
+      // The mascot texture has transparent headroom, so visually center the
+      // halo on the rendered character instead of the texture rectangle.
+      this.menuGlow.y = isPortrait ? 55 : 24;
+    }
 
     // 3. Leaderboard Top Score Info
     if (this.infoText && this.titleContainer) {
       this.infoText.x = width / 2;
-      this.infoText.y = this.titleContainer.y + 2 * scale;
+      if (isPortrait && this.menuLogo && this.menuMascotContainer) {
+        const mascotTopY =
+          this.titleContainer.y +
+          (this.menuMascotContainer.y - this.menuLogo.height / 2) * scale;
+        this.infoText.y = mascotTopY + 22 * scale;
+      } else {
+        this.infoText.y = this.titleContainer.y + 12 * scale;
+      }
       this.infoText.style.fontSize = Math.max(18, Math.min(24, 24 * scale));
       if (this.infoPill) {
         const pillW = Math.max(150, this.infoText.width + 52);

@@ -39,7 +39,7 @@ function gameAlert(message) {
           left: 0;
           width: 100dvw;
           height: 100dvh;
-          background: rgba(0, 0, 0, 0.65);
+          background: rgba(16, 28, 44, 0.6);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
           display: flex;
@@ -50,10 +50,12 @@ function gameAlert(message) {
           transition: opacity 0.25s ease;
         }
         .game-alert-card {
-          background: #fbfaf5;
-          border: 5px solid #0088cc;
-          box-shadow: inset 0 0 0 2.5px #33ccff, 0 10px 25px rgba(0, 0, 0, 0.35);
-          border-radius: 20px;
+          background: rgba(232, 235, 239, 0.8);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 2px solid rgba(255, 255, 255, 0.78);
+          box-shadow: 0 14px 42px rgba(16, 36, 61, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.48);
+          border-radius: 24px;
           padding: 28px 24px;
           width: 85%;
           max-width: 340px;
@@ -130,6 +132,16 @@ function gameAlert(message) {
 
     button.addEventListener("click", closeAlert);
   });
+}
+
+function isDebugCompletionEnabled() {
+  const host = window.location.hostname;
+  return (
+    import.meta.env.DEV ||
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    new window.URLSearchParams(window.location.search).has("debug-ui")
+  );
 }
 
 export const AdManager = {
@@ -788,6 +800,45 @@ export class GameScene {
     hintBadgeText.anchor.set(0.5);
     hintBadge.addChild(hintBadgeText);
     this.hintBtn.addChild(hintBadge);
+
+    // Local-only shortcut for exercising the full completion popup flow.
+    if (isDebugCompletionEnabled()) {
+      this.debugCompleteBtn = new Colorful3DButton({
+        width: 126,
+        height: 38,
+        radius: 19,
+        text: "TEST XONG",
+        colorStyle: "orange",
+        fontSize: 13,
+        onClick: () => this.completeRunForPopupTest(),
+      });
+      this.debugCompleteBtn.label.style.fontWeight = "800";
+      this.debugCompleteBtn.zIndex = 20;
+      this.uiContainer.addChild(this.debugCompleteBtn);
+    }
+  }
+
+  completeRunForPopupTest() {
+    if (this.isGameOver || this._debugCompletionActive) return;
+
+    const leaderboard = saveManager.getLeaderboard();
+    const currentBest = leaderboard.reduce(
+      (best, entry) => Math.max(best, Number(entry.score) || 0),
+      0,
+    );
+
+    this._debugCompletionActive = true;
+    this._winkRoundFinalized = true;
+    this.score = Math.max(1000, Math.ceil((currentBest + 1) / 100) * 100);
+    this.moves = 0;
+    this.updateUI();
+
+    if (this.debugCompleteBtn) {
+      this.debugCompleteBtn.eventMode = "none";
+      this.debugCompleteBtn.alpha = 0.55;
+    }
+
+    this.showGameOver();
   }
 
   /**
@@ -3110,11 +3161,11 @@ export class GameScene {
     const overlay = document.createElement("div");
     overlay.id = "game-revive-overlay-id";
     overlay.style.cssText =
-      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(16,28,44,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;";
 
     const card = document.createElement("div");
     card.style.cssText =
-      "background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.6);border-radius:24px;width:90%;max-width:350px;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 12px 40px rgba(0,0,0,0.15), inset 0 0 0 2px rgba(255,255,255,0.5);";
+      "background:rgba(232,235,239,0.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:2px solid rgba(255,255,255,0.78);border-radius:24px;width:90%;max-width:350px;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 14px 42px rgba(16,36,61,0.22), inset 0 0 0 1px rgba(255,255,255,0.48);";
 
     const title = document.createElement("div");
     title.innerText = "TIẾP TỤC?";
@@ -3209,7 +3260,10 @@ export class GameScene {
 
     // Dừng nhạc nền và phát nhạc kết quả tương ứng
     soundManager.stopBGM();
-    const rank = saveManager.addScore(this.score);
+    // Debug completion previews a #1 result without polluting saved scores.
+    const rank = this._debugCompletionActive
+      ? 1
+      : saveManager.addScore(this.score);
     if (rank) {
       soundManager.playVictory();
     } else {
@@ -3228,7 +3282,7 @@ export class GameScene {
       App.app.screen.width,
       App.app.screen.height,
     );
-    this.gameOverOverlay.fill({ color: 0x24191a, alpha: 0.7 });
+    this.gameOverOverlay.fill({ color: 0x101c2c, alpha: 0.6 });
     this.gameOverScreen.addChild(this.gameOverOverlay);
 
     // Premium modal container
@@ -3572,106 +3626,64 @@ export class GameScene {
     }
 
     const cleanCardShadow = new Graphics()
-      .roundRect(-202, -174, 404, 362, 28)
-      .fill({ color: 0x663b2e, alpha: 0.42 });
-    cleanCardShadow.y = 10;
+      .roundRect(-202, -180, 404, 368, 28)
+      .fill({ color: 0x10243d, alpha: 0.3 });
+    cleanCardShadow.y = 9;
     this.gameOverModal.addChild(cleanCardShadow);
 
     const cleanCard = new Graphics()
-      .roundRect(-202, -174, 404, 362, 28)
-      .fill({ color: 0xfff8eb, alpha: 0.99 })
-      .stroke({ color: 0xf4bd52, width: 4 });
+      .roundRect(-202, -180, 404, 368, 28)
+      .fill({ color: 0xe8ebef, alpha: 0.82 })
+      .stroke({ color: 0xffffff, width: 3, alpha: 0.82 });
     this.gameOverModal.addChild(cleanCard);
 
     const cleanInnerLine = new Graphics()
-      .roundRect(-193, -165, 386, 344, 22)
-      .stroke({ color: 0xffffff, width: 2, alpha: 0.82 });
+      .roundRect(-193, -171, 386, 350, 22)
+      .stroke({ color: 0xcbd2dc, width: 1.5, alpha: 0.7 });
     this.gameOverModal.addChild(cleanInnerLine);
-
-    const cleanHeaderShadow = new Graphics()
-      .roundRect(-116, -198, 232, 60, 18)
-      .fill({ color: 0xb9652e });
-    cleanHeaderShadow.y = 7;
-    this.gameOverModal.addChild(cleanHeaderShadow);
-
-    const cleanHeaderGradient = new FillGradient({
-      start: { x: 0, y: -198 },
-      end: { x: 0, y: -138 },
-      colorStops: [
-        { offset: 0, color: 0xffdf7c },
-        { offset: 1, color: 0xf4ad43 },
-      ],
-    });
-    const cleanHeader = new Graphics()
-      .roundRect(-116, -198, 232, 60, 18)
-      .fill({ fill: cleanHeaderGradient })
-      .stroke({ color: 0xfff1b7, width: 2 });
-    this.gameOverModal.addChild(cleanHeader);
 
     const cleanTitle = new Text({
       text: "KẾT THÚC",
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
-        fontSize: 27,
+        fontSize: 30,
         fontWeight: "900",
-        fill: "#57352F",
+        fill: "#1B365D",
+        letterSpacing: 1.2,
       },
     });
     cleanTitle.anchor.set(0.5);
-    cleanTitle.y = -168;
+    cleanTitle.y = -143;
     this.gameOverModal.addChild(cleanTitle);
 
+    const titleDivider = new Graphics()
+      .roundRect(-86, -117, 172, 3, 1.5)
+      .fill({ color: 0xb9c4d1 });
+    this.gameOverModal.addChild(titleDivider);
+
     const resultMedal = new Container();
-    resultMedal.y = -84;
+    resultMedal.y = -72;
     this.gameOverModal.addChild(resultMedal);
 
-    const medalRibbons = new Graphics()
-      .poly([-29, 2, -7, 8, -15, 46, -29, 34, -42, 42], true)
-      .fill({ color: 0xf08a36 })
-      .stroke({ color: 0xc76528, width: 2 })
-      .poly([29, 2, 7, 8, 15, 46, 29, 34, 42, 42], true)
-      .fill({ color: 0xf08a36 })
-      .stroke({ color: 0xc76528, width: 2 });
-    resultMedal.addChild(medalRibbons);
-
     const medalShadow = new Graphics()
-      .circle(0, 5, 41)
-      .fill({ color: 0xa95b2e, alpha: 0.75 });
+      .circle(0, 4, 38)
+      .fill({ color: 0x1b365d, alpha: 0.2 });
     resultMedal.addChild(medalShadow);
 
-    const medalGradient = new FillGradient({
-      start: { x: 0, y: -41 },
-      end: { x: 0, y: 41 },
-      colorStops: [
-        { offset: 0, color: 0xffee91 },
-        { offset: 0.52, color: 0xffc83f },
-        { offset: 1, color: 0xee8e29 },
-      ],
-    });
     const medalOuter = new Graphics()
-      .circle(0, 0, 41)
-      .fill({ fill: medalGradient })
-      .stroke({ color: 0xffffff, width: 3 });
+      .circle(0, 0, 38)
+      .fill({ color: 0xffffff })
+      .stroke({ color: 0xcbd2dc, width: 2 });
     resultMedal.addChild(medalOuter);
 
     const medalInner = new Graphics()
-      .circle(0, 0, 31)
-      .fill({ color: 0xfff0b6 })
-      .stroke({ color: 0xe5982f, width: 2.5 });
+      .circle(0, 0, 30)
+      .fill({ color: 0xf5c553 });
     resultMedal.addChild(medalInner);
 
-    const medalStarGradient = new FillGradient({
-      start: { x: 0, y: -24 },
-      end: { x: 0, y: 24 },
-      colorStops: [
-        { offset: 0, color: 0xffce43 },
-        { offset: 1, color: 0xf27b2e },
-      ],
-    });
     const medalStar = new Graphics()
-      .star(0, 0, 5, 23, 11)
-      .fill({ fill: medalStarGradient })
-      .stroke({ color: 0xffffff, width: 2 });
+      .star(0, 0, 5, 21, 10)
+      .fill({ color: 0xffffff });
     resultMedal.addChild(medalStar);
 
     const finalScoreLabel = new Text({
@@ -3680,25 +3692,25 @@ export class GameScene {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 54,
         fontWeight: "900",
-        fill: "#57352F",
+        fill: "#1B365D",
         dropShadow: {
-          color: "#D7A857",
-          alpha: 0.34,
+          color: "#1B365D",
+          alpha: 0.16,
           blur: 0,
-          distance: 3,
+          distance: 2,
           angle: Math.PI / 2,
         },
       },
     });
     finalScoreLabel.anchor.set(0.5);
-    finalScoreLabel.y = -8;
+    finalScoreLabel.y = 0;
     this.gameOverModal.addChild(finalScoreLabel);
 
     const statusText = rank ? `KỶ LỤC MỚI  ·  #${rank}` : "CHƠI TỐT LẮM!";
     const statusPill = new Graphics()
-      .roundRect(-112, 36, 224, 36, 18)
-      .fill({ color: 0xffe9b6 })
-      .stroke({ color: 0xf4bd52, width: 1.5 });
+      .roundRect(-112, 42, 224, 36, 18)
+      .fill({ color: 0xffffff })
+      .stroke({ color: 0xcbd2dc, width: 1.5 });
     this.gameOverModal.addChild(statusPill);
 
     const statusLabel = new Text({
@@ -3707,15 +3719,15 @@ export class GameScene {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
         fontWeight: "800",
-        fill: "#7A4833",
+        fill: "#52657C",
       },
     });
     statusLabel.anchor.set(0.5);
-    statusLabel.y = 54;
+    statusLabel.y = 60;
     this.gameOverModal.addChild(statusLabel);
 
     // Three equal action buttons: reward, replay and home.
-    const btnY = 126;
+    const btnY = 134;
 
     // We only show 3 buttons since the player already had their "Thêm Lượt" popup.
     let hasDoubled = false;
@@ -4315,6 +4327,10 @@ export class GameScene {
       this.hintBtn.x = 42;
       this.hintBtn.y = height - 42;
     }
+    if (this.debugCompleteBtn) {
+      this.debugCompleteBtn.x = width / 2;
+      this.debugCompleteBtn.y = height - 42;
+    }
 
     // 5. Position Combo Text
     if (this.comboText) {
@@ -4368,21 +4384,27 @@ export class GameScene {
           // Fallback if screen is extremely squished: place it slightly above settings button
           this.tutorialText.y = settingsBtnTop - 20;
         }
-        this.tutorialText.visible = true;
+        this.tutorialText.visible = !this.debugCompleteBtn;
 
         if (this.tutorialBg) {
           this.tutorialBg.clear();
-          const tw = this.tutorialText.width + 40;
-          const th = this.tutorialText.height + 20;
-          this.tutorialBg.roundRect(
-            this.tutorialText.x - tw / 2,
-            this.tutorialText.y - th / 2,
-            tw,
-            th,
-            20,
-          );
-          this.tutorialBg.fill({ color: 0x704b55, alpha: 0.84 });
-          this.tutorialBg.stroke({ color: 0xffe3c8, width: 1.5, alpha: 0.82 });
+          if (!this.debugCompleteBtn) {
+            const tw = this.tutorialText.width + 40;
+            const th = this.tutorialText.height + 20;
+            this.tutorialBg.roundRect(
+              this.tutorialText.x - tw / 2,
+              this.tutorialText.y - th / 2,
+              tw,
+              th,
+              20,
+            );
+            this.tutorialBg.fill({ color: 0x704b55, alpha: 0.84 });
+            this.tutorialBg.stroke({
+              color: 0xffe3c8,
+              width: 1.5,
+              alpha: 0.82,
+            });
+          }
         }
       } else {
         if (this.tutorialBg) this.tutorialBg.clear();
