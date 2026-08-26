@@ -7,6 +7,8 @@ const EXPECTED_SHA256 =
   "089b2d6c2261a7b285fa8acf5ff599e6d2aba9c1366f9def4ae1b1f9fefcfbda";
 const EXPECTED_PARENTS = [
   "https://winkgames.papastudio.net",
+  "https://winkgames.fun",
+  "https://www.winkgames.fun",
   "http://localhost:3000",
 ];
 const EXPECTED_GAME_ID = "4bc4b359-7b79-4f0c-b740-74dbfc448906";
