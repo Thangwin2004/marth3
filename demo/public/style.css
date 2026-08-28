@@ -308,11 +308,13 @@ body {
   right: 0;
   bottom: 0;
   background-color: #ead9b6;
+  /* A lightweight painted fallback remains visible while the WebP is being
+     fetched/decoded, so the loader never falls through to a black frame. */
   background-image:
     linear-gradient(
       180deg,
-      rgba(255, 248, 226, 0.12) 0%,
-      rgba(239, 217, 166, 0.2) 100%
+      rgba(255, 248, 226, 0.08) 0%,
+      rgba(239, 217, 166, 0.18) 100%
     ),
     url("/assets/backgroud/vietnamese_cultural_landscape_background_1/screen.webp");
   background-position: center;

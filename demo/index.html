@@ -2,8 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="theme-color" content="#ead9b6" />
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="preload"
+      as="image"
+      href="/assets/backgroud/vietnamese_cultural_landscape_background_1/screen.webp"
+      type="image/webp"
+      fetchpriority="high"
+    />
+    <link rel="preload" as="image" href="/logo.webp" type="image/webp" />
+    <style>
+      /* Critical first-paint colors: prevent a black iframe/canvas flash on
+         slower phones before the full stylesheet and splash art are ready. */
+      html,
+      body,
+      #app,
+      #splash-screen {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #ead9b6;
+      }
+
+      #splash-screen {
+        position: absolute;
+        inset: 0;
+        z-index: 999999;
+      }
+    </style>
     <link rel="stylesheet" href="/style.css" />
     <title>Tribe Crush - Match 3</title>
 
@@ -22,7 +50,13 @@
       <div id="splash-screen">
         <div class="splash-content">
           <div class="splash-mascot-wrap">
-            <img class="splash-mascot" src="/logo.webp" alt="Tribe Crush" />
+            <img
+              class="splash-mascot"
+              src="/logo.webp"
+              alt="Tribe Crush"
+              fetchpriority="high"
+              decoding="async"
+            />
           </div>
           <div class="splash-title" aria-hidden="true">
             <span>TRIBE</span>
