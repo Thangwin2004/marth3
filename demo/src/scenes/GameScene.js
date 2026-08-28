@@ -2184,7 +2184,12 @@ export class GameScene {
         });
       }
 
-      const batchSize = 6;
+      // Keep the original waterfall timing, but never let tile creation occupy
+      // too much of one frame on a weak phone. Fast devices still process up
+      // to six tiles per frame; slower devices yield as soon as the budget is
+      // spent and continue on the next animation frame.
+      const maxBatchSize = 6;
+      const frameBudgetMs = 2.5;
       let queueIndex = 0;
       const spawnBatch = () => {
         if (!this.board?.fields) {
@@ -2192,9 +2197,17 @@ export class GameScene {
           return;
         }
 
-        const batchEnd = Math.min(queueIndex + batchSize, spawnQueue.length);
-        for (; queueIndex < batchEnd; queueIndex++) {
+        const frameStartedAt = window.performance.now();
+        let spawnedThisFrame = 0;
+        while (
+          queueIndex < spawnQueue.length &&
+          spawnedThisFrame < maxBatchSize &&
+          (spawnedThisFrame === 0 ||
+            window.performance.now() - frameStartedAt < frameBudgetMs)
+        ) {
           const { field, depth } = spawnQueue[queueIndex];
+          queueIndex += 1;
+          spawnedThisFrame += 1;
           const tile = this.board.createTile(field, null, true);
           tile.sprite.y = -App.config.tileSize * (2 + depth);
           if (tile.stateOverlay) {
@@ -3263,15 +3276,16 @@ export class GameScene {
 
     const yesBtn = document.createElement("button");
     yesBtn.style.cssText =
-      "background:linear-gradient(to bottom, #88D399, #5CB475);border:2px solid #FFFFFF;border-radius:12px;padding:10px 40px;color:white;font-size:24px;font-weight:900;font-family:'Be Vietnam Pro', sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4A965E, 0 8px 10px rgba(0,0,0,0.2);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+      "width:100%;min-height:62px;box-sizing:border-box;background:linear-gradient(to bottom, #88D399, #5CB475);border:2px solid #FFFFFF;border-radius:12px;padding:10px 18px;color:white;font-size:clamp(18px,5.5vw,22px);font-weight:900;font-family:'Be Vietnam Pro', sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 6px 0 #4A965E, 0 8px 10px rgba(0,0,0,0.2);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;white-space:nowrap;";
 
     const tvIcon = document.createElement("img");
     tvIcon.src = "/assest/iconbtn/images.webp";
-    tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
+    tvIcon.style.cssText = "height:28px;width:auto;flex:0 0 auto;";
 
     const yesText = document.createElement("span");
     yesText.innerText = t("revive.moreMoves");
-    yesText.style.textShadow = "0 2px 4px rgba(0,0,0,0.3)";
+    yesText.style.cssText =
+      "white-space:nowrap;flex:0 0 auto;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,0.3);";
 
     yesBtn.appendChild(tvIcon);
     yesBtn.appendChild(yesText);

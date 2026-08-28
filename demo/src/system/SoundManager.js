@@ -374,12 +374,12 @@ class SoundManager {
    * Hiệu ứng âm thanh khi ngọc tiếp đất (Wooden fall tap) - được throttle 100ms
    */
   playLand() {
-    this.init();
-    if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
-
     const now = Date.now();
     if (now - this.lastLandTime < 65) return; // slightly lower throttle for snappy rolling cascades
     this.lastLandTime = now;
+
+    this.init();
+    if (!this.ctx || !this.enabled || window.__GLOBAL_MUTE__) return;
 
     const ctxTime = this.ctx.currentTime;
 

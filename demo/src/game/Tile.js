@@ -203,7 +203,20 @@ export class Tile {
     gsap.killTweensOf(this.sprite.scale);
     this.sprite.scale.set(1);
 
+    // Falling tiles cannot be interacted with while the board is resolving.
+    // Removing them from Pixi's hit-test tree saves pointer-bound checks on
+    // mobile during large cascades without changing the visual animation.
+    const previousEventMode = this.sprite.eventMode;
+    this.sprite.eventMode = "none";
+
     return new Promise((resolve) => {
+      const finishFall = () => {
+        if (this.sprite && !this.sprite.destroyed) {
+          this.sprite.eventMode = previousEventMode;
+        }
+        resolve();
+      };
+
       gsap.to(this.sprite, {
         y: position.y + halfTile,
         duration: 0.45,
@@ -222,11 +235,11 @@ export class Tile {
               y: 1,
               duration: 0.24,
               ease: "back.out(1.8)",
-              onComplete: resolve,
+              onComplete: finishFall,
             });
             return;
           }
-          resolve();
+          finishFall();
         },
       });
       if (this.stateOverlay && !this.stateOverlay.destroyed) {
