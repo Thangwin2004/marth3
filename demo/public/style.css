@@ -43,6 +43,8 @@ body {
   width: 100% !important;
   height: 100% !important;
   display: block !important;
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* --- OVERLAY UTILITIES (GLASSMORPHISM) --- */
@@ -457,6 +459,12 @@ body {
   opacity: 0;
   transition: opacity 0.25s ease;
   box-sizing: border-box;
+  padding:
+    max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+  overflow: hidden;
 }
 .game-popup-card {
   background: rgba(232, 235, 239, 0.8);
@@ -481,6 +489,14 @@ body {
     sans-serif;
   box-sizing: border-box;
   opacity: 0;
+  max-height: calc(100dvh - 24px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.game-popup-card::-webkit-scrollbar {
+  display: none;
 }
 .game-popup-card.wide {
   max-width: 440px;
@@ -700,12 +716,56 @@ body {
     0 3px 0 #78b1c8;
 }
 @media (max-width: 420px) {
+  .game-popup-card {
+    width: 100%;
+    max-width: 360px;
+    padding: 36px 16px 18px;
+    border-radius: 20px;
+  }
+  .game-popup-card.wide {
+    max-width: 380px;
+  }
+  .game-popup-title {
+    top: 12px;
+    max-width: calc(100% - 88px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 19px;
+  }
+  .game-settings-row-container {
+    margin-top: 14px;
+    gap: 9px;
+  }
+  .game-settings-row,
   .game-settings-language-row {
+    min-height: 54px;
+    height: 54px;
     padding-inline: 14px;
+  }
+  .game-settings-label {
+    font-size: 14px;
+  }
+  .game-paused-action-container {
+    gap: 14px;
+    margin-top: 18px;
   }
   .game-settings-language-select {
     min-width: 120px;
     font-size: 13px;
+  }
+}
+
+@media (max-height: 700px) {
+  .game-popup-card {
+    padding-top: 34px;
+    padding-bottom: 16px;
+  }
+  .game-settings-row-container {
+    margin-top: 10px;
+    gap: 8px;
+  }
+  .game-paused-action-container {
+    margin-top: 14px;
   }
 }
 .game-paused-btn::before {

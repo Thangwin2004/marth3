@@ -353,11 +353,12 @@ export class Board {
       maxBoardHeight = canvasHeight - 40; // Chỉ chừa 40px lề dọc
       topOffset = 20;
     } else if (isMobilePortrait) {
-      // Màn hình dọc điện thoại: HUD nằm ở trên cùng
+      // Mobile portrait is split into explicit HUD / board / footer zones.
+      // This prevents the board from growing underneath the bottom controls.
       maxBoardWidth = canvasWidth - 16;
-      // Leave space for HUD at top (145px) and tutorial text + settings button at bottom (~130px)
-      maxBoardHeight = canvasHeight - 275;
-      topOffset = 145;
+      topOffset = Math.max(92, Math.min(108, canvasHeight * 0.145));
+      const footerHeight = Math.max(92, Math.min(112, canvasHeight * 0.15));
+      maxBoardHeight = canvasHeight - topOffset - footerHeight;
     } else {
       // Màn hình bình thường hoặc màn hình dọc PC/Laptop: HUD nằm ở trên cùng
       // Increase top offset to 135 to make room for the tutorial text
@@ -380,23 +381,19 @@ export class Board {
     const scaledHeight = boardHeight * scale;
 
     // Căn giữa bảng theo chiều ngang
-    this.container.x = canvasWidth / 2 - scaledWidth / 2;
+    this.container.x = Math.round(canvasWidth / 2 - scaledWidth / 2);
 
     // Căn giữa bảng theo chiều dọc trong vùng khả dụng
     if (isMobilePortrait) {
-      // On mobile portrait, we want to center the board vertically if there's plenty of space,
-      // but shift it up if the bottom space is too tight (especially on smaller screens like 375x667).
-      // We enforce a minimum bottom safe gap of 60px between the board background bottom and settingsBtnTop.
-      const settingsBtnTop = canvasHeight - 68;
-      const boardBgPadding = 16 * scale;
-      const maxAllowedY = settingsBtnTop - 60 - boardBgPadding - scaledHeight;
       const centeredY = topOffset + (maxBoardHeight - scaledHeight) / 2;
-
-      // We also ensure the board doesn't overlap the HUD at the top (topOffset of 125px).
-      // We make sure the container y is at least 145px (leaving a gap below HUD).
-      this.container.y = Math.max(145, Math.min(centeredY, maxAllowedY));
+      const maxAllowedY = canvasHeight - 92 - scaledHeight;
+      this.container.y = Math.round(
+        Math.max(topOffset, Math.min(centeredY, maxAllowedY)),
+      );
     } else {
-      this.container.y = topOffset + (maxBoardHeight - scaledHeight) / 2;
+      this.container.y = Math.round(
+        topOffset + (maxBoardHeight - scaledHeight) / 2,
+      );
     }
   }
 

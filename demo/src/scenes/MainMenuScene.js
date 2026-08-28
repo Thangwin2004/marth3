@@ -732,8 +732,10 @@ export class MainMenuScene {
 
     // 2. Title Container
     if (this.titleContainer) {
-      this.titleContainer.x = width / 2;
-      this.titleContainer.y = isPortrait ? height * 0.2 : height * 0.26;
+      this.titleContainer.x = Math.round(width / 2);
+      this.titleContainer.y = Math.round(
+        isPortrait ? height * 0.2 : height * 0.26,
+      );
       this.titleContainer.scale.set(scale);
     }
     if (this.menuLogo && this.menuMascotContainer) {
@@ -742,7 +744,7 @@ export class MainMenuScene {
         : Math.min(230, Math.max(190, height * 0.29));
       this.menuLogo.width = mascotSize;
       this.menuLogo.height = mascotSize;
-      this.menuMascotContainer.y = isPortrait ? 250 : 112;
+      this.menuMascotContainer.y = isPortrait ? 195 : 112;
     }
     if (this.menuGlow) {
       // The mascot texture has transparent headroom, so visually center the
@@ -752,12 +754,14 @@ export class MainMenuScene {
 
     // 3. Leaderboard Top Score Info
     if (this.infoText && this.titleContainer) {
-      this.infoText.x = width / 2;
-      if (isPortrait && this.menuLogo && this.menuMascotContainer) {
-        const mascotTopY =
-          this.titleContainer.y +
-          (this.menuMascotContainer.y - this.menuLogo.height / 2) * scale;
-        this.infoText.y = mascotTopY + 22 * scale;
+      this.infoText.x = Math.round(width / 2);
+      if (isPortrait) {
+        // The mascot files contain different amounts of transparent padding.
+        // A viewport zone is therefore more reliable than texture bounds and
+        // keeps the score pill below the character on every phone ratio.
+        this.infoText.y = Math.round(
+          Math.max(350, Math.min(420, height * 0.55)),
+        );
       } else {
         this.infoText.y = this.titleContainer.y + 12 * scale;
       }
@@ -786,7 +790,9 @@ export class MainMenuScene {
       : this.titleContainer
         ? this.titleContainer.y + 115 * scale
         : height * 0.35;
-    let playY = Math.max(titleBottomY + 245 * scale, height * 0.65);
+    let playY = isPortrait
+      ? titleBottomY + Math.max(88, 104 * scale)
+      : Math.max(titleBottomY + 245 * scale, height * 0.65);
     const playH = isPortrait
       ? Math.max(68, Math.min(84, 84 * scale))
       : Math.min(100, Math.max(88, height * 0.1));
@@ -796,11 +802,14 @@ export class MainMenuScene {
       : Math.min(48, Math.max(42, height * 0.05));
     const circGap = 28 * scale;
 
-    const paradeTop = height - 115;
+    const paradeY = isPortrait ? height - 54 : height - 85;
+    const paradeTop = paradeY - 38;
     const maxCircY = paradeTop - 20 - circR;
 
     // Determine circY, spacing it nicely below playBtn but avoiding parade
-    let circY = Math.max(playY + 110 * scale, height * 0.75);
+    let circY = isPortrait
+      ? playY + playH / 2 + circR + Math.max(14, 18 * scale)
+      : Math.max(playY + 110 * scale, height * 0.75);
     if (circY > maxCircY) {
       circY = maxCircY;
     }
@@ -814,7 +823,7 @@ export class MainMenuScene {
     }
 
     if (this.playBtn) {
-      this.playBtn.position.set(width / 2, playY);
+      this.playBtn.position.set(Math.round(width / 2), Math.round(playY));
       this.playBtn.updateStyle(playH / 2 / scale);
       this.playBtn.scale.set(scale);
     }
@@ -830,7 +839,10 @@ export class MainMenuScene {
     const totalCircs = visibleCircs.length;
     const startX = width / 2 - ((totalCircs - 1) * (circR * 2 + circGap)) / 2;
     visibleCircs.forEach((btn, idx) => {
-      btn.position.set(startX + idx * (circR * 2 + circGap), circY);
+      btn.position.set(
+        Math.round(startX + idx * (circR * 2 + circGap)),
+        Math.round(circY),
+      );
       if (typeof btn.updateStyle === "function") {
         btn.updateStyle(circR / scale);
       }
@@ -840,7 +852,7 @@ export class MainMenuScene {
     // 6. Parade bottom banner
     if (this.paradeContainer) {
       this.paradeContainer.x = 0;
-      this.paradeContainer.y = height - 85;
+      this.paradeContainer.y = paradeY;
       this.paradeContainer.scale.set(1);
     }
 

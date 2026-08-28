@@ -31,15 +31,24 @@ class GameApp {
     const hardwareThreads = navigator.hardwareConcurrency || 4;
     const deviceMemory = navigator.deviceMemory || 4;
     const isLowPowerDevice = hardwareThreads <= 4 || deviceMemory <= 4;
-    const renderResolution =
-      isCompactScreen || isLowPowerDevice ? 1 : Math.min(devicePixelRatio, 1.5);
+    // Never force mobile to a 1x backing buffer: most phones have a DPR of
+    // 2-3, so a 1x canvas is stretched by the browser and makes every Pixi
+    // text, vector edge and icon look soft. Cap DPR to protect fill-rate and
+    // memory while retaining a visibly sharp UI on compact/low-power devices.
+    const resolutionCap = isLowPowerDevice ? 1.5 : 2;
+    const minimumResolution = isCompactScreen ? 1.5 : 1;
+    const renderResolution = Math.min(
+      resolutionCap,
+      Math.max(minimumResolution, devicePixelRatio),
+    );
 
     await this.app.init({
       resizeTo: container,
       backgroundColor: 0x0a0a1a,
-      antialias: !isCompactScreen && !isLowPowerDevice,
+      antialias: true,
       resolution: renderResolution,
       autoDensity: true,
+      roundPixels: true,
       preference: "webgl",
       powerPreference: "high-performance",
     });
@@ -51,11 +60,18 @@ class GameApp {
       document.body.appendChild(this.app.canvas);
     }
 
+    // Snap scene transforms to physical pixels. This is especially important
+    // for odd phone widths where width / 2 otherwise lands on a half pixel.
+    this.app.stage.roundPixels = true;
+
     await this.loadAssets(config.assets);
 
     console.log("✅ PixiJS Application initialized!");
     console.log(
       `   Canvas: ${this.app.screen.width}x${this.app.screen.height}`,
+    );
+    console.log(
+      `   Render resolution: ${renderResolution}x (device DPR ${devicePixelRatio})`,
     );
   }
 

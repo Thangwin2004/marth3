@@ -654,6 +654,8 @@ export class GameScene {
    */
   createUI() {
     this.uiContainer = new Container();
+    this.uiContainer.sortableChildren = true;
+    this.uiContainer.zIndex = 120;
     this.container.addChild(this.uiContainer);
 
     // === SCORE PANEL BACKGROUND ===
@@ -776,6 +778,7 @@ export class GameScene {
       },
       this.uiContainer,
     );
+    this.settingsBtn.zIndex = 30;
 
     // Rewarded Hint: highlights a valid pair but never makes the move.
     this.hintBtn = this.createCircularButton(
@@ -785,6 +788,7 @@ export class GameScene {
       () => this.requestHint(),
       this.uiContainer,
     );
+    this.hintBtn.zIndex = 30;
     const hintBadge = new Container();
     const hintBadgeBg = new Graphics()
       .roundRect(-13, -8, 26, 16, 8)
@@ -4399,13 +4403,14 @@ export class GameScene {
         this.movesPanel.x = boardRight + (rightSpace - panelWidth) / 2;
         this.movesPanel.y = (height - panelHeight) / 2;
       } else if (isMobilePortrait) {
-        // Màn hình dọc điện thoại: xếp ở trên cùng nhưng lùi xuống để không bị nút Fullscreen đè
+        // Compact safe header; hidden browser/profile controls no longer reserve
+        // a large empty strip above the board.
         panelWidth = Math.min(200, (width - 40) / 2);
         panelHeight = 50;
         fontSize = 18;
 
         const margin = 15;
-        const topY = 75; // Pushed down from 15 to clear the 16px top + 44px height profile/fullscreen buttons
+        const topY = Math.max(16, Math.min(28, height * 0.035));
 
         this.scorePanel.x = margin;
         this.scorePanel.y = topY;
@@ -4519,10 +4524,14 @@ export class GameScene {
     if (this.settingsBtn) {
       this.settingsBtn.x = width - 42;
       this.settingsBtn.y = height - 42;
+      this.settingsBtn.alpha = 1;
+      this.settingsBtn.visible = true;
     }
     if (this.hintBtn) {
       this.hintBtn.x = 42;
       this.hintBtn.y = height - 42;
+      this.hintBtn.alpha = 1;
+      this.hintBtn.visible = true;
     }
     if (this.debugCompleteBtn) {
       this.debugCompleteBtn.x = width / 2;
