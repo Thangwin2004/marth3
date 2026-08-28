@@ -14,8 +14,27 @@ import { winkGame } from "./integrations/wink/wink-adapter.js";
 import { waitForGameFonts } from "./utils/fontLoader.js";
 import { installFocusPause } from "./utils/focusPause.js";
 import { installInteractionGuard } from "./utils/interactionGuard.js";
+import { i18n, t } from "./system/I18nManager.js";
 
 installInteractionGuard();
+
+function localizeSplash() {
+  const titleParts = t("game.title").split("\n");
+  const title = document.querySelector(".splash-title");
+  const splashText = document.getElementById("splash-text");
+  const mascot = document.querySelector(".splash-mascot");
+  if (title) {
+    title.querySelector("span").textContent = titleParts[0] || "TRIBE";
+    title.querySelector("strong").textContent = titleParts[1] || "CRUSH";
+  }
+  if (splashText) {
+    splashText.innerText = t("loading.progress", { progress: 0 });
+  }
+  if (mascot) mascot.alt = t("game.documentTitle");
+}
+
+localizeSplash();
+i18n.subscribe(localizeSplash);
 
 async function startGame() {
   try {
@@ -59,6 +78,9 @@ async function startGame() {
       },
     });
 
+    winkGame.observe((state) => i18n.syncFromWink(state));
+    i18n.syncFromWink(winkGame.state);
+
     // Step 3: Load save data
     const save = saveManager.load();
     console.log(
@@ -79,13 +101,13 @@ async function startGame() {
         progress += Math.floor(Math.random() * 15) + 5;
         if (progress > 90) progress = 90;
         splashProgress.style.width = progress + "%";
-        splashText.innerText = `ĐANG TẢI ${progress}%`;
+        splashText.innerText = t("loading.progress", { progress });
       }, 50);
 
       setTimeout(() => {
         clearInterval(interval);
         splashProgress.style.width = "100%";
-        splashText.innerText = `ĐANG TẢI 100%`;
+        splashText.innerText = t("loading.progress", { progress: 100 });
         setTimeout(() => {
           splash.style.opacity = "0";
           setTimeout(() => {

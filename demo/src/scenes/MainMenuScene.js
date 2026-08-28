@@ -24,6 +24,7 @@ import {
 } from "../system/UIComponents.js";
 import { winkGame } from "../integrations/wink/wink-adapter.js";
 import { coverSprite } from "../utils/layout.js";
+import { i18n, t } from "../system/I18nManager.js";
 
 function getEffectiveUser() {
   if (winkGame && winkGame.personalBest?.displayName) {
@@ -44,7 +45,7 @@ function getEffectiveUser() {
   if (winkGame && winkGame.isAuthenticated) {
     return {
       id: "wink_user",
-      name: "Thành viên",
+      name: t("menu.member"),
     };
   }
   return null;
@@ -237,12 +238,12 @@ function gameConfirm(message) {
     const okButton = document.createElement("img");
     okButton.className = "game-alert-img-btn";
     okButton.src = "assets/yes_btn.webp";
-    okButton.alt = "ĐỒNG Ý";
+    okButton.alt = t("actions.confirm");
 
     const cancelButton = document.createElement("img");
     cancelButton.className = "game-alert-img-btn";
     cancelButton.src = "assets/close_btn.webp";
-    cancelButton.alt = "HỦY";
+    cancelButton.alt = t("actions.cancel");
 
     btnContainer.appendChild(okButton);
     btnContainer.appendChild(cancelButton);
@@ -506,8 +507,8 @@ export class MainMenuScene {
       ],
     });
 
-    const title = new Text({
-      text: "BỘ LẠC\nCRUSH",
+    this.titleText = new Text({
+      text: t("game.title"),
       style: {
         fontFamily: '"Baloo 2", "Be Vietnam Pro", sans-serif',
         fontSize: 62,
@@ -525,9 +526,9 @@ export class MainMenuScene {
         },
       },
     });
-    title.anchor.set(0.5);
-    title.y = -92;
-    this.titleContent.addChild(title);
+    this.titleText.anchor.set(0.5);
+    this.titleText.y = -92;
+    this.titleContent.addChild(this.titleText);
 
     const subtitle = new Text({
       text: "MATCH 3",
@@ -560,9 +561,7 @@ export class MainMenuScene {
 
     this.infoText = new Text({
       text:
-        topScore && topScore > 0
-          ? `★  ${topScore.toLocaleString("vi-VN")}`
-          : "★  —",
+        topScore && topScore > 0 ? `★  ${i18n.formatNumber(topScore)}` : "★  —",
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
@@ -587,6 +586,8 @@ export class MainMenuScene {
     this.settingsBtn = this.createCircularButton("⚙️", 0, 0, () => {
       this.showSettingsModal(false);
     });
+
+    this._stopLanguageObserver = i18n.subscribe(() => this.applyLanguage());
 
     // === ANIMAL SCROLLING BANNER (PARADE) ===
     this.paradeContainer = new Container();
@@ -696,6 +697,17 @@ export class MainMenuScene {
     });
   }
 
+  applyLanguage() {
+    if (this.titleText && !this.titleText.destroyed) {
+      this.titleText.text = t("game.title");
+    }
+    if (this.playBtn?.label && !this.playBtn.label.destroyed) {
+      this.playBtn.label.text = t("menu.play");
+    }
+    this.refreshWinkPersonalBest();
+    this.resize();
+  }
+
   resize() {
     const width = App.app.screen.width;
     const height = App.app.screen.height;
@@ -720,8 +732,10 @@ export class MainMenuScene {
 
     // 2. Title Container
     if (this.titleContainer) {
-      this.titleContainer.x = width / 2;
-      this.titleContainer.y = isPortrait ? height * 0.2 : height * 0.26;
+      this.titleContainer.x = Math.round(width / 2);
+      this.titleContainer.y = Math.round(
+        isPortrait ? height * 0.2 : height * 0.26,
+      );
       this.titleContainer.scale.set(scale);
     }
     if (this.menuLogo && this.menuMascotContainer) {
@@ -730,7 +744,7 @@ export class MainMenuScene {
         : Math.min(230, Math.max(190, height * 0.29));
       this.menuLogo.width = mascotSize;
       this.menuLogo.height = mascotSize;
-      this.menuMascotContainer.y = isPortrait ? 250 : 112;
+      this.menuMascotContainer.y = isPortrait ? 195 : 112;
     }
     if (this.menuGlow) {
       // The mascot texture has transparent headroom, so visually center the
@@ -740,12 +754,14 @@ export class MainMenuScene {
 
     // 3. Leaderboard Top Score Info
     if (this.infoText && this.titleContainer) {
-      this.infoText.x = width / 2;
-      if (isPortrait && this.menuLogo && this.menuMascotContainer) {
-        const mascotTopY =
-          this.titleContainer.y +
-          (this.menuMascotContainer.y - this.menuLogo.height / 2) * scale;
-        this.infoText.y = mascotTopY + 22 * scale;
+      this.infoText.x = Math.round(width / 2);
+      if (isPortrait) {
+        // The mascot files contain different amounts of transparent padding.
+        // A viewport zone is therefore more reliable than texture bounds and
+        // keeps the score pill below the character on every phone ratio.
+        this.infoText.y = Math.round(
+          Math.max(350, Math.min(420, height * 0.55)),
+        );
       } else {
         this.infoText.y = this.titleContainer.y + 12 * scale;
       }
@@ -774,7 +790,9 @@ export class MainMenuScene {
       : this.titleContainer
         ? this.titleContainer.y + 115 * scale
         : height * 0.35;
-    let playY = Math.max(titleBottomY + 245 * scale, height * 0.65);
+    let playY = isPortrait
+      ? titleBottomY + Math.max(88, 104 * scale)
+      : Math.max(titleBottomY + 245 * scale, height * 0.65);
     const playH = isPortrait
       ? Math.max(68, Math.min(84, 84 * scale))
       : Math.min(100, Math.max(88, height * 0.1));
@@ -784,11 +802,14 @@ export class MainMenuScene {
       : Math.min(48, Math.max(42, height * 0.05));
     const circGap = 28 * scale;
 
-    const paradeTop = height - 115;
+    const paradeY = isPortrait ? height - 54 : height - 85;
+    const paradeTop = paradeY - 38;
     const maxCircY = paradeTop - 20 - circR;
 
     // Determine circY, spacing it nicely below playBtn but avoiding parade
-    let circY = Math.max(playY + 110 * scale, height * 0.75);
+    let circY = isPortrait
+      ? playY + playH / 2 + circR + Math.max(14, 18 * scale)
+      : Math.max(playY + 110 * scale, height * 0.75);
     if (circY > maxCircY) {
       circY = maxCircY;
     }
@@ -802,9 +823,13 @@ export class MainMenuScene {
     }
 
     if (this.playBtn) {
-      this.playBtn.position.set(width / 2, playY);
-      this.playBtn.updateStyle(playH / 2 / scale);
-      this.playBtn.scale.set(scale);
+      this.playBtn.position.set(Math.round(width / 2), Math.round(playY));
+      // Draw at the final on-screen size. Scaling a container also scales its
+      // cached Text texture and is the main source of soft mobile labels.
+      this.playBtn.updateStyle(playH / 2);
+      this.playBtn.scale.set(1);
+      this.playBtn._restScaleX = 1;
+      this.playBtn._restScaleY = 1;
     }
 
     const visibleCircs = [];
@@ -818,17 +843,22 @@ export class MainMenuScene {
     const totalCircs = visibleCircs.length;
     const startX = width / 2 - ((totalCircs - 1) * (circR * 2 + circGap)) / 2;
     visibleCircs.forEach((btn, idx) => {
-      btn.position.set(startX + idx * (circR * 2 + circGap), circY);
+      btn.position.set(
+        Math.round(startX + idx * (circR * 2 + circGap)),
+        Math.round(circY),
+      );
       if (typeof btn.updateStyle === "function") {
-        btn.updateStyle(circR / scale);
+        btn.updateStyle(circR);
       }
-      btn.scale.set(scale);
+      btn.scale.set(1);
+      btn._restScaleX = 1;
+      btn._restScaleY = 1;
     });
 
     // 6. Parade bottom banner
     if (this.paradeContainer) {
       this.paradeContainer.x = 0;
-      this.paradeContainer.y = height - 85;
+      this.paradeContainer.y = paradeY;
       this.paradeContainer.scale.set(1);
     }
 
@@ -950,7 +980,7 @@ export class MainMenuScene {
     if (label.startsWith("GOOGLE_ICON")) {
       const displayText = label.includes(":")
         ? label.split(":")[1]
-        : "ĐĂNG NHẬP GOOGLE";
+        : t("menu.googleLogin");
 
       const text = new Text({
         text: displayText.toUpperCase(),
@@ -1109,9 +1139,8 @@ export class MainMenuScene {
     content.addChild(innerRim);
     content.addChild(highlight);
 
-    // Vietnamese label "CHƠI NGAY"
     const label = new Text({
-      text: "CHƠI NGAY",
+      text: t("menu.play"),
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 22,
@@ -1122,6 +1151,7 @@ export class MainMenuScene {
     });
     label.anchor.set(0.5);
     content.addChild(label);
+    btn.label = label;
 
     let currentR = 30;
 
@@ -1286,7 +1316,7 @@ export class MainMenuScene {
 
     const title = document.createElement("div");
     title.className = "game-popup-title";
-    title.innerText = "BẢNG VÀNG";
+    title.innerText = t("leaderboard.title");
     card.appendChild(title);
 
     const closePopup = () => {
@@ -1308,12 +1338,12 @@ export class MainMenuScene {
     const userText = document.createElement("div");
     userText.className = "game-leaderboard-user-text";
     userText.innerText = effUser
-      ? `Tài khoản: ${effUser.name} (Đã đăng nhập)`
+      ? t("leaderboard.accountSignedIn", { name: effUser.name })
       : winkGame?.isAuthenticated
-        ? "Tài khoản: Thành viên (Đã đăng nhập)"
+        ? t("leaderboard.memberSignedIn")
         : winkGame.isReady
-          ? "Đăng nhập Wink để lưu thành tích"
-          : "Ngoại tuyến (đang dùng dữ liệu thiết bị)";
+          ? t("leaderboard.signInToSave")
+          : t("leaderboard.offline");
     card.appendChild(userText);
 
     const list = winkGame.isReady ? [] : saveManager.getLeaderboard();
@@ -1327,9 +1357,9 @@ export class MainMenuScene {
     const thead = document.createElement("thead");
     thead.innerHTML = `
       <tr>
-        <th>HẠNG</th>
-        <th>THÀNH VIÊN</th>
-        <th>ĐIỂM SỐ</th>
+        <th>${t("leaderboard.rankHeader")}</th>
+        <th>${t("leaderboard.memberHeader")}</th>
+        <th>${t("leaderboard.scoreHeader")}</th>
       </tr>
     `;
     table.appendChild(thead);
@@ -1343,7 +1373,7 @@ export class MainMenuScene {
       tbody.innerHTML = "";
       if (!entries || entries.length === 0) {
         const emptyRow = document.createElement("tr");
-        emptyRow.innerHTML = `<td colspan="3" style="padding: 24px; color: #360207; font-size: 16px; font-weight: bold; text-align: center;">Chưa có thành tích nào.<br/>Hãy chơi game để thiết lập kỷ lục nhé! 🚀</td>`;
+        emptyRow.innerHTML = `<td colspan="3" style="padding: 24px; color: #360207; font-size: 16px; font-weight: bold; text-align: center;">${t("leaderboard.empty")}</td>`;
         tbody.appendChild(emptyRow);
         return;
       }
@@ -1360,7 +1390,8 @@ export class MainMenuScene {
               : idx === 2
                 ? "🥉"
                 : `${entry.rank || idx + 1}`;
-        const name = entry.userName || entry.displayName || "Thành viên";
+        const name =
+          entry.userName || entry.displayName || t("leaderboard.defaultMember");
         const avatarUrl = entry.avatarUrl || getAvatarUrl(name);
 
         row.innerHTML = `
@@ -1369,7 +1400,7 @@ export class MainMenuScene {
             <img src="${avatarUrl}" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #0088cc; background: #fff;" alt="" />
             <span>${name}</span>
           </td>
-          <td>${(entry.score || 0).toLocaleString()}</td>
+          <td>${i18n.formatNumber(entry.score || 0)}</td>
         `;
         tbody.appendChild(row);
       });
@@ -1408,8 +1439,8 @@ export class MainMenuScene {
         (activeUser
           ? activeUser.name
           : winkGame?.isAuthenticated
-            ? "Thành viên"
-            : "Bạn (Khách)");
+            ? t("menu.member")
+            : t("leaderboard.youGuest"));
       const pAvatar = pb?.avatarUrl || getAvatarUrl(pName);
       const pScore =
         pb?.score !== undefined && pb?.score !== null
@@ -1420,22 +1451,26 @@ export class MainMenuScene {
       const rankNum = pb?.rank || null;
 
       userText.innerText = activeUser
-        ? `Tài khoản: ${activeUser.name} (Đã đăng nhập)`
+        ? t("leaderboard.accountSignedIn", { name: activeUser.name })
         : winkGame?.isAuthenticated
-          ? "Tài khoản: Thành viên (Đã đăng nhập)"
+          ? t("leaderboard.memberSignedIn")
           : winkGame.isReady
-            ? "Đăng nhập Wink để lưu thành tích"
-            : "Ngoại tuyến (đang dùng dữ liệu thiết bị)";
+            ? t("leaderboard.signInToSave")
+            : t("leaderboard.offline");
 
-      rankItem.innerText = rankNum ? `Hạng: #${rankNum}` : "Hạng: -";
+      rankItem.innerText = rankNum
+        ? t("leaderboard.rank", { rank: rankNum })
+        : t("leaderboard.noRank");
       nameItem.innerHTML = `
         <img src="${pAvatar}" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #0088cc;" alt="" />
         <span>${pName}</span>
       `;
       scoreItem.innerText =
         pScore !== null && pScore !== undefined
-          ? `Điểm: ${Number(pScore).toLocaleString("vi-VN")}`
-          : "Điểm: —";
+          ? t("leaderboard.score", {
+              score: i18n.formatNumber(Number(pScore)),
+            })
+          : t("leaderboard.noScore");
     };
 
     // Initial render
@@ -1454,7 +1489,9 @@ export class MainMenuScene {
               userName:
                 item.displayName ||
                 item.name ||
-                `Thành viên #${item.rank || idx + 1}`,
+                t("leaderboard.defaultMemberNumber", {
+                  rank: item.rank || idx + 1,
+                }),
               score: item.score || 0,
               rank: item.rank || idx + 1,
               avatarUrl: item.avatarUrl,
@@ -1500,7 +1537,7 @@ export class MainMenuScene {
 
     const title = document.createElement("div");
     title.className = "game-popup-title";
-    title.innerText = "CÀI ĐẶT";
+    title.innerText = t("settings.title");
     card.appendChild(title);
 
     const closePopup = () => {
@@ -1562,12 +1599,44 @@ export class MainMenuScene {
 
       row.appendChild(text);
       row.appendChild(toggle);
+      row.labelElement = text;
+      return row;
+    };
+
+    const createLanguageRow = () => {
+      const row = document.createElement("div");
+      row.className = "game-settings-language-row";
+
+      const label = document.createElement("span");
+      label.className = "game-settings-label";
+      label.innerText = t("settings.language");
+
+      const select = document.createElement("select");
+      select.className = "game-settings-language-select";
+      select.setAttribute("aria-label", t("settings.language"));
+      select.innerHTML = `
+        <option value="en">${t("settings.english")}</option>
+        <option value="vi">${t("settings.vietnamese")}</option>
+      `;
+      select.value = i18n.language;
+      select.addEventListener("change", () => {
+        soundManager.playClick();
+        i18n.setLanguage(select.value);
+        title.innerText = t("settings.title");
+        musicRow.labelElement.innerText = t("settings.music");
+        sfxRow.labelElement.innerText = t("settings.sfx");
+        label.innerText = t("settings.language");
+        select.setAttribute("aria-label", t("settings.language"));
+        versionText.innerText = t("settings.version");
+      });
+
+      row.append(label, select);
       return row;
     };
 
     // Music row
     const musicRow = createToggleRow(
-      "ÂM NHẠC",
+      t("settings.music"),
       soundManager.musicEnabled,
       () => {
         soundManager.playClick();
@@ -1578,12 +1647,17 @@ export class MainMenuScene {
     rowContainer.appendChild(musicRow);
 
     // SFX row
-    const sfxRow = createToggleRow("HIỆU ỨNG", soundManager.enabled, () => {
-      soundManager.playClick();
-      soundManager.enabled = !soundManager.enabled;
-      return soundManager.enabled;
-    });
+    const sfxRow = createToggleRow(
+      t("settings.sfx"),
+      soundManager.enabled,
+      () => {
+        soundManager.playClick();
+        soundManager.enabled = !soundManager.enabled;
+        return soundManager.enabled;
+      },
+    );
     rowContainer.appendChild(sfxRow);
+    rowContainer.appendChild(createLanguageRow());
 
     card.appendChild(rowContainer);
 
@@ -1592,7 +1666,7 @@ export class MainMenuScene {
     versionText.style.fontSize = "12px";
     versionText.style.color = "#360207";
     versionText.style.marginTop = "20px";
-    versionText.innerText = "Phiên bản: 1.0.0";
+    versionText.innerText = t("settings.version");
     card.appendChild(versionText);
 
     overlay.appendChild(card);
@@ -1634,6 +1708,11 @@ export class MainMenuScene {
       this._stopWinkScoreObserver = null;
     }
 
+    if (this._stopLanguageObserver) {
+      this._stopLanguageObserver();
+      this._stopLanguageObserver = null;
+    }
+
     killTweensRecursive(this.container);
 
     this.particles.forEach((p) => {
@@ -1648,7 +1727,7 @@ export class MainMenuScene {
     const normalized = Number(score);
     this.infoText.text =
       Number.isFinite(normalized) && normalized > 0
-        ? `★  ${normalized.toLocaleString("vi-VN")}`
+        ? `★  ${i18n.formatNumber(normalized)}`
         : "★  —";
     this.resize();
   }
