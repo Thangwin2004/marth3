@@ -3501,8 +3501,9 @@ export class GameScene {
 
     // Premium modal container
     this.gameOverModal = new Container();
-    this.gameOverModal.x = App.app.screen.width / 2;
-    this.gameOverModal.y = App.app.screen.height / 2;
+    this.gameOverModal.roundPixels = true;
+    this.gameOverModal.x = Math.round(App.app.screen.width / 2);
+    this.gameOverModal.y = Math.round(App.app.screen.height / 2);
     this.gameOverScreen.addChild(this.gameOverModal);
 
     // Hào quang vàng xoay nhẹ đằng sau modal Game Over
@@ -3839,9 +3840,12 @@ export class GameScene {
       displayObject.destroy({ children: true });
     }
 
-    // Match the compact pause-dialog proportions: generous side margins on
-    // phones, one glass surface, and a clear vertical information hierarchy.
-    const resultCardW = 344;
+    // Draw at the final phone width instead of scaling the entire modal down.
+    // This keeps Pixi text and vector borders on the native pixel grid.
+    const resultCardW = Math.min(
+      344,
+      Math.max(248, Math.floor(App.app.screen.width - 32)),
+    );
     const resultCardH = 392;
     this.gameOverModalWidth = resultCardW;
     this.gameOverModalHeight = resultCardH;
@@ -3855,6 +3859,7 @@ export class GameScene {
         24,
       )
       .fill({ color: 0x10243d, alpha: 0.28 });
+    cleanCardShadow.roundPixels = true;
     cleanCardShadow.y = 8;
     this.gameOverModal.addChild(cleanCardShadow);
 
@@ -3866,14 +3871,21 @@ export class GameScene {
         resultCardH,
         24,
       )
-      .fill({ color: 0xcfd3da, alpha: 0.94 })
-      .stroke({ color: 0xf8f9fb, width: 2.5, alpha: 0.96 });
+      .fill({ color: 0xcfd3da })
+      .stroke({
+        color: 0xf8f9fb,
+        width: 2,
+        alpha: 1,
+        alignment: 1,
+        join: "round",
+      });
+    cleanCard.roundPixels = true;
     this.gameOverModal.addChild(cleanCard);
 
     const cleanTitle = new Text({
       text: t("result.end"),
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 30,
         fontWeight: "900",
         fill: "#1B365D",
@@ -3888,10 +3900,12 @@ export class GameScene {
       },
     });
     cleanTitle.anchor.set(0.5);
+    cleanTitle.roundPixels = true;
     cleanTitle.y = -154;
     this.gameOverModal.addChild(cleanTitle);
 
     const resultMedal = new Container();
+    resultMedal.roundPixels = true;
     resultMedal.y = -91;
     this.gameOverModal.addChild(resultMedal);
 
@@ -3919,7 +3933,7 @@ export class GameScene {
     const finalScoreLabel = new Text({
       text: String(this.score),
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 50,
         fontWeight: "900",
         fill: "#1B365D",
@@ -3933,25 +3947,28 @@ export class GameScene {
       },
     });
     finalScoreLabel.anchor.set(0.5);
+    finalScoreLabel.roundPixels = true;
     finalScoreLabel.y = -22;
     this.gameOverModal.addChild(finalScoreLabel);
 
     const statusText = formatStatus(scoreSync);
     const statusPill = new Graphics()
       .roundRect(-116, 30, 232, 34, 17)
-      .fill({ color: 0xf8f9fb, alpha: 0.96 });
+      .fill({ color: 0xf8f9fb });
+    statusPill.roundPixels = true;
     this.gameOverModal.addChild(statusPill);
 
     const statusLabel = new Text({
       text: statusText,
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 14,
         fontWeight: "800",
         fill: "#52657C",
       },
     });
     statusLabel.anchor.set(0.5);
+    statusLabel.roundPixels = true;
     statusLabel.y = 47;
     this.gameOverModal.addChild(statusLabel);
 
@@ -4029,13 +4046,14 @@ export class GameScene {
     const doubleBadgeText = new Text({
       text: "x2",
       style: {
-        fontFamily: '"Be Vietnam Pro", sans-serif',
+        fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 12,
         fontWeight: "900",
         fill: "#9A421F",
       },
     });
     doubleBadgeText.anchor.set(0.5);
+    doubleBadgeText.roundPixels = true;
     doubleBadgeText.position.set(29, -27);
     doubleBtn.addChild(doubleBadgeText);
 
@@ -4719,18 +4737,15 @@ export class GameScene {
         this.gameOverOverlay.fill({ color: 0x24191a, alpha: 0.7 });
       }
       if (this.gameOverModal) {
-        this.gameOverModal.x = width / 2;
-        this.gameOverModal.y = height / 2;
+        this.gameOverModal.x = Math.round(width / 2);
+        this.gameOverModal.y = Math.round(height / 2);
         const modalWidth = this.gameOverModalWidth || 344;
         const modalHeight = this.gameOverModalHeight || 392;
-        const modalScale =
-          width < 600 || height > width
-            ? Math.min(
-                1.0,
-                (width - 40) / modalWidth,
-                (height - 40) / modalHeight,
-              )
-            : 1.0;
+        const modalScale = Math.min(
+          1.0,
+          (width - 24) / modalWidth,
+          (height - 24) / modalHeight,
+        );
         this.gameOverModal.scale.set(modalScale);
       }
     }
