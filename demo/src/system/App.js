@@ -28,15 +28,12 @@ class GameApp {
 
     const devicePixelRatio = window.devicePixelRatio || 1;
     const isCompactScreen = window.matchMedia("(max-width: 768px)").matches;
-    const hardwareThreads = navigator.hardwareConcurrency || 4;
-    const deviceMemory = navigator.deviceMemory || 4;
-    const isLowPowerDevice = hardwareThreads <= 4 || deviceMemory <= 4;
     // Never force mobile to a 1x backing buffer: most phones have a DPR of
     // 2-3, so a 1x canvas is stretched by the browser and makes every Pixi
     // text, vector edge and icon look soft. Cap DPR to protect fill-rate and
-    // memory while retaining a visibly sharp UI on compact/low-power devices.
-    const resolutionCap = isLowPowerDevice ? 1.5 : 2;
-    const minimumResolution = isCompactScreen ? 1.5 : 1;
+    // memory while retaining a visibly sharp UI on compact devices.
+    const resolutionCap = 2;
+    const minimumResolution = isCompactScreen ? 2 : 1;
     const renderResolution = Math.min(
       resolutionCap,
       Math.max(minimumResolution, devicePixelRatio),

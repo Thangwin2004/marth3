@@ -824,8 +824,12 @@ export class MainMenuScene {
 
     if (this.playBtn) {
       this.playBtn.position.set(Math.round(width / 2), Math.round(playY));
-      this.playBtn.updateStyle(playH / 2 / scale);
-      this.playBtn.scale.set(scale);
+      // Draw at the final on-screen size. Scaling a container also scales its
+      // cached Text texture and is the main source of soft mobile labels.
+      this.playBtn.updateStyle(playH / 2);
+      this.playBtn.scale.set(1);
+      this.playBtn._restScaleX = 1;
+      this.playBtn._restScaleY = 1;
     }
 
     const visibleCircs = [];
@@ -844,9 +848,11 @@ export class MainMenuScene {
         Math.round(circY),
       );
       if (typeof btn.updateStyle === "function") {
-        btn.updateStyle(circR / scale);
+        btn.updateStyle(circR);
       }
-      btn.scale.set(scale);
+      btn.scale.set(1);
+      btn._restScaleX = 1;
+      btn._restScaleY = 1;
     });
 
     // 6. Parade bottom banner
