@@ -3207,9 +3207,43 @@ export class GameScene {
   //  GAME OVER OVERLAY
   // ============================================================
 
+  setGameplayHudVisible(visible) {
+    const hudElements = [
+      this.scorePanel,
+      this.scoreLabel,
+      this.scoreText,
+      this.scoreHudIcon,
+      this.movesPanel,
+      this.movesLabel,
+      this.movesText,
+      this.movesHudIcon,
+      this.tutorialText,
+      this.hintBtn,
+      this.settingsBtn,
+      this.debugCompleteBtn,
+    ].filter((element) => element && !element.destroyed);
+
+    if (!visible) {
+      if (!this.gameOverHudVisibility) {
+        this.gameOverHudVisibility = hudElements.map((element) => [
+          element,
+          element.visible,
+        ]);
+      }
+      for (const element of hudElements) element.visible = false;
+      return;
+    }
+
+    for (const [element, wasVisible] of this.gameOverHudVisibility || []) {
+      if (!element.destroyed) element.visible = wasVisible;
+    }
+    this.gameOverHudVisibility = null;
+  }
+
   showGameOver() {
     this.isGameOver = true;
     this.disabled = true;
+    this.setGameplayHudVisible(false);
     soundManager.stopBGM();
 
     if (this.hasContinued) {
@@ -3229,6 +3263,7 @@ export class GameScene {
           this.moves = 5;
           this.isGameOver = false;
           this.disabled = false;
+          this.setGameplayHudVisible(true);
           this.updateUI();
           soundManager.playBGM();
         } else {
@@ -3804,22 +3839,36 @@ export class GameScene {
       displayObject.destroy({ children: true });
     }
 
+    // Match the compact pause-dialog proportions: generous side margins on
+    // phones, one glass surface, and a clear vertical information hierarchy.
+    const resultCardW = 344;
+    const resultCardH = 392;
+    this.gameOverModalWidth = resultCardW;
+    this.gameOverModalHeight = resultCardH;
+
     const cleanCardShadow = new Graphics()
-      .roundRect(-216, -192, 432, 384, 28)
-      .fill({ color: 0x10243d, alpha: 0.3 });
-    cleanCardShadow.y = 9;
+      .roundRect(
+        -resultCardW / 2,
+        -resultCardH / 2,
+        resultCardW,
+        resultCardH,
+        24,
+      )
+      .fill({ color: 0x10243d, alpha: 0.28 });
+    cleanCardShadow.y = 8;
     this.gameOverModal.addChild(cleanCardShadow);
 
     const cleanCard = new Graphics()
-      .roundRect(-216, -192, 432, 384, 28)
-      .fill({ color: 0xe8ebef, alpha: 0.82 })
-      .stroke({ color: 0xffffff, width: 3, alpha: 0.82 });
+      .roundRect(
+        -resultCardW / 2,
+        -resultCardH / 2,
+        resultCardW,
+        resultCardH,
+        24,
+      )
+      .fill({ color: 0xcfd3da, alpha: 0.94 })
+      .stroke({ color: 0xf8f9fb, width: 2.5, alpha: 0.96 });
     this.gameOverModal.addChild(cleanCard);
-
-    const cleanInnerLine = new Graphics()
-      .roundRect(-207, -183, 414, 366, 22)
-      .stroke({ color: 0xcbd2dc, width: 1.5, alpha: 0.7 });
-    this.gameOverModal.addChild(cleanInnerLine);
 
     const cleanTitle = new Text({
       text: t("result.end"),
@@ -3829,42 +3878,49 @@ export class GameScene {
         fontWeight: "900",
         fill: "#1B365D",
         letterSpacing: 1.2,
+        dropShadow: {
+          color: "#10243D",
+          alpha: 0.14,
+          blur: 0,
+          distance: 3,
+          angle: Math.PI / 2,
+        },
       },
     });
     cleanTitle.anchor.set(0.5);
-    cleanTitle.y = -151;
+    cleanTitle.y = -154;
     this.gameOverModal.addChild(cleanTitle);
 
     const resultMedal = new Container();
-    resultMedal.y = -85;
+    resultMedal.y = -91;
     this.gameOverModal.addChild(resultMedal);
 
     const medalShadow = new Graphics()
-      .circle(0, 4, 38)
+      .circle(0, 4, 34)
       .fill({ color: 0x1b365d, alpha: 0.2 });
     resultMedal.addChild(medalShadow);
 
     const medalOuter = new Graphics()
-      .circle(0, 0, 38)
-      .fill({ color: 0xffffff })
+      .circle(0, 0, 34)
+      .fill({ color: 0xf8f9fb })
       .stroke({ color: 0xcbd2dc, width: 2 });
     resultMedal.addChild(medalOuter);
 
     const medalInner = new Graphics()
-      .circle(0, 0, 30)
+      .circle(0, 0, 27)
       .fill({ color: 0xf5c553 });
     resultMedal.addChild(medalInner);
 
     const medalStar = new Graphics()
-      .star(0, 0, 5, 21, 10)
-      .fill({ color: 0xffffff });
+      .star(0, 0, 5, 19, 9)
+      .fill({ color: 0xf8f9fb });
     resultMedal.addChild(medalStar);
 
     const finalScoreLabel = new Text({
       text: String(this.score),
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
-        fontSize: 54,
+        fontSize: 50,
         fontWeight: "900",
         fill: "#1B365D",
         dropShadow: {
@@ -3877,14 +3933,13 @@ export class GameScene {
       },
     });
     finalScoreLabel.anchor.set(0.5);
-    finalScoreLabel.y = -8;
+    finalScoreLabel.y = -22;
     this.gameOverModal.addChild(finalScoreLabel);
 
     const statusText = formatStatus(scoreSync);
     const statusPill = new Graphics()
-      .roundRect(-120, 42, 240, 36, 18)
-      .fill({ color: 0xffffff })
-      .stroke({ color: 0xcbd2dc, width: 1.5 });
+      .roundRect(-116, 30, 232, 34, 17)
+      .fill({ color: 0xf8f9fb, alpha: 0.96 });
     this.gameOverModal.addChild(statusPill);
 
     const statusLabel = new Text({
@@ -3897,17 +3952,17 @@ export class GameScene {
       },
     });
     statusLabel.anchor.set(0.5);
-    statusLabel.y = 60;
+    statusLabel.y = 47;
     this.gameOverModal.addChild(statusLabel);
 
     // Three equal action buttons: reward, replay and home.
-    const btnY = 140;
+    const btnY = 126;
 
     // We only show 3 buttons since the player already had their "Thêm Lượt" popup.
     let hasDoubled = false;
     const doubleBtn = this.createCircularButton(
       "video",
-      -102,
+      -88,
       btnY,
       async () => {
         if (hasDoubled) return;
@@ -3946,7 +4001,7 @@ export class GameScene {
         }
       },
       this.gameOverModal,
-      34,
+      32,
     );
 
     // Reuse the same clapperboard asset as the rewarded "Thêm lượt" action.
@@ -4001,12 +4056,12 @@ export class GameScene {
         await sceneManager.switchTo(GameScene);
       },
       this.gameOverModal,
-      34,
+      32,
     );
 
     const homeBtn = this.createCircularButton(
       "home",
-      102,
+      88,
       btnY,
       async () => {
         if (this.gameOverIntervalId) {
@@ -4017,7 +4072,7 @@ export class GameScene {
         await sceneManager.switchTo(MainMenuScene);
       },
       this.gameOverModal,
-      34,
+      32,
     );
 
     this.gameOverIntervalId = null;
@@ -4539,13 +4594,13 @@ export class GameScene {
       this.settingsBtn.x = width - 42;
       this.settingsBtn.y = height - 42;
       this.settingsBtn.alpha = 1;
-      this.settingsBtn.visible = true;
+      this.settingsBtn.visible = !this.isGameOver;
     }
     if (this.hintBtn) {
       this.hintBtn.x = 42;
       this.hintBtn.y = height - 42;
       this.hintBtn.alpha = 1;
-      this.hintBtn.visible = true;
+      this.hintBtn.visible = !this.isGameOver;
     }
     if (this.debugCompleteBtn) {
       this.debugCompleteBtn.x = width / 2;
@@ -4666,9 +4721,15 @@ export class GameScene {
       if (this.gameOverModal) {
         this.gameOverModal.x = width / 2;
         this.gameOverModal.y = height / 2;
+        const modalWidth = this.gameOverModalWidth || 344;
+        const modalHeight = this.gameOverModalHeight || 392;
         const modalScale =
           width < 600 || height > width
-            ? Math.min(1.0, (width - 18) / 432, (height - 24) / 408)
+            ? Math.min(
+                1.0,
+                (width - 40) / modalWidth,
+                (height - 40) / modalHeight,
+              )
             : 1.0;
         this.gameOverModal.scale.set(modalScale);
       }
