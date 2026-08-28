@@ -26,13 +26,22 @@ class GameApp {
     const container =
       document.getElementById("pixi-container") || document.body;
 
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const isCompactScreen = window.matchMedia("(max-width: 768px)").matches;
+    const hardwareThreads = navigator.hardwareConcurrency || 4;
+    const deviceMemory = navigator.deviceMemory || 4;
+    const isLowPowerDevice = hardwareThreads <= 4 || deviceMemory <= 4;
+    const renderResolution =
+      isCompactScreen || isLowPowerDevice ? 1 : Math.min(devicePixelRatio, 1.5);
+
     await this.app.init({
       resizeTo: container,
       backgroundColor: 0x0a0a1a,
-      antialias: true,
-      resolution: Math.max(window.devicePixelRatio || 1, 2),
+      antialias: !isCompactScreen && !isLowPowerDevice,
+      resolution: renderResolution,
       autoDensity: true,
       preference: "webgl",
+      powerPreference: "high-performance",
     });
 
     if (container.id === "pixi-container") {

@@ -78,6 +78,13 @@ export class Board {
     this.rows = levelConfig?.board?.rows || App.config.board.rows;
     this.cols = levelConfig?.board?.cols || App.config.board.cols;
 
+    // Direct row/column lookup for hot paths such as match scans, cascades,
+    // hints and possible-move checks. `fields` remains available for code that
+    // needs to iterate over the whole board.
+    this.fieldGrid = Array.from({ length: this.rows }, () =>
+      Array(this.cols).fill(null),
+    );
+
     /**
      * Allowed tile types for this level.
      * Levels can restrict the number of tile types for difficulty tuning.
@@ -172,6 +179,7 @@ export class Board {
   createField(row, col) {
     const field = new Field(row, col);
     this.fields.push(field);
+    this.fieldGrid[row][col] = field;
 
     // Thêm sprites vào container (thứ tự addChild = thứ tự vẽ)
     this.container.addChild(field.sprite); // Nền ô vuông (vẽ trước)
@@ -280,7 +288,10 @@ export class Board {
    * @returns {Field|undefined} Field tại vị trí đó, hoặc undefined
    */
   getField(row, col) {
-    return this.fields.find((field) => field.row === row && field.col === col);
+    if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) {
+      return undefined;
+    }
+    return this.fieldGrid[row][col] || undefined;
   }
 
   /**

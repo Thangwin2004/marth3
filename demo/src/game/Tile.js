@@ -74,8 +74,8 @@ export class Tile {
     // Overlay graphics for special states
     this.stateOverlay = null;
 
-    // === CONTAINER ===
-    // We make this.sprite a Container so it holds the card background, crop mask, and sprite
+    // Keep a lightweight wrapper so landing scale animations do not overwrite
+    // the image's texture-fit scale.
     this.sprite = new Container();
     // Fake anchor object so it doesn't crash on this.sprite.anchor.set(0.5)
     this.sprite.anchor = {
@@ -88,64 +88,15 @@ export class Tile {
       configurable: true,
     });
 
-    // 1. Card Background Graphics
-    this.cardBg = new Graphics();
-    this.sprite.addChild(this.cardBg);
-
-    // 2. Animal Image Sprite (100% colorful, bright, and clear)
+    // The field already draws the frosted card and border. Tiles only render
+    // their transparent character image, avoiding 56 moving Graphics objects
+    // and 56 stencil masks during cascades.
     this.imageSprite = App.sprite(this.color);
     this.imageSprite.anchor.set(0.5);
     this.sprite.addChild(this.imageSprite);
 
-    // 3. Crop Mask Graphics
-    this.cardMask = new Graphics();
-    this.sprite.addChild(this.cardMask);
-    this.imageSprite.mask = this.cardMask;
-
-    // Draw the card layout
-    this.drawCardLayout();
-
     // Scale the image sprite
     this.resizeSprite();
-  }
-
-  drawCardLayout() {
-    const maskSize = 90; // Enlarged from 76 to 90 for zoomed-in character display
-    const maskRadius = 12;
-
-    this.cardBg.clear();
-
-    // Warm soft shadow under the tile
-    this.cardBg.roundRect(
-      -maskSize / 2,
-      -maskSize / 2 + 3,
-      maskSize,
-      maskSize,
-      maskRadius,
-    );
-    this.cardBg.fill({ color: 0x55352f, alpha: 0.3 });
-
-    // Frosted face and a thin ivory frame around the character.
-    this.cardBg.roundRect(
-      -maskSize / 2,
-      -maskSize / 2,
-      maskSize,
-      maskSize,
-      maskRadius,
-    );
-    this.cardBg.fill({ color: 0xffe8d1, alpha: 0.1 });
-    this.cardBg.stroke({ color: 0xfff7e8, width: 1.8, alpha: 0.86 });
-
-    // Crop Mask to isolate the animal character (full rounded rectangle)
-    this.cardMask.clear();
-    this.cardMask.roundRect(
-      -maskSize / 2,
-      -maskSize / 2,
-      maskSize,
-      maskSize,
-      maskRadius,
-    );
-    this.cardMask.fill({ color: 0xffffff });
   }
 
   resizeSprite() {
@@ -154,9 +105,9 @@ export class Tile {
     const textureWidth = texture.orig.width;
     const textureHeight = texture.orig.height;
     const baseSize = Math.max(textureWidth, textureHeight);
-    // Zoom in slightly (1.1x) to show mostly the character and crop the background,
-    // but keep it small enough so the head/legs are not cut off by the mask.
-    const scale = (targetSize / baseSize) * 1.1;
+    // Source assets already have transparent backgrounds, so a small inset is
+    // enough to keep characters inside the field without a runtime mask.
+    const scale = (targetSize / baseSize) * 1.02;
     this.imageSprite.scale.set(scale);
   }
 
@@ -247,6 +198,11 @@ export class Tile {
    */
   fallDownTo(position, delay = 0) {
     const halfTile = App.config.tileSize / 2;
+    // A previous swap animation may still own the scale timeline when the
+    // cascade begins. Reset it so falling characters never look squashed.
+    gsap.killTweensOf(this.sprite.scale);
+    this.sprite.scale.set(1);
+
     return new Promise((resolve) => {
       gsap.to(this.sprite, {
         y: position.y + halfTile,
@@ -256,23 +212,18 @@ export class Tile {
         onComplete: () => {
           soundManager.playLand();
           if (this.sprite && !this.sprite.destroyed) {
-            // Lightweight two-beat squash and bounce. It keeps the landing
-            // readable while using fewer tweens than the old three-stage chain.
-            this.sprite.scale.set(1.1, 0.86);
-            gsap
-              .timeline({ onComplete: resolve })
-              .to(this.sprite.scale, {
-                x: 0.94,
-                y: 1.08,
-                duration: 0.07,
-                ease: "power1.out",
-              })
-              .to(this.sprite.scale, {
-                x: 1,
-                y: 1,
-                duration: 0.1,
-                ease: "back.out(1.7)",
-              });
+            // Make the landing readable even on small phone screens: the tile
+            // visibly spreads sideways and compresses vertically, then the
+            // back easing gives it one soft rebound. This remains one tween
+            // per tile so large cascades stay inexpensive.
+            this.sprite.scale.set(1.16, 0.78);
+            gsap.to(this.sprite.scale, {
+              x: 1,
+              y: 1,
+              duration: 0.24,
+              ease: "back.out(1.8)",
+              onComplete: resolve,
+            });
             return;
           }
           resolve();
@@ -392,7 +343,6 @@ export class Tile {
     if (this.imageSprite) {
       this.imageSprite.texture = Texture.from(newColor);
     }
-    this.drawCardLayout();
     this.resizeSprite();
     this.updateStateOverlay();
   }

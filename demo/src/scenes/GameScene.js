@@ -26,6 +26,7 @@ import {
   createVectorIcon as createVectorIconFromUI,
   mapEmojiToIconType,
 } from "../system/UIComponents.js";
+import { i18n, t } from "../system/I18nManager.js";
 
 function gameAlert(message) {
   return new Promise((resolve) => {
@@ -107,7 +108,7 @@ function gameAlert(message) {
     const button = document.createElement("img");
     button.className = "game-alert-img-btn";
     button.src = "assets/yes_btn.webp";
-    button.alt = "ĐỒNG Ý";
+    button.alt = t("actions.confirm");
 
     card.appendChild(text);
     card.appendChild(button);
@@ -300,6 +301,7 @@ export class GameScene {
     this._winkRound = winkGame.startRound();
     this._winkRoundFinalized = false;
     this.activeParticleCount = 0;
+    this._stopLanguageObserver = i18n.subscribe(() => this.applyLanguage());
 
     App.setBackgroundColor(0x6d4039);
 
@@ -503,6 +505,7 @@ export class GameScene {
 
     // === CREATE UI ===
     this.createUI();
+    this.applyLanguage();
 
     // === LISTEN FOR GRID EVENTS ===
     this.board.container.on(
@@ -576,7 +579,8 @@ export class GameScene {
     tempParticle.destroy();
 
     this.ambientParticles = [];
-    for (let i = 0; i < 25; i++) {
+    const ambientParticleCount = App.app.screen.width <= 768 ? 10 : 18;
+    for (let i = 0; i < ambientParticleCount; i++) {
       const size = 1.2 + Math.random() * 3.5;
       const p = new Sprite(particleTexture);
       p.anchor.set(0.5);
@@ -751,7 +755,7 @@ export class GameScene {
     this.uiContainer.addChild(this.tutorialBg);
 
     this.tutorialText = new Text({
-      text: "Chạm 2 thú hoặc vuốt để đổi chỗ",
+      text: t("tutorial.swap"),
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
@@ -807,7 +811,7 @@ export class GameScene {
         width: 126,
         height: 38,
         radius: 19,
-        text: "TEST XONG",
+        text: t("debug.complete"),
         colorStyle: "orange",
         fontSize: 13,
         onClick: () => this.completeRunForPopupTest(),
@@ -815,6 +819,18 @@ export class GameScene {
       this.debugCompleteBtn.label.style.fontWeight = "800";
       this.debugCompleteBtn.zIndex = 20;
       this.uiContainer.addChild(this.debugCompleteBtn);
+    }
+  }
+
+  applyLanguage() {
+    if (this.tutorialText && !this.tutorialText.destroyed) {
+      this.tutorialText.text = t("tutorial.swap");
+    }
+    if (
+      this.debugCompleteBtn?.label &&
+      !this.debugCompleteBtn.label.destroyed
+    ) {
+      this.debugCompleteBtn.label.text = t("debug.complete");
     }
   }
 
@@ -1203,7 +1219,7 @@ export class GameScene {
 
     if (isRainbow1 && isRainbow2) {
       // 1. Rainbow + Rainbow: Clear board
-      comboTextStr = "SIÊU BÃO CẦU VỒNG! 🌈";
+      comboTextStr = t("combo.superRainbow");
       soundType = "super";
       shakeIntensity = 30;
 
@@ -1234,9 +1250,7 @@ export class GameScene {
             ];
 
       comboTextStr =
-        specialType === "drum"
-          ? "CƠN MƯA TRỐNG ĐỒNG! 🥁"
-          : "BÃO CHỮ THẬP RUNE! ⚡";
+        specialType === "drum" ? t("combo.rainDrum") : t("combo.rainRune");
       soundType = specialType === "drum" ? "drum" : "rune";
       shakeIntensity = 25;
 
@@ -1314,7 +1328,7 @@ export class GameScene {
       }
     } else if (isDrum1 && isDrum2) {
       // 3. Drum + Drum: Giant 5x5 area explosion
-      comboTextStr = "ĐẠI TRỐNG ĐỒNG PHÁT NỔ! 💥";
+      comboTextStr = t("combo.giantDrum");
       soundType = "super";
       shakeIntensity = 28;
 
@@ -1332,7 +1346,7 @@ export class GameScene {
       totalAdded += (250 + destroyedTiles.length * 15) * multiplier;
     } else if (isRune1 && isRune2) {
       // 4. Rune + Rune: Clears 3 rows and 3 columns (giant cross)
-      comboTextStr = "SIÊU LƯỚI CHỮ THẬP! ⚔️";
+      comboTextStr = t("combo.crossGrid");
       soundType = "rune";
       shakeIntensity = 24;
 
@@ -1378,7 +1392,7 @@ export class GameScene {
       totalAdded += (200 + destroyedTiles.length * 12) * multiplier;
     } else if ((isRune1 && isDrum2) || (isRune2 && isDrum1)) {
       // 5. Rune + Drum: Giant cross (3 rows and 3 columns)
-      comboTextStr = "PHÁO HOA LIÊN HOÀN! 🎆";
+      comboTextStr = t("combo.fireworks");
       soundType = "super";
       shakeIntensity = 26;
 
@@ -1422,7 +1436,11 @@ export class GameScene {
     // Apply score and floating text
     this.score += totalAdded;
     this.updateUI();
-    this.spawnFloatingScore(pX, pY, `SIÊU PHỐI HỢP! +${totalAdded}`);
+    this.spawnFloatingScore(
+      pX,
+      pY,
+      t("combo.superFusion", { score: totalAdded }),
+    );
 
     // Show floating combo text
     if (comboTextStr) {
@@ -1608,7 +1626,10 @@ export class GameScene {
           this.spawnFloatingScore(
             exp.x,
             exp.y,
-            `SIÊU TRỐNG ĐỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ""}`,
+            t("combo.superDrum", {
+              score: matchPoints,
+              multiplier: multiplier > 1 ? ` (x${multiplier})` : "",
+            }),
           );
           this.spawnRipple(exp.x, exp.y, 0xffa726);
         } else if (exp.length === 4) {
@@ -1624,7 +1645,10 @@ export class GameScene {
           this.spawnFloatingScore(
             exp.x,
             exp.y,
-            `SIÊU CHỮ THẬP! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ""}`,
+            t("combo.superCross", {
+              score: matchPoints,
+              multiplier: multiplier > 1 ? ` (x${multiplier})` : "",
+            }),
           );
           this.spawnRipple(exp.x, exp.y, 0x00e676);
         } else {
@@ -1640,7 +1664,10 @@ export class GameScene {
           this.spawnFloatingScore(
             exp.x,
             exp.y,
-            `SIÊU BÃO NỔ! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ""}`,
+            t("combo.superBlast", {
+              score: matchPoints,
+              multiplier: multiplier > 1 ? ` (x${multiplier})` : "",
+            }),
           );
           this.spawnRipple(exp.x, exp.y, 0xff00ff);
         }
@@ -1651,7 +1678,10 @@ export class GameScene {
         this.spawnFloatingScore(
           exp.x,
           exp.y,
-          `TRỐNG ĐỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ""}`,
+          t("combo.drum", {
+            score: matchPoints,
+            multiplier: multiplier > 1 ? ` (x${multiplier})` : "",
+          }),
         );
 
         this.spawnRipple(exp.x, exp.y, 0xcd7f32);
@@ -1662,7 +1692,10 @@ export class GameScene {
         this.spawnFloatingScore(
           exp.x,
           exp.y,
-          `KẾT HỢP 4! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ""}`,
+          t("combo.match4", {
+            score: matchPoints,
+            multiplier: multiplier > 1 ? ` (x${multiplier})` : "",
+          }),
         );
 
         const slotIndex = this.sessionColors.indexOf(exp.color);
@@ -1678,7 +1711,10 @@ export class GameScene {
         this.spawnFloatingScore(
           exp.x,
           exp.y,
-          `KẾT HỢP 5! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ""}`,
+          t("combo.match5", {
+            score: matchPoints,
+            multiplier: multiplier > 1 ? ` (x${multiplier})` : "",
+          }),
         );
 
         const slotIndex = this.sessionColors.indexOf(exp.color);
@@ -1724,7 +1760,10 @@ export class GameScene {
               this.spawnFloatingScore(
                 tX,
                 tY,
-                `SẤM VANG TRỐNG ĐỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ""}`,
+                t("combo.thunderDrum", {
+                  score: matchPoints,
+                  multiplier: multiplier > 1 ? ` (x${multiplier})` : "",
+                }),
               );
               this.spawnRipple(tX, tY, 0xffa726);
             } else if (specialTile.isRune) {
@@ -1743,7 +1782,10 @@ export class GameScene {
               this.spawnFloatingScore(
                 tX,
                 tY,
-                `HIỆU ỨNG CHỮ THẬP! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ""}`,
+                t("combo.crossEffect", {
+                  score: matchPoints,
+                  multiplier: multiplier > 1 ? ` (x${multiplier})` : "",
+                }),
               );
               this.spawnRipple(tX, tY, 0x00e676);
             } else if (specialTile.isRainbow) {
@@ -1776,7 +1818,10 @@ export class GameScene {
               this.spawnFloatingScore(
                 tX,
                 tY,
-                `NỔ SẮC CẦU VỒNG! +${matchPoints}${multiplier > 1 ? ` (x${multiplier})` : ""}`,
+                t("combo.rainbowBlast", {
+                  score: matchPoints,
+                  multiplier: multiplier > 1 ? ` (x${multiplier})` : "",
+                }),
               );
               this.spawnRipple(tX, tY, 0xff00ff);
             }
@@ -2067,8 +2112,12 @@ export class GameScene {
           const field = this.board.getField(row, col);
           if (!field.tile) {
             ++started;
-            // Stagger delay based on how low it is and column position
-            const staggerDelay = (this.board.rows - row) * 0.05 + col * 0.02;
+            // Keep a short visual cascade without making upper rows wait over
+            // half a second on large clears.
+            const staggerDelay = Math.min(
+              0.12,
+              (this.board.rows - row) * 0.018 + col * 0.008,
+            );
             this.fallDownTo(field, staggerDelay).then(() => {
               ++completed;
               if (completed >= started) resolve();
@@ -2098,7 +2147,7 @@ export class GameScene {
   addTiles() {
     return new Promise((resolve) => {
       const emptyFields = this.board.fields.filter((f) => f.tile === null);
-      let total = emptyFields.length;
+      const total = emptyFields.length;
       let completed = 0;
 
       if (total === 0) {
@@ -2106,42 +2155,63 @@ export class GameScene {
         return;
       }
 
-      // Group empty fields by column
-      const cols = {};
+      // Group empty fields by column, then interleave columns in the spawn
+      // queue. This keeps the waterfall readable and avoids allocating an
+      // entire cleared board in one JavaScript task.
+      const cols = new Map();
       emptyFields.forEach((f) => {
-        if (!cols[f.col]) cols[f.col] = [];
-        cols[f.col].push(f);
+        if (!cols.has(f.col)) cols.set(f.col, []);
+        cols.get(f.col).push(f);
       });
 
-      let globalSpawnIndex = 0;
-      Object.keys(cols).forEach((col) => {
-        const fieldsInCol = cols[col];
-        // Sort from bottom to top (highest row index to lowest)
+      const columns = [...cols.entries()].sort(([a], [b]) => a - b);
+      let maxColumnDepth = 0;
+      columns.forEach(([, fieldsInCol]) => {
         fieldsInCol.sort((a, b) => b.row - a.row);
-
-        fieldsInCol.forEach((field) => {
-          // Distributed instantiation to prevent Main Thread freeze
-          // A single global sequence prevents several columns from allocating
-          // new tiles in the same frame during large board clears.
-          const spawnDelayMs = globalSpawnIndex++ * 20;
-
-          setTimeout(() => {
-            if (!this.board || !this.board.fields) return;
-
-            const tile = this.board.createTile(field, null, true);
-            tile.sprite.y = -App.config.tileSize * 2;
-            if (tile.stateOverlay) {
-              tile.stateOverlay.y = tile.sprite.y;
-            }
-
-            // The fall animation delay is 0 here since we already delayed its creation time
-            tile.fallDownTo(field.position, 0).then(() => {
-              ++completed;
-              if (completed >= total) resolve();
-            });
-          }, spawnDelayMs);
-        });
+        maxColumnDepth = Math.max(maxColumnDepth, fieldsInCol.length);
       });
+
+      const spawnQueue = [];
+      for (let depth = 0; depth < maxColumnDepth; depth++) {
+        columns.forEach(([, fieldsInCol]) => {
+          if (fieldsInCol[depth]) {
+            spawnQueue.push({ field: fieldsInCol[depth], depth });
+          }
+        });
+      }
+
+      const batchSize = 6;
+      let queueIndex = 0;
+      const spawnBatch = () => {
+        if (!this.board?.fields) {
+          resolve();
+          return;
+        }
+
+        const batchEnd = Math.min(queueIndex + batchSize, spawnQueue.length);
+        for (; queueIndex < batchEnd; queueIndex++) {
+          const { field, depth } = spawnQueue[queueIndex];
+          const tile = this.board.createTile(field, null, true);
+          tile.sprite.y = -App.config.tileSize * (2 + depth);
+          if (tile.stateOverlay) {
+            tile.stateOverlay.y = tile.sprite.y;
+          }
+
+          // A tiny per-column depth delay prevents overlapping tiles without
+          // the old global 20 ms delay that grew linearly with clear size.
+          const fallDelay = Math.min(depth * 0.025, 0.1);
+          tile.fallDownTo(field.position, fallDelay).then(() => {
+            ++completed;
+            if (completed >= total) resolve();
+          });
+        }
+
+        if (queueIndex < spawnQueue.length) {
+          requestAnimationFrame(spawnBatch);
+        }
+      };
+
+      spawnBatch();
     });
   }
 
@@ -3168,7 +3238,7 @@ export class GameScene {
       "background:rgba(232,235,239,0.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:2px solid rgba(255,255,255,0.78);border-radius:24px;width:90%;max-width:350px;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:0 14px 42px rgba(16,36,61,0.22), inset 0 0 0 1px rgba(255,255,255,0.48);";
 
     const title = document.createElement("div");
-    title.innerText = "TIẾP TỤC?";
+    title.innerText = t("revive.title");
     title.style.cssText =
       "font-size:32px;font-weight:900;background:linear-gradient(180deg, #FFDF73 0%, #E6A123 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 2px rgba(255,255,255,1));margin-bottom:20px;font-family:'Be Vietnam Pro', sans-serif;text-align:center;text-transform:uppercase;";
 
@@ -3196,14 +3266,14 @@ export class GameScene {
     tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
 
     const yesText = document.createElement("span");
-    yesText.innerText = "THÊM LƯỢT";
+    yesText.innerText = t("revive.moreMoves");
     yesText.style.textShadow = "0 2px 4px rgba(0,0,0,0.3)";
 
     yesBtn.appendChild(tvIcon);
     yesBtn.appendChild(yesText);
 
     const skipText = document.createElement("div");
-    skipText.innerText = "Không, cảm ơn";
+    skipText.innerText = t("revive.skip");
     skipText.style.cssText =
       "margin-top:15px;color:#1B365D;font-size:16px;font-weight:700;font-family:'Be Vietnam Pro', sans-serif;cursor:pointer;text-decoration:underline;";
 
@@ -3334,16 +3404,22 @@ export class GameScene {
 
     const formatStatus = (sync) => {
       if (sync.isNewBest) {
-        return sync.rank ? `KỶ LỤC MỚI  ·  #${sync.rank}` : "KỶ LỤC MỚI";
+        return sync.rank
+          ? t("result.newRecordRank", { rank: sync.rank })
+          : t("result.newRecord");
       }
       if (sync.source === "wink" && sync.bestScore > 0) {
-        return `CAO NHẤT  ·  ${sync.bestScore.toLocaleString("vi-VN")}`;
+        return t("result.best", {
+          score: i18n.formatNumber(sync.bestScore),
+        });
       }
-      if (sync.source === "guest") return "ĐĂNG NHẬP ĐỂ LƯU";
+      if (sync.source === "guest") return t("result.signIn");
       if (sync.source === "offline" && sync.bestScore > 0) {
-        return `THIẾT BỊ  ·  ${sync.bestScore.toLocaleString("vi-VN")}`;
+        return t("result.device", {
+          score: i18n.formatNumber(sync.bestScore),
+        });
       }
-      return "CHƠI TỐT LẮM!";
+      return t("result.goodRun");
     };
 
     // Dừng nhạc nền và phát nhạc kết quả tương ứng
@@ -3424,7 +3500,7 @@ export class GameScene {
     });
 
     const glowText = new Text({
-      text: "KẾT THÚC",
+      text: t("result.end"),
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 38,
@@ -3441,7 +3517,7 @@ export class GameScene {
     glowText.filters = [glowFilter];
 
     const victoryText = new Text({
-      text: "KẾT THÚC",
+      text: t("result.end"),
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 38,
@@ -3617,7 +3693,7 @@ export class GameScene {
         .fill({ color: 0x7e57ff })
         .stroke({ width: 1.2, color: 0xffc84a });
       const ribbonText = new Text({
-        text: "KỶ LỤC MỚI!",
+        text: t("result.newRecord"),
         style: {
           fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 10,
@@ -3633,7 +3709,7 @@ export class GameScene {
 
     // 3. Stats Labels (Relocated below the badge)
     const scoreLabel = new Text({
-      text: `TỔNG ĐIỂM:\n${this.score}`,
+      text: t("result.totalScore", { score: this.score }),
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 30,
@@ -3655,7 +3731,7 @@ export class GameScene {
       rankContainer.addChild(trophyL);
 
       const rankText = new Text({
-        text: ` KỶ LỤC MỚI! HẠNG #${rank} `,
+        text: t("result.newRecordRank", { rank }),
         style: {
           fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 20,
@@ -3684,7 +3760,7 @@ export class GameScene {
       });
     } else {
       const normalLabel = new Text({
-        text: "Hãy cố gắng hơn ở lượt chơi kế tiếp nhé!",
+        text: t("result.tryAgain"),
         style: {
           fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 14,
@@ -3728,7 +3804,7 @@ export class GameScene {
     this.gameOverModal.addChild(cleanInnerLine);
 
     const cleanTitle = new Text({
-      text: "KẾT THÚC",
+      text: t("result.end"),
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 30,
@@ -3848,7 +3924,7 @@ export class GameScene {
                   bestScore: doubledLocalBestAfter,
                 });
           statusLabel.text = formatStatus(scoreSync);
-          await gameAlert("Điểm đã được nhân đôi!");
+          await gameAlert(t("result.doubled"));
         }
       },
       this.gameOverModal,
@@ -3994,7 +4070,7 @@ export class GameScene {
     this.deadlockModal.addChild(modalBg);
 
     const text = new Text({
-      text: "HẾT NƯỚC ĐI!\nĐANG TRÁO BÀN NGỌC...",
+      text: t("deadlock.shuffle"),
       style: {
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
@@ -4636,7 +4712,7 @@ export class GameScene {
 
     const title = document.createElement("div");
     title.className = "game-popup-title";
-    title.innerText = isIngame ? "TẠM DỪNG" : "CÀI ĐẶT";
+    title.innerText = isIngame ? t("settings.pauseTitle") : t("settings.title");
     title.style.cssText =
       "position:relative;top:0;left:0;transform:none;margin-bottom:24px;background:none;box-shadow:none;border:none;color:#1B365D;font-size:36px;letter-spacing:2px;text-shadow:0 2px 4px rgba(255,255,255,0.8);";
     card.appendChild(title);
@@ -4704,7 +4780,7 @@ export class GameScene {
 
     // Music row
     const musicRow = createToggleRow(
-      "🎵 Nhạc nền",
+      `🎵 ${t("settings.music")}`,
       soundManager.musicEnabled,
       () => {
         soundManager.playClick();
@@ -4715,11 +4791,15 @@ export class GameScene {
     rowContainer.appendChild(musicRow);
 
     // SFX row
-    const sfxRow = createToggleRow("🔊 Hiệu ứng", soundManager.enabled, () => {
-      soundManager.playClick();
-      soundManager.enabled = !soundManager.enabled;
-      return soundManager.enabled;
-    });
+    const sfxRow = createToggleRow(
+      `🔊 ${t("settings.sfx")}`,
+      soundManager.enabled,
+      () => {
+        soundManager.playClick();
+        soundManager.enabled = !soundManager.enabled;
+        return soundManager.enabled;
+      },
+    );
     rowContainer.appendChild(sfxRow);
 
     card.appendChild(rowContainer);
@@ -4731,7 +4811,7 @@ export class GameScene {
 
       const homeBtn = document.createElement("button");
       homeBtn.className = "game-paused-btn game-paused-btn--home";
-      homeBtn.setAttribute("aria-label", "Về trang chính");
+      homeBtn.setAttribute("aria-label", t("actions.home"));
       homeBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`;
       homeBtn.addEventListener("click", async () => {
         overlay.remove();
@@ -4743,7 +4823,7 @@ export class GameScene {
 
       const replayBtn = document.createElement("button");
       replayBtn.className = "game-paused-btn game-paused-btn--replay";
-      replayBtn.setAttribute("aria-label", "Chơi lại");
+      replayBtn.setAttribute("aria-label", t("actions.replay"));
       replayBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg>`;
       replayBtn.addEventListener("click", async () => {
         overlay.remove();
@@ -4754,7 +4834,7 @@ export class GameScene {
 
       const continueBtn = document.createElement("button");
       continueBtn.className = "game-paused-btn game-paused-btn--continue";
-      continueBtn.setAttribute("aria-label", "Tiếp tục");
+      continueBtn.setAttribute("aria-label", t("actions.continue"));
       continueBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
       continueBtn.addEventListener("click", closePopup);
       actionContainer.appendChild(continueBtn);
@@ -4767,7 +4847,7 @@ export class GameScene {
     versionText.style.fontSize = "11px";
     versionText.style.color = "#1B365D";
     versionText.style.marginTop = "20px";
-    versionText.innerText = "Phiên bản: 1.0.0";
+    versionText.innerText = t("settings.version");
     card.appendChild(versionText);
 
     overlay.appendChild(card);
@@ -4801,6 +4881,11 @@ export class GameScene {
     if (this.gameOverIntervalId) {
       clearInterval(this.gameOverIntervalId);
       this.gameOverIntervalId = null;
+    }
+
+    if (this._stopLanguageObserver) {
+      this._stopLanguageObserver();
+      this._stopLanguageObserver = null;
     }
 
     // Clean up HTML popups
