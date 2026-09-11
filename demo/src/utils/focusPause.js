@@ -50,15 +50,19 @@ export function installFocusPause({
   const handleFocus = () => resumeFor("focus");
   const handlePageHide = () => pauseFor("page");
   const handlePageShow = () => resumeFor("page");
-  const viewportObserver = typeof IntersectionObserver === "undefined"
-    ? null
-    : new IntersectionObserver(([entry]) => {
-        if (entry?.isIntersecting && entry.intersectionRatio >= 0.15) {
-          resumeFor("viewport");
-        } else {
-          pauseFor("viewport");
-        }
-      }, { threshold: [0, 0.15] });
+  const viewportObserver =
+    typeof IntersectionObserver === "undefined"
+      ? null
+      : new IntersectionObserver(
+          ([entry]) => {
+            if (entry?.isIntersecting && entry.intersectionRatio >= 0.15) {
+              resumeFor("viewport");
+            } else {
+              pauseFor("viewport");
+            }
+          },
+          { threshold: [0, 0.15] },
+        );
 
   document.addEventListener("visibilitychange", handleVisibility);
   window.addEventListener("blur", handleBlur);

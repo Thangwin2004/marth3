@@ -91,7 +91,7 @@ class SoundManager {
   }
 
   /**
-   * Đồng bộ lại trạng thái mute tổng (từ wink-bridge hoặc settings)
+   * Đồng bộ lại trạng thái mute tổng (từ Wink SDK hoặc settings)
    */
   syncMuteState() {
     if (!this.ctx) return;

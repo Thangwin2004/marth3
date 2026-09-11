@@ -2,10 +2,14 @@ import js from "@eslint/js";
 import prettier from "eslint-plugin-prettier/recommended";
 
 export default [
-  { ignores: ["dist",
-      "**/build-wink-warm.mjs", "public", "public/**", "**/wink-bridge.js"] },
+  { ignores: ["dist", "public", "public/**"] },
   js.configs.recommended,
   prettier,
+  {
+    rules: {
+      "prettier/prettier": ["error", { endOfLine: "auto" }],
+    },
+  },
   {
     files: ["**/*.{js,jsx}"],
     languageOptions: {
@@ -30,6 +34,7 @@ export default [
         EventTarget: "readonly",
         HTMLMediaElement: "readonly",
         MutationObserver: "readonly",
+        IntersectionObserver: "readonly",
       },
     },
     rules: {
