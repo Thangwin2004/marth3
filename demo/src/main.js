@@ -76,6 +76,7 @@ async function startGame() {
         window.__GLOBAL_MUTE__ = false;
         soundManager.syncMuteState();
       },
+      onLocale: (locale) => i18n.syncFromWink(locale),
     });
 
     winkGame.observe((state) => i18n.syncFromWink(state));

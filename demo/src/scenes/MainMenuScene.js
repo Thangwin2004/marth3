@@ -1621,13 +1621,11 @@ export class MainMenuScene {
       select.value = i18n.language;
       select.addEventListener("change", () => {
         soundManager.playClick();
-        i18n.setLanguage(select.value);
-        title.innerText = t("settings.title");
-        musicRow.labelElement.innerText = t("settings.music");
-        sfxRow.labelElement.innerText = t("settings.sfx");
-        label.innerText = t("settings.language");
-        select.setAttribute("aria-label", t("settings.language"));
-        versionText.innerText = t("settings.version");
+        if (winkGame && typeof winkGame.setLocale === "function") {
+          winkGame.setLocale(select.value);
+        } else {
+          i18n.setLanguage(select.value);
+        }
       });
 
       row.append(label, select);
@@ -1669,6 +1667,27 @@ export class MainMenuScene {
     versionText.innerText = t("settings.version");
     card.appendChild(versionText);
 
+    const unsubModalI18n = i18n.subscribe(() => {
+      title.innerText = t("settings.title");
+      musicRow.labelElement.innerText = t("settings.music");
+      sfxRow.labelElement.innerText = t("settings.sfx");
+      const langRow = overlay.querySelector(".game-settings-language-row");
+      if (langRow) {
+        const lbl = langRow.querySelector(".game-settings-label");
+        if (lbl) lbl.innerText = t("settings.language");
+        const sel = langRow.querySelector(".game-settings-language-select");
+        if (sel) {
+          sel.setAttribute("aria-label", t("settings.language"));
+          sel.innerHTML = `
+            <option value="en">${t("settings.english")}</option>
+            <option value="vi">${t("settings.vietnamese")}</option>
+          `;
+          sel.value = i18n.language;
+        }
+      }
+      versionText.innerText = t("settings.version");
+    });
+
     overlay.appendChild(card);
     const appContainer = document.getElementById("app") || document.body;
     appContainer.appendChild(overlay);
@@ -1676,6 +1695,7 @@ export class MainMenuScene {
     this.settingsPopup = {
       isHTML: true,
       destroy: () => {
+        unsubModalI18n();
         overlay.remove();
         this.settingsPopup = null;
       },
